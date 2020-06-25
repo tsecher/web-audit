@@ -1,0 +1,22 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "seo_audit": "node ./seo_audit/seo_audit.js",
+    "lighthouse_audit": "node ./seo_audit/lighthouse_audit.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chrome-launcher": "^0.13.3",
+    "crawler": "^1.2.2",
+    "events": "^3.1.0",
+    "file-system": "^2.2.2",
+    "fs": "0.0.1-security",
+    "lighthouse": "^6.0.0",
+    "lighthouse-logger": "^1.2.0",
+  }
+}

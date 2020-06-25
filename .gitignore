@@ -1,0 +1,4 @@
+/analyses/*
+!/analyses/.keep
+/src/node_modules
+/.idea
