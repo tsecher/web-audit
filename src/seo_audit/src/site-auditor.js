@@ -136,7 +136,8 @@ class SiteAuditor {
 		var links = [];
 		const $ = res.$;
 		if ($) {
-			$('a[href]').each((i, n) => {
+			// Parcours des liens et link alternate (mulitlingue).
+			$('a[href], link[rel="alternate"]').each((i, n) => {
 				links.push($(n).attr('href'))
 			})
 			links = links.filter(item => {
