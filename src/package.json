@@ -18,5 +18,6 @@
     "fs": "0.0.1-security",
     "lighthouse": "^6.0.0",
     "lighthouse-logger": "^1.2.0",
+    "sleep": "^6.2.0"
   }
 }
