@@ -18,6 +18,7 @@
     "fs": "0.0.1-security",
     "lighthouse": "^6.0.0",
     "lighthouse-logger": "^1.2.0",
+    "node-seo-checker": "^1.0.6",
     "sleep": "^6.2.0"
   }
 }

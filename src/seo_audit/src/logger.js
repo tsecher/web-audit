@@ -3,6 +3,7 @@ const fs = require('fs');
 class Logger {
 	constructor(auditor) {
 		this.auditor = auditor;
+		this.separator = ',';
 		this.initDir();
 	}
 
@@ -62,14 +63,14 @@ class Logger {
 		if (data) {
 			values = values.concat(Object.values(data));
 			if (!fs.existsSync(path)) {
-				fs.writeFileSync(path, (['url', 'message'].concat(Object.keys(data))).join(';') + "\r\n")
+				fs.writeFileSync(path, (['url', 'message'].concat(Object.keys(data))).join(this.separator) + "\r\n")
 			}
 		}
 
 
 		fs.appendFileSync(path, values.map(item => {
 			return '"' + item + '"'
-		}).join(';') + "\r\n");
+		}).join(this.separator) + "\r\n");
 	}
 
 	/**
@@ -103,7 +104,7 @@ class Logger {
 		return fs.readFileSync(this.dir + name + '.csv', 'utf-8')
 			.split('\n')
 			.map(row => {
-				return row.split(';')
+				return row.split(this.separator)
 					.map(cell => {
 						cell = cell.trim();
 						if (cell[0] === '"') {

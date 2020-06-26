@@ -66,6 +66,10 @@ class SiteAuditor {
 	 * @param done
 	 */
 	onCrawlPage(error, res, done, fromPage) {
+		if( !res.request ){
+			return;
+		}
+
 		this.currentUrl = res.request.uri.href;
 		console.log(this.currentUrl);
 
@@ -116,8 +120,6 @@ class SiteAuditor {
 	 * @param done
 	 */
 	logRobotsTxt(error, res, done) {
-		this.logger.save(res.body, 'robots.txt');
-
 		// test de la présence du sitemap.
 		if (res.body.indexOf('Sitemap: ') < 0) {
 			this.logger.error('Pas de sitemap dans le robots.txt', '', res.request.uri.href)
