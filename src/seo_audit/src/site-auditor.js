@@ -52,6 +52,7 @@ class SiteAuditor {
 
 		this.crawler = new Crawler({
 			maxConnections: 10,
+			userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
 			// This will be called for each crawled page
 			callback: (error, res, done) => this.onCrawlPage(error, res, done, fromPage)
 		})
