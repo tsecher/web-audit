@@ -2,11 +2,13 @@ const Logger = require("./logger")
 const lighthouse = require('lighthouse')
 const chromeLauncher = require('chrome-launcher')
 const log = require('lighthouse-logger');
+const UrlTools = require('./url-tools');
 
-class LighthouseAuditor {
+class LighthouseAuditor extends UrlTools{
 
 	constructor(baseUrl) {
-		this.baseUrl = baseUrl;
+		super(baseUrl)
+
 		this.logger = new Logger(this);
 
 		// Récuépration des éléments à auditer.
@@ -18,6 +20,7 @@ class LighthouseAuditor {
 			}).map(item => {
 				return item[0]
 			})
+
 	}
 
 	run() {
@@ -35,16 +38,22 @@ class LighthouseAuditor {
 
 	onChromLaunched(chrome) {
 		const url = this.urlsList[this.current];
-		console.log('next ' + url)
-		const options = {
-			output: 'json',
-			onlyCategories: ['performance', 'seo', 'best-practices', 'accessibility'],
-			port: chrome.port
-		};
+		if (url ){
+			console.log('next ' + url)
+			const options = {
+				output: 'json',
+				onlyCategories: ['performance', 'seo', 'best-practices', 'accessibility'],
+				port: chrome.port
+			};
 
-		lighthouse(url, options)
-			.then(result => this.onLighthouseAudit(result, options, url, chrome))
-			.catch((e) => this.onDone(chrome, e))
+			lighthouse(url, options)
+				.then(result => this.onLighthouseAudit(result, options, url, chrome))
+				.catch((e) => this.onDone(chrome, e))
+		}
+		else{
+			this.onDone(chrome, null)
+		}
+
 	}
 
 	onLighthouseAudit(runnerResult, options, url, chrome) {

@@ -11,7 +11,7 @@ class Logger {
 	 * Initialise le rep d'analise.
 	 */
 	initDir() {
-		this.dir = '../analyses/' + this.auditor.baseUrl.split('.')[1] + '/';
+		this.dir = '../analyses/' + this.auditor.domain + '/';
 		let version = 1;
 
 		if (!fs.existsSync(this.dir)) {

@@ -2,15 +2,17 @@ const Crawler = require("crawler")
 const Logger = require("./logger")
 const PageAuditor = require("./page-auditor")
 const events = require("events");
+const UrlTools = require("./url-tools")
 
 const SiteAuditorEvents = {
 	ON_CRAWL_PAGE: 'on-crawl-page',
 }
 
-class SiteAuditor {
+class SiteAuditor extends UrlTools{
 
 	constructor(baseUrl) {
-		this.baseUrl = baseUrl + (baseUrl.slice(-1) != '/' ? '/' : '');
+		super(baseUrl)
+
 		this.logger = new Logger(this);
 		this.pageAuditor = new PageAuditor(this.logger);
 		this.alreadyCrawled = [];
@@ -50,11 +52,16 @@ class SiteAuditor {
 		}))
 		this.alreadyCrawled = this.alreadyCrawled + pages;
 
+		pages = pages.map(url => {
+			return {
+				uri: url,
+				callback: (error, res, done) => this.onCrawlPage(error, res, done, url)
+			}
+		})
+
 		this.crawler = new Crawler({
 			maxConnections: 10,
 			userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
-			// This will be called for each crawled page
-			callback: (error, res, done) => this.onCrawlPage(error, res, done, fromPage)
 		})
 			.queue(pages)
 	}
@@ -67,6 +74,7 @@ class SiteAuditor {
 	 * @param done
 	 */
 	onCrawlPage(error, res, done, fromPage) {
+	    // console.log(res.body)
 		if( !res.request ){
 			return;
 		}
@@ -75,9 +83,11 @@ class SiteAuditor {
 		console.log(this.currentUrl);
 
 		if (error) {
+			console.log(res);
 			console.log(error);
 		} else {
 			const $ = res.$;
+
 			if (res.statusCode != 200) {
 				this.logger.log(res.statusCode, res.statusCode, {from: fromPage})
 			} else {
@@ -89,7 +99,13 @@ class SiteAuditor {
 						fromPage: fromPage,
 					});
 					// On continue sur d'autres pages.
-					this.crawlPage(this.getLinks(res), this.currentUrl);
+					try{
+						this.crawlPage(this.getLinks(res), this.currentUrl);
+					} 
+					catch(e){
+						console.log('nonoernonn')
+					}
+					
 				}
 
 			}
@@ -141,15 +157,18 @@ class SiteAuditor {
 		if ($) {
 			// Parcours des liens et link alternate (mulitlingue).
 			$('a[href], link[rel="alternate"]').each((i, n) => {
-				links.push($(n).attr('href'))
+				let href = $(n).attr('href');
+
+				href = this.initLink(href);
+				links.push(href)
 			})
 			links = links.filter(item => {
 				return !(
 					item.length === 0
 					|| item[0] === '#'
-					|| item.indexOf('tel:') === 0
-					|| item.indexOf('mailto:') === 0
-					|| item.indexOf('javascript:') === 0
+					|| item.toLowerCase().indexOf('tel:') === 0
+					|| item.toLowerCase().indexOf('mailto:') === 0
+					|| item.toLowerCase().indexOf('javascript:') === 0
 					|| (item.indexOf('http') === 0 && item.indexOf(this.baseUrl) !== 0)
 				)
 					;
@@ -165,6 +184,7 @@ class SiteAuditor {
 
 		return links
 	}
+
 }
 
 
