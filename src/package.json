@@ -5,20 +5,25 @@
   "main": "index.js",
   "scripts": {
     "seo_audit": "node ./seo_audit/seo_audit.js",
-    "lighthouse_audit": "node ./seo_audit/lighthouse_audit.js"
+    "lighthouse_audit": "node ./seo_audit/lighthouse_audit.js",
+    "ecoindex_audit": "node ./seo_audit/ecoindex_audit.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "chrome-launcher": "^0.13.3",
+    "chrome-remote-interface": "^0.31.0",
     "crawler": "^1.2.2",
+    "ecoindex": "https://github.com/cnumr/ecoindex_node/tarball/master",
     "events": "^3.1.0",
     "file-system": "^2.2.2",
     "fs": "0.0.1-security",
     "lighthouse": "^6.0.0",
     "lighthouse-logger": "^1.2.0",
     "node-seo-checker": "^1.0.6",
-    "sleep": "^6.2.0"
+    "puppeteer": "^10.2.0",
+    "sleep": "^6.2.0",
+    "zlib": "^1.0.5"
   }
 }

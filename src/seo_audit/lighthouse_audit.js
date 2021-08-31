@@ -3,7 +3,7 @@ const LighthouseAuditor = require("./src/lighthouse-auditor")
 const parameters = process.argv;
 const url = parameters[2];
 
-const audit = new LighthouseAuditor(url);
+const audit = new LighthouseAuditor(url, '../selection');
 audit.run();
 
 

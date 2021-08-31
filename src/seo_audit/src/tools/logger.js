@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 class Logger {
 	constructor(auditor) {
@@ -11,7 +12,12 @@ class Logger {
 	 * Initialise le rep d'analise.
 	 */
 	initDir() {
-		this.dir = '../analyses/' + this.auditor.domain + '/';
+		const analyseDir  = process.env.INIT_CWD + '/seo_analyse/';
+		if (!fs.existsSync(analyseDir)) {
+			fs.mkdirSync(analyseDir);
+		}
+
+		this.dir = analyseDir + this.auditor.domain + '/';
 		let version = 1;
 
 		if (!fs.existsSync(this.dir)) {

@@ -6,6 +6,7 @@ class PageAuditor {
 
 	constructor(logger) {
 		this.logger = logger;
+		this.logger.log('../selection', (new Date()), 0, '==========' );
 	}
 
 	/**
@@ -15,9 +16,14 @@ class PageAuditor {
 	 * @param $
 	 */
 	auditPage(res, $) {
-		this.meta(res, $);
-		this.seoChecker(res, $);
-		this.prepareLighthouse(res.request.uri.href);
+		try{
+			this.meta(res, $);
+			this.seoChecker(res, $);
+			this.prepareLighthouse(res.request.uri.href);
+		}
+		catch(e){
+		}
+
 	}
 
 	/**
@@ -35,7 +41,15 @@ class PageAuditor {
 	}
 
 	prepareLighthouse(url) {
-		this.logger.log('../lighthouse-selection', 0);
+		const file = '../selection';
+		const content = this.logger.read(file)
+			.filter(item => {
+				return item[0] === url
+			}).length
+
+		if( content === 0 ){
+			this.logger.log(file, 0);
+		}
 	}
 
 	seoChecker(res, $) {

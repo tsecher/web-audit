@@ -1,8 +1,8 @@
 const Crawler = require("crawler")
-const Logger = require("./logger")
-const PageAuditor = require("./page-auditor")
 const events = require("events");
-const UrlTools = require("./url-tools")
+const Logger = require("./tools/logger")
+const PageAuditor = require("./parser/page-auditor")
+const UrlTools = require("./tools/url-tools")
 
 const SiteAuditorEvents = {
 	ON_CRAWL_PAGE: 'on-crawl-page',
@@ -27,7 +27,12 @@ class SiteAuditor extends UrlTools{
 	 */
 	run() {
 		// INitialise le  sitemap depuis robots.txt.
-		this.checkRobots();
+		try{
+			// this.checkRobots();
+		}
+		catch(e){
+		}
+
 
 		// Crawl le sitemap.
 		if (this.sitemap) {
@@ -55,7 +60,7 @@ class SiteAuditor extends UrlTools{
 		pages = pages.map(url => {
 			return {
 				uri: url,
-				callback: (error, res, done) => this.onCrawlPage(error, res, done, url)
+				callback: (error, res, done) => this.onCrawlPage(error, res, done, fromPage)
 			}
 		})
 
@@ -80,7 +85,7 @@ class SiteAuditor extends UrlTools{
 		}
 
 		this.currentUrl = res.request.uri.href;
-		console.log(this.currentUrl);
+		console.log('try : ' + this.currentUrl)
 
 		if (error) {
 			console.log(res);
@@ -103,7 +108,7 @@ class SiteAuditor extends UrlTools{
 						this.crawlPage(this.getLinks(res), this.currentUrl);
 					} 
 					catch(e){
-						console.log('nonoernonn')
+						console.log(e)
 					}
 					
 				}
@@ -121,7 +126,7 @@ class SiteAuditor extends UrlTools{
 	checkRobots() {
 		const crawler = new Crawler(
 			{
-				maxConnections: 10,
+				maxConnections: 1,
 				// This will be called for each crawled page
 				callback: (error, res, done) => this.logRobotsTxt(error, res, done)
 			}
@@ -137,12 +142,17 @@ class SiteAuditor extends UrlTools{
 	 * @param done
 	 */
 	logRobotsTxt(error, res, done) {
-		// test de la présence du sitemap.
-		if (res.body.indexOf('Sitemap: ') < 0) {
-			this.logger.error('Pas de sitemap dans le robots.txt', '', res.request.uri.href)
-		} else {
-			this.sitemap = res.body.split('Sitemap: ')[1].split('\n')[0]
+		try{
+			// test de la présence du sitemap.
+			if (res.body.indexOf('Sitemap: ') < 0) {
+				this.logger.error('Pas de sitemap dans le robots.txt', '', res.request.uri.href)
+			} else {
+				this.sitemap = res.body.split('Sitemap: ')[1].split('\n')[0]
+			}
 		}
+		catch(e){
+		}
+
 	}
 
 	/**
