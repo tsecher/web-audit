@@ -5,6 +5,12 @@ const cheerio = require('cheerio');
 
 class EcoindexAuditor extends ChromeParser {
 
+
+    constructor(baseUrl, selectionFile) {
+        super(baseUrl, selectionFile);
+        this.logger.defaultName = 'lighthouse';
+    }
+
     process(chrome, url) {
         CDP({port: chrome.port})
             .then((protocol) => {

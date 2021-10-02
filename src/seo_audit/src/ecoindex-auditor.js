@@ -4,6 +4,8 @@ const zlib = require('zlib');
 
 class EcoindexAuditor extends PupeteerParser {
 
+
+
     process(browser, url) {
         this.currentData = {
             brower: browser,

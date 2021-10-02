@@ -5,10 +5,10 @@ const log = require('lighthouse-logger');
 
 class ChromeParser extends UrlTools {
 
-    constructor(baseUrl, selectionFile) {
+    constructor(baseUrl, selectionFile, defaultLogName) {
         super(baseUrl)
 
-        this.logger = new Logger(this);
+        this.logger = new Logger(this, defaultLogName);
 
         // Récuépration des éléments à auditer.
         this.current = 0;

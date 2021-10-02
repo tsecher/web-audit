@@ -2,9 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 class Logger {
-	constructor(auditor) {
+	constructor(auditor, defaultName) {
 		this.auditor = auditor;
 		this.separator = ',';
+		this.defaultName = defaultName;
 		this.initDir();
 	}
 
@@ -31,7 +32,10 @@ class Logger {
 					return a > b;
 				})
 
-			version = (parseInt(versions.slice(-1)) || 0) + 1;
+			version  = parseInt(versions.slice(-1)) || 0;
+			if( fs.existsSync(`${this.dir}v${version}/${this.defaultName}.csv`) ){
+				version = version + 1;
+			}
 		}
 
 		this.dir += 'v' + version + '/';
@@ -91,6 +95,12 @@ class Logger {
 			.map(dirent => dirent.name)
 	}
 
+	getFilesList(source){
+		return fs.readdirSync(source, {withFileTypes: true})
+			.filter(dirent => dirent.isFile())
+			.map(dirent => dirent.name)
+	}
+
 	/**
 	 * save file.
 	 *
@@ -107,18 +117,24 @@ class Logger {
 	 * @returns {*[][]}
 	 */
 	read(name) {
-		return fs.readFileSync(this.dir + name + '.csv', 'utf-8')
-			.split('\n')
-			.map(row => {
-				return row.split(this.separator)
-					.map(cell => {
-						cell = cell.trim();
-						if (cell[0] === '"') {
-							return cell.slice(1, -1);
-						}
-						return cell;
-					})
-			})
+		const file = this.dir + name + '.csv';
+		if( fs.existsSync(file) ){
+			return fs.readFileSync(file, 'utf-8')
+				.split('\n')
+				.map(row => {
+					return row.split(this.separator)
+						.map(cell => {
+							cell = cell.trim();
+							if (cell[0] === '"') {
+								return cell.slice(1, -1);
+							}
+							return cell;
+						})
+				})
+		}
+		console.log("Vous devez faire un audit seo pour déterminer les pages à tracker.");
+		process.exit();
+
 	}
 }
 

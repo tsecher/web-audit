@@ -27,7 +27,7 @@ class LighthouseAuditor extends ChromeParser {
 		})
 
 		console.log(JSON.stringify(logData))
-		this.logger.log('lighthouse', '', logData, url);
+		this.logger.log(this.logger.defaultName, '', logData, url);
 		this.onDone(chrome);
 	}
 

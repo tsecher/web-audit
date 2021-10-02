@@ -6,7 +6,8 @@
   "scripts": {
     "seo_audit": "node ./seo_audit/seo_audit.js",
     "lighthouse_audit": "node ./seo_audit/lighthouse_audit.js",
-    "ecoindex_audit": "node ./seo_audit/ecoindex_audit.js"
+    "ecoindex_audit": "node ./seo_audit/ecoindex_audit.js",
+    "lighteco_audit": "node ./seo_audit/lighteco_audit.js"
   },
   "keywords": [],
   "author": "",

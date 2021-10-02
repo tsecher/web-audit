@@ -4,10 +4,10 @@ const puppeteer = require('puppeteer');
 
 class PupeteerParser extends UrlTools{
 
-    constructor(baseUrl, selectionFile) {
+    constructor(baseUrl, selectionFile, logFile) {
         super(baseUrl)
 
-        this.logger = new Logger(this);
+        this.logger = new Logger(this, logFile);
 
         // Récuépration des éléments à auditer.
         this.current = 0;
