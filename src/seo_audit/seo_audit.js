@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const SiteAuditor = require("./src/site-auditor");
 
 const parameters = process.argv;

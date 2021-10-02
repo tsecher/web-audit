@@ -10,11 +10,11 @@ const SiteAuditorEvents = {
 
 class SiteAuditor extends UrlTools{
 
-	constructor(baseUrl) {
+	constructor(baseUrl, defaultSelectionValue = 0) {
 		super(baseUrl)
 
 		this.logger = new Logger(this);
-		this.pageAuditor = new PageAuditor(this.logger);
+		this.pageAuditor = new PageAuditor(this.logger, defaultSelectionValue);
 		this.alreadyCrawled = [];
 
 		// Events.
@@ -35,11 +35,7 @@ class SiteAuditor extends UrlTools{
 
 
 		// Crawl le sitemap.
-		if (this.sitemap) {
-			this.crawlFromSitemap();
-		} else {
-			this.crawlPage(this.baseUrl);
-		}
+		this.crawlPage(this.baseUrl);
 	}
 
 	/**

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const LighthouseAuditor = require("./src/lighthouse-auditor")
 
 const parameters = process.argv;

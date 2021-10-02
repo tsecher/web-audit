@@ -26,12 +26,6 @@
         "is_exist" : [0, 0],
         "enable" : [1, 1]
     },
-    "strong" :
-    {
-        "count" : 15,
-        "sign" : ">=",
-        "enable" : 1
-    },
     "h1" :
     {
         "count" : 1,

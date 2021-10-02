@@ -4,9 +4,10 @@ const when = require('when');
 
 class PageAuditor {
 
-	constructor(logger) {
+	constructor(logger, defaultSelectionValue=0) {
 		this.logger = logger;
 		this.logger.log('../selection', (new Date()), 0, '==========' );
+		this.defaultSelectionValue = defaultSelectionValue;
 	}
 
 	/**
@@ -48,7 +49,7 @@ class PageAuditor {
 			}).length
 
 		if( content === 0 ){
-			this.logger.log(file, 0);
+			this.logger.log(file, this.defaultSelectionValue);
 		}
 	}
 
@@ -56,7 +57,7 @@ class PageAuditor {
 		const manager = new Manager();
 		manager.setReader((new Manager.Reader()).createInputHtml(res.body))
 		manager.setWriter((new Manager.Writer()).createOutputLog(this.logger))
-		manager.checkSEO('../rule.json')
+		manager.checkSEO(__dirname + '/rules/rule.json')
 	}
 }
 

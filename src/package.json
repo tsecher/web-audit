@@ -7,7 +7,8 @@
     "seo_audit": "node ./seo_audit/seo_audit.js",
     "lighthouse_audit": "node ./seo_audit/lighthouse_audit.js",
     "ecoindex_audit": "node ./seo_audit/ecoindex_audit.js",
-    "lighteco_audit": "node ./seo_audit/lighteco_audit.js"
+    "lighteco_audit": "node ./seo_audit/lighteco_audit.js",
+    "audit": "node ./seo_audit/audit.js"
   },
   "keywords": [],
   "author": "",
@@ -23,8 +24,12 @@
     "lighthouse": "^6.0.0",
     "lighthouse-logger": "^1.2.0",
     "node-seo-checker": "^1.0.6",
+    "prompts": "^2.4.1",
     "puppeteer": "^10.2.0",
     "sleep": "^6.2.0",
     "zlib": "^1.0.5"
+  },
+  "bin": {
+    "audit": "seo_audit/audit.js"
   }
 }

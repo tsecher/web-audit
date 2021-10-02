@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const EcoindexAuditor = require("./src/ecoindex-auditor")
 const LighthouseAuditor = require("./src/lighthouse-auditor")
 
