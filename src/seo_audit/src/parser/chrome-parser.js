@@ -25,23 +25,26 @@ class ChromeParser extends UrlTools {
     run() {
         log.setLevel('info');
 
-        this.auditNext();
+       // this.auditNext();
+
+        chromeLauncher.launch({chromeFlags: ['--headless']})
+        .then(chrome => this.onChromLaunched(chrome))
+        .catch(console.log)
     }
 
     auditNext() {
-        chromeLauncher.launch({chromeFlags: ['--headless']})
-            .then(chrome => this.onChromLaunched(chrome))
-            .catch(console.log)
-    }
-
-    onChromLaunched(chrome) {
         const url = this.urlsList[this.current];
         if (url) {
             console.log('try : ' + url);
-            this.process(chrome, url);
+            this.process(this.chrome, url);
         } else {
-            this.onDone(chrome, null)
+            this.onDone(this.chrome, null)
         }
+    }
+
+    onChromLaunched(chrome) {
+        this.chrome = chrome;
+        this.auditNext()
 
     }
 
@@ -49,12 +52,13 @@ class ChromeParser extends UrlTools {
         if (e) {
             console.log(e);
         }
-        chrome.kill()
+//        chrome.kill()
         this.current++;
         if (this.current <= this.urlsList.length) {
             this.auditNext();
         } else {
             process.exit();
+            chrome.kill();
         }
     }
 }

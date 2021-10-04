@@ -28,14 +28,25 @@ class SiteAuditor extends UrlTools{
 	run() {
 		// INitialise le  sitemap depuis robots.txt.
 		try{
-			// this.checkRobots();
+			this.checkRobots();
 		}
 		catch(e){
 		}
 
+		this.crawler = new Crawler({
+			maxConnections: 10,
+			userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+		})
 
 		// Crawl le sitemap.
 		this.crawlPage(this.baseUrl);
+		this.crawler.on('drain', () => {
+			this.crawler.onDone();
+		});
+
+		return new Promise((resolve, reject)=>{
+			this.crawler.onDone = resolve
+		})
 	}
 
 	/**
@@ -60,11 +71,7 @@ class SiteAuditor extends UrlTools{
 			}
 		})
 
-		this.crawler = new Crawler({
-			maxConnections: 10,
-			userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
-		})
-			.queue(pages)
+		this.crawler.queue(pages)
 	}
 
 	/**
@@ -86,6 +93,7 @@ class SiteAuditor extends UrlTools{
 		if (error) {
 			console.log(res);
 			console.log(error);
+			this.crawler.queueSize--;
 		} else {
 			const $ = res.$;
 
@@ -106,12 +114,13 @@ class SiteAuditor extends UrlTools{
 					catch(e){
 						console.log(e)
 					}
-					
 				}
 
 			}
 
 		}
+
+
 		done();
 	}
 
@@ -172,6 +181,7 @@ class SiteAuditor extends UrlTools{
 				return !(
 					item.length === 0
 					|| item[0] === '#'
+					|| item.indexOf('?') >= 0
 					|| item.toLowerCase().indexOf('tel:') === 0
 					|| item.toLowerCase().indexOf('mailto:') === 0
 					|| item.toLowerCase().indexOf('javascript:') === 0
