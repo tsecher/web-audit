@@ -30,6 +30,10 @@ class ChromeParser extends UrlTools {
         chromeLauncher.launch({chromeFlags: ['--headless']})
         .then(chrome => this.onChromLaunched(chrome))
         .catch(console.log)
+
+        return new Promise((resolve, reject)=>{
+            this.resolve = resolve
+        })
     }
 
     auditNext() {
@@ -57,7 +61,7 @@ class ChromeParser extends UrlTools {
         if (this.current <= this.urlsList.length) {
             this.auditNext();
         } else {
-            process.exit();
+            this.resolve();
             chrome.kill();
         }
     }

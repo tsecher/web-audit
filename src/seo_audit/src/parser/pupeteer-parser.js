@@ -22,6 +22,10 @@ class PupeteerParser extends UrlTools{
 
     run() {
         this.auditNext()
+
+        return new Promise((resolve, reject)=>{
+            this.resolve = resolve
+        })
     }
 
     auditNext(){
@@ -52,7 +56,7 @@ class PupeteerParser extends UrlTools{
             this.auditNext();
         }
         else{
-            process.exit();
+            this.resolve();
         }
     }
 }
