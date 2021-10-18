@@ -13,7 +13,7 @@ class SiteAuditor extends UrlTools{
 	constructor(baseUrl, defaultSelectionValue = 0) {
 		super(baseUrl)
 
-		this.logger = new Logger(this);
+		this.logger = new Logger(this, 'meta');
 		this.pageAuditor = new PageAuditor(this.logger, defaultSelectionValue);
 		this.alreadyCrawled = [];
 

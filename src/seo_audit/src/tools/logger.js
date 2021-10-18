@@ -34,6 +34,8 @@ class Logger {
 				})
 
 			version  = parseInt(versions.slice(-1)) || 0;
+
+			console.log(`${this.dir}v${version}/${this.defaultName}.csv`);
 			if( fs.existsSync(`${this.dir}v${version}/${this.defaultName}.csv`) ){
 				version = version + 1;
 			}
@@ -93,12 +95,6 @@ class Logger {
 	getDirList(source) {
 		return fs.readdirSync(source, {withFileTypes: true})
 			.filter(dirent => dirent.isDirectory())
-			.map(dirent => dirent.name)
-	}
-
-	getFilesList(source){
-		return fs.readdirSync(source, {withFileTypes: true})
-			.filter(dirent => dirent.isFile())
 			.map(dirent => dirent.name)
 	}
 

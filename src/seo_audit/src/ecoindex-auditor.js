@@ -47,7 +47,6 @@ class EcoindexAuditor extends PupeteerParser {
     }
 
     addRequestData(nbRequest) {
-        console.log("current request", nbRequest)
         this.currentData.request = nbRequest
         this.finish()
     }
@@ -62,7 +61,6 @@ class EcoindexAuditor extends PupeteerParser {
     }
 
     addDOMData(DOMLength) {
-        console.log("current dom", DOMLength)
         this.currentData.DOM = DOMLength;
         this.finish()
     }
@@ -110,7 +108,6 @@ class EcoindexAuditor extends PupeteerParser {
 
     addSizeData(size) {
         size = Math.round(size / 1024)
-        console.log("size", size)
         this.currentData.size = size;
         this.finish()
     }

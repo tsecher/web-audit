@@ -27,6 +27,11 @@ const settings = [
         active: 'oui',
         inactive: 'non'
     },
+    {
+        type: 'text',
+        name: 'email',
+        message: 'Report email ?'
+    }
 ]
 
 // Initialisation des settings.
@@ -72,6 +77,21 @@ const prompts = require('prompts');
         response = await prompts(settings)
     }
 
+    // Initialisation du mailer via parameters.
+    let mailer;
+    if(response.email.length){
+        let authData = null
+        if( parameters.senderMail && parameters.senderPass){
+            authData = {
+                user: parameters.senderMail,
+                pass: parameters.senderPass,
+            }
+        }
+        mailer = new (require('./src/report/mailer'))(response.url, response.email, authData)
+        await mailer.initAuth();
+    }
+
+    // Initlisations dse auditors.
     const listAudits = {
         'seo': () => {
             console.log('=========================');
@@ -106,6 +126,8 @@ const prompts = require('prompts');
         }
     }
 
+
+    // Next audit.
     function nextAudit() {
         // Récupération du next audit id.
         const audits = response.types;
@@ -115,6 +137,9 @@ const prompts = require('prompts');
         if (typeof listAudits[nextAuditIndex] === 'function') {
             listAudits[nextAuditIndex]();
         } else {
+            if (response.email.length) {
+                mailer.send()
+            }
         }
     }
 
