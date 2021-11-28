@@ -56,9 +56,12 @@ class PupeteerParser extends UrlTools{
             this.auditNext();
         }
         else{
+            this.endProcess()
             this.resolve();
         }
     }
+
+    endProcess(){}
 }
 
 

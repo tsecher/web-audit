@@ -1,10 +1,17 @@
 const PupeteerParser = require('./parser/pupeteer-parser')
 const ecoindex = require('ecoindex');
 const zlib = require('zlib');
+const Average = require('./report/average')
 
 class EcoindexAuditor extends PupeteerParser {
 
 
+    constructor(baseUrl, selectionFile, logFile) {
+        super(baseUrl, selectionFile, logFile);
+        this.average = new Average(this);
+        this.average.proxyGetResults = this.average.getResults
+        this.average.getResults = () => this.overrideAverageResult()
+    }
 
     process(browser, url) {
         this.currentData = {
@@ -134,9 +141,24 @@ class EcoindexAuditor extends PupeteerParser {
             'Size (B)': this.currentData.size,
         }
 
+        this.average.add(data)
         console.log(JSON.stringify(data))
         this.logger.log('ecoindex', '', data, this.currentData.url);
         this.onDone(this.currentData.brower);
+    }
+
+
+    endProcess() {
+        this.average.showAverage()
+    }
+
+    overrideAverageResult() {
+        const result = this.average.proxyGetResults()
+        result.note =
+            String.fromCharCode(this.average.getLetterRef() + Math.round(result.note - 1))
+            + "  (" + (result.note - 1) + ")"
+
+        return result
     }
 }
 

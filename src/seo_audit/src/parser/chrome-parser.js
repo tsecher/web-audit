@@ -61,10 +61,13 @@ class ChromeParser extends UrlTools {
         if (this.current <= this.urlsList.length) {
             this.auditNext();
         } else {
+            this.endProcess();
             this.resolve();
             chrome.kill();
         }
     }
+
+    endProcess(){}
 }
 
 

@@ -79,7 +79,7 @@ const prompts = require('prompts');
 
     // Initialisation du mailer via parameters.
     let mailer;
-    if(response.email.length){
+    if(response.email && response.email.length){
         let authData = null
         if( parameters.senderMail && parameters.senderPass){
             authData = {
@@ -137,7 +137,7 @@ const prompts = require('prompts');
         if (typeof listAudits[nextAuditIndex] === 'function') {
             listAudits[nextAuditIndex]();
         } else {
-            if (response.email.length) {
+            if (response.email && response.email.length) {
                 mailer.send()
             }
         }
