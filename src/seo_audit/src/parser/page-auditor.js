@@ -38,6 +38,10 @@ class PageAuditor {
 			'canonical': $('link[rel="canonical"]').attr('href'),
 			'title': $('title').text(),
 			'description': $('meta[name="description"]').attr("content"),
+			'og:title': $('meta[property="og:title"]').attr("content"),
+			'og:site_name': $('meta[property="og:site_name"]').attr("content"),
+			'og:description': $('meta[property="og:description"]').attr("content"),
+			'og:image': $('meta[property="og:image"]').attr("content"),
 		});
 	}
 
