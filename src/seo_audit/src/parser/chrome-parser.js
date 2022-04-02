@@ -27,7 +27,9 @@ class ChromeParser extends UrlTools {
 
        // this.auditNext();
 
-        chromeLauncher.launch({chromeFlags: ['--headless']})
+        chromeLauncher.launch({
+          chromeFlags: ['--headless'],
+        })
         .then(chrome => this.onChromLaunched(chrome))
         .catch(console.log)
 
