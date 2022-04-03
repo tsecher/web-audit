@@ -60,7 +60,7 @@ class SiteAuditor extends UrlTools{
 			pages = [pages];
 		}
 		pages = pages.filter((url => {
-			return this.alreadyCrawled.indexOf(url) < 0;
+			return this.isHTML(url) && this.alreadyCrawled.indexOf(url) < 0;
 		}))
 		this.alreadyCrawled = this.alreadyCrawled + pages;
 
@@ -199,6 +199,20 @@ class SiteAuditor extends UrlTools{
 		}
 
 		return links
+	}
+
+	isHTML(url){
+		let test = url.replace( this.baseUrl , '');
+		test = test.split('/').slice(-1)[0];
+		if(test.length > 0){
+			let extension = test.split('.')
+			if(extension.length > 1){
+				extension = extension.slice(-1)[0];
+				return ['html', 'html'].indexOf(extension) > -1;
+			}
+		}
+		return true;
+		
 	}
 
 }

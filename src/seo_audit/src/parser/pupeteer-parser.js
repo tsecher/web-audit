@@ -29,9 +29,14 @@ class PupeteerParser extends UrlTools{
     }
 
     auditNext(){
-        puppeteer.launch()
+        try {
+            puppeteer.launch()
             .then(chrome => this.onBrowserLaunch(chrome))
-            .catch(console.log)
+            .catch(console.log)    
+        } catch (error) {
+            
+        }
+        
     }
 
     onBrowserLaunch(browser) {

@@ -21,22 +21,36 @@ class EcoindexAuditor extends PupeteerParser {
         };
 
         // Création de la page.
-        browser.newPage()
+        try{
+            browser.newPage()
             .then(page => this.preparePage(page, url))
             .catch(data => this.onDone(browser))
+        }
+        catch(e){
+            this.onDone(browser);
+        }
+        
     }
 
     preparePage(page, url) {
-        this.getRequestCount(page)
-        this.getSizeData(page)
-
-        page.goto(url)
-            .then(() => {
-                this.getDOMData(page)
-                this.addRequestData(this.nbRequest)
-                this.addSizeData(this.size)
-            })
-            .catch(data => this.onDone(this.currentData.brower))
+        try{
+            this.getRequestCount(page)
+            this.getSizeData(page)
+    
+            page.goto(url)
+                .then(() => {
+                    this.getDOMData(page)
+                    this.addRequestData(this.nbRequest)
+                    this.addSizeData(this.size)
+                })
+                .catch(data => {
+                    this.onDone(this.currentData.brower)
+                })
+        }
+        catch(e){
+            this.onDone(this.currentData.brower)
+        }
+        
     }
 
 
@@ -130,12 +144,14 @@ class EcoindexAuditor extends PupeteerParser {
     }
 
     allDataDone() {
-        const index = ecoindex.calculate(this.currentData.DOM, this.currentData.request, this.currentData.size);
-        const note = ecoindex.getNote(index);
+        const index = ecoindex.getEcoindex(this.currentData.DOM, this.currentData.request, this.currentData.size);
+    
 
         const data = {
-            'note': note,
-            'index': index,
+            'note': index.grade,
+            'index': index.score,
+            'ghg': index.ghg,
+            'water': index.water,
             'NB DOM elements': this.currentData.DOM,
             'NB requests': this.currentData.request,
             'Size (B)': this.currentData.size,

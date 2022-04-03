@@ -23,5 +23,8 @@
   },
   "bin": {
     "audit": "seo_audit/audit.js"
+  },
+  "scripts": {
+    "audit": "seo_audit/audit.js"
   }
 }
