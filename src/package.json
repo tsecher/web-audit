@@ -22,9 +22,9 @@
     "zlib": "^1.0.5"
   },
   "bin": {
-    "audit": "seo_audit/audit.js"
+    "web_audit": "seo_audit/audit.js"
   },
   "scripts": {
-    "audit": "seo_audit/audit.js"
+    "web_audit": "seo_audit/audit.js"
   }
 }

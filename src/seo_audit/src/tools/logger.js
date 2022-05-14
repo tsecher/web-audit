@@ -13,7 +13,7 @@ class Logger {
 	 * Initialise le rep d'analise.
 	 */
 	initDir() {
-		const analyseDir  = (process.env.PWD || process.env.INIT_CWD) + '/seo_analyse/';
+		const analyseDir  = (process.cwd()) + '/seo_analyse/';
 
 		if (!fs.existsSync(analyseDir)) {
 			fs.mkdirSync(analyseDir);
