@@ -1,9 +1,11 @@
-const PupeteerParser = require('./parser/pupeteer-parser')
+const ChromeParser = require('./parser/chrome-parser')
 const ecoindex = require('ecoindex');
 const zlib = require('zlib');
 const Average = require('./report/average')
+const CDP = require('chrome-remote-interface');
+const {time} = require("lighthouse-logger");
 
-class EcoindexAuditor extends PupeteerParser {
+class EcoindexAuditor extends ChromeParser {
 
 
     constructor(baseUrl, selectionFile, logFile) {
@@ -14,73 +16,89 @@ class EcoindexAuditor extends PupeteerParser {
     }
 
     process(browser, url) {
+
         this.currentData = {
-            brower: browser,
+            browser: browser,
             url: url,
             count: 4,
         };
 
-        // Création de la page.
-        try{
-            browser.newPage()
-            .then(page => this.preparePage(page, url))
-            .catch(data => this.onDone(browser))
-        }
-        catch(e){
-            this.onDone(browser);
-        }
-        
+        CDP({port: browser.port}).then(
+            protocol => {
+                const {Page, Runtime, Network} = protocol;
+
+                // Time out.
+                this.setTimeout(1000);
+
+                this.getSizeData(Network);
+                this.getRequestCount(Network);
+                this.getDOMData(Page, Runtime, url);
+            }
+        ).catch(e => {
+        })
+
     }
 
-    preparePage(page, url) {
-        try{
-            this.getRequestCount(page)
-            this.getSizeData(page)
-    
-            page.goto(url)
-                .then(() => {
-                    this.getDOMData(page)
-                    this.addRequestData(this.nbRequest)
-                    this.addSizeData(this.size)
-                })
-                .catch(data => {
-                    this.onDone(this.currentData.brower)
-                })
+    /**
+     * End page audit when timeout is reach.
+     *
+     * @param time
+     */
+    setTimeout(time) {
+        if (this.timeout) {
+            clearTimeout(this.timeout);
         }
-        catch(e){
-            this.onDone(this.currentData.brower)
-        }
-        
+        this.timeout = setTimeout(() => this.allDataDone(), time);
     }
-
 
     /**======================================================
      ||                  Request count                      ||
      =======================================================*/
-    async getRequestCount(page) {
+    /**
+     * Populate request count.
+     *
+     * @param Network
+     * @returns {Promise<void>}
+     */
+    async getRequestCount(Network) {
         this.currentData.count++;
+        this.currentData.request = 0;
         this.nbRequest = 0;
-        page.on('request', request => {
-            if (!request.url().startsWith('data:')) {
-                this.nbRequest++;
-            }
+        Network.requestWillBeSent(e => {
+            this.currentData.request++;
+            this.setTimeout(1000);
         })
-    }
-
-    addRequestData(nbRequest) {
-        this.currentData.request = nbRequest
-        this.finish()
     }
 
     /**======================================================
      ||                  DOM DATA                      ||
      =======================================================*/
-    getDOMData(page) {
-        // this.currentData.count++;
-        page.evaluate(() => document.querySelectorAll('*').length)
-            .then(value => this.addDOMData(value))
+    /**
+     * Populate dom data.
+     *
+     * @param Page
+     * @param Runtime
+     * @param url
+     */
+    getDOMData(Page, Runtime, url) {
+        Page.enable(() => {
+            Page.navigate({url: url});
+
+            // Dom Data.
+            Page.domContentEventFired(async (e) => {
+                // Get Dom data.
+                const js = "document.querySelectorAll('*').length";
+                const domData = (await Runtime.evaluate({expression: js})).result.value;
+                this.addDOMData(domData);
+            });
+        })
     }
 
+    /**
+     * Add dom length to current data.
+     *
+     * @param DOMLength
+     */
     addDOMData(DOMLength) {
         this.currentData.DOM = DOMLength;
         this.finish()
@@ -90,91 +108,88 @@ class EcoindexAuditor extends PupeteerParser {
     /**======================================================
      ||                  Network                      ||
      =======================================================*/
-    getSizeData(page) {
+    /**
+     * Populate page bite size.
+     *
+     * @param Network
+     */
+    getSizeData(Network) {
         this.currentData.count++;
-        this.size = 0;
-        page.on('response', response => {
-            if (response.ok()) {
-                switch (response.headers()['content-encoding']) {
-                    case 'br':
-                        response.buffer().then(buffer => {
-                            zlib.brotliCompress(buffer, (_, result) => {
-                                this.size += result.length;
-                            });
-                        });
-                        break;
-                    case 'gzip':
-                        response.buffer().then(buffer => {
-                            zlib.gzip(buffer, (_, result) => {
-                                this.size += result.length;
-                            });
-                        });
-                        break;
-                    case 'deflate':
-                        response.buffer().then(buffer => {
-                            zlib.deflate(buffer, (_, result) => {
-                                this.size += result.length;
-                            });
-                        });
-                        break;
-                    default:
-                        response.buffer().then(buffer => {
-                            this.size += buffer.length;
-                        });
-                        break;
-                }
-            }
-        });
+        // Size
+        Network.enable(async e => {
+            Network.loadingFinished(e => {
+                this.addSizeData(e.encodedDataLength);
+            })
+        })
     }
 
+    /**
+     * Add page size to current data.
+     *
+     * @param size
+     */
     addSizeData(size) {
-        size = Math.round(size / 1024)
-        this.currentData.size = size;
-        this.finish()
+        if (!this.currentData.size) {
+            size = Math.round((size / 100)) / 10;
+            this.currentData.size = size;
+            this.finish()
+        }
+
     }
 
     /**======================================================
      ||                  END                      ||
      =======================================================*/
 
+    /**
+     * When a data is populated.
+     */
     finish() {
         if (Object.keys(this.currentData).length === this.currentData.count) {
             this.allDataDone()
         }
     }
 
+    /**
+     * When all data are populated.
+     */
     allDataDone() {
         const index = ecoindex.getEcoindex(this.currentData.DOM, this.currentData.request, this.currentData.size);
-    
 
         const data = {
             'note': index.grade,
             'index': index.score,
             'ghg': index.ghg,
             'water': index.water,
-            'NB DOM elements': this.currentData.DOM,
-            'NB requests': this.currentData.request,
-            'Size (B)': this.currentData.size,
+            'NB DOM elements': this.currentData.DOM || -1,
+            'NB requests': this.currentData.request || -1,
+            'Size (B)': this.currentData.size || -1,
         }
 
         this.average.add(data)
-        console.log(JSON.stringify(data))
+        console.log(JSON.stringify({...data, ...{url:this.currentData.url}}))
         this.logger.log('ecoindex', '', data, this.currentData.url);
-        this.onDone(this.currentData.brower);
+        this.onDone(this.currentData.browser);
     }
 
 
+    /**
+     * End of process.
+     */
     endProcess() {
+        console.log("end process");
         this.average.showAverage()
     }
 
+    /**
+     * Override average for letter based data.
+     */
     overrideAverageResult() {
         const result = this.average.proxyGetResults()
         result.note =
             String.fromCharCode(this.average.getLetterRef() + Math.round(result.note - 1))
             + "  (" + (result.note - 1) + ")"
-
-        return result
+        return result;
     }
 }
 

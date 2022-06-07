@@ -3,6 +3,7 @@ const Logger = require("../tools/logger")
 const chromeLauncher = require('chrome-launcher')
 const log = require('lighthouse-logger');
 
+
 class ChromeParser extends UrlTools {
 
     constructor(baseUrl, selectionFile, defaultLogName) {
@@ -19,38 +20,44 @@ class ChromeParser extends UrlTools {
             }).map(item => {
                 return item[0]
             })
-
     }
 
     run() {
         log.setLevel('info');
 
-       // this.auditNext();
+        this.auditNext();
 
-        chromeLauncher.launch({
-          chromeFlags: ['--headless'],
-        })
-        .then(chrome => this.onChromLaunched(chrome))
-        .catch(console.log)
 
-        return new Promise((resolve, reject)=>{
+        return new Promise((resolve, reject) => {
             this.resolve = resolve
         })
     }
 
-    auditNext() {
-        const url = this.urlsList[this.current];
-        if (url) {
-            console.log('try : ' + url);
-            this.process(this.chrome, url);
-        } else {
-            this.onDone(this.chrome, null)
-        }
+    launchChrome(cb) {
+        chromeLauncher.launch({
+            chromeFlags: ['--headless'],
+        })
+            .then(chrome => cb(chrome))
+            .catch(console.log)
     }
+
+    auditNext() {
+        this.launchChrome((chrome) => {
+            const url = this.urlsList[this.current];
+            if (url) {
+                console.log(`[${this.current + 1}/${this.urlsList.length}] ${url}`);
+                this.process(chrome, url);
+            } else {
+                this.onDone(chrome, null)
+            }
+        })
+
+    }
+
 
     onChromLaunched(chrome) {
         this.chrome = chrome;
-        this.auditNext()
+        // this.auditNext()
 
     }
 
@@ -58,18 +65,26 @@ class ChromeParser extends UrlTools {
         if (e) {
             console.log(e);
         }
-//        chrome.kill()
+        chrome.kill()
+            .then(() => this.onChromeKill())
+            .catch(() => this.onChromeKill())
+    }
+
+    onChromeKill() {
         this.current++;
-        if (this.current <= this.urlsList.length) {
+        if (this.current < this.urlsList.length + 1) {
             this.auditNext();
         } else {
-            this.endProcess();
+            if (this.current === this.urlsList.length + 1) {
+                this.endProcess();
+            }
             this.resolve();
-            chrome.kill();
         }
     }
 
-    endProcess(){}
+    endProcess() {
+
+    }
 }
 
 
