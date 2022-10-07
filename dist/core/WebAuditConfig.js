@@ -10,6 +10,10 @@ class WebAuditConfigClass {
         return this._logger;
     }
     get storage() {
+        if (!this._storage) {
+            this.logger.exit(`You have to declare a storage. 
+            Ex: WebAuditConfig.setStorage( ... ) `);
+        }
         return this._storage;
     }
     setLogger(logger) {

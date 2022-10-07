@@ -1,13 +1,15 @@
 import colors from "colors";
 
 export interface LoggerInterface {
-    message(data: any, id: any, context: any): void
+    exit(data?: any, id?: any, context?: any): void
 
-    error(data: any, id: any, context: any): void
+    error(data?: any, id?: any, context?: any): void
 
-    warning(data: any, id: any, context: any): void
+    warning(data?: any, id?: any, context?: any): void
 
-    success(data: any, id: any, context: any): void
+    success(data?: any, id?: any, context?: any): void
+
+    message(data?: any, id?: any, context?: any): void
 }
 
 export class LoggerClass implements LoggerInterface {
@@ -20,7 +22,7 @@ export class LoggerClass implements LoggerInterface {
         context: null,
     }
 
-    defaultColor = (x) => {
+    defaultColor = (x: any) => {
         return x;
     }
 
@@ -30,7 +32,7 @@ export class LoggerClass implements LoggerInterface {
     private log(data: any, id?: any, context?: any, color?: Function): void {
         color = color || this.defaultColor;
         if (this.isNewIdAndContext(id, context)) {
-            console.log(color(`======== ${id} : ${context}`));
+            console.log(color(`======== ${id || ''} : ${context || ''}`));
         }
         console.log(color(data));
     }
@@ -51,7 +53,16 @@ export class LoggerClass implements LoggerInterface {
         this.log(data, id, context, colors.yellow);
     }
 
+    exit(data?: any, id?: any, context?: any): void {
+        this.error(data, id, context);
+        process.exit();
+    }
+
+
     private isNewIdAndContext(id: string, context: string) {
+        if (!id && !context) {
+            return false;
+        }
         if (`${id}||${context}` !== `${this.cache.id}||${this.cache.context}`) {
             this.cache.id = id;
             this.cache.context = context;

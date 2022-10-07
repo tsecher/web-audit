@@ -24,7 +24,7 @@ class LoggerClass {
     log(data, id, context, color) {
         color = color || this.defaultColor;
         if (this.isNewIdAndContext(id, context)) {
-            console.log(color(`======== ${id} : ${context}`));
+            console.log(color(`======== ${id || ''} : ${context || ''}`));
         }
         console.log(color(data));
     }
@@ -40,7 +40,14 @@ class LoggerClass {
     warning(data, id, context) {
         this.log(data, id, context, colors_1.default.yellow);
     }
+    exit(data, id, context) {
+        this.error(data, id, context);
+        process.exit();
+    }
     isNewIdAndContext(id, context) {
+        if (!id && !context) {
+            return false;
+        }
         if (`${id}||${context}` !== `${this.cache.id}||${this.cache.context}`) {
             this.cache.id = id;
             this.cache.context = context;

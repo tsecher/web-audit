@@ -10,6 +10,10 @@ class WebAuditConfigClass {
     }
 
     get storage(): StorageInterface | undefined {
+        if (!this._storage) {
+            this.logger.exit(`You have to declare a storage. 
+            Ex: WebAuditConfig.setStorage( ... ) `);
+        }
         return this._storage;
     }
 

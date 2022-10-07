@@ -22,6 +22,8 @@ export class WebAuditCoreClass implements WebAuditCoreInterface {
         Config.logger.warning("warning","test", "ok");
         Config.logger.success("success","test", "ok");
 
+        Config.storage?.installStore("mon", "context", {"oker":"jje"});
+
         return ["test", "ok"];
     }
 }
