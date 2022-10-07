@@ -1,6 +1,2 @@
-/analyses/*
-!/analyses/.keep
-/seo_analyse
-./seo_analyse
-/src/node_modules
 /.idea
+/node_modules
