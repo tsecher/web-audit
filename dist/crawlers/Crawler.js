@@ -144,7 +144,7 @@ class WebAuditCrawler {
                 urls.push(this.getCleanUrlFromHref(href, origin));
             }
             catch (e) {
-                // Config.logger.warning(`Not a valid url ${href}`);
+                WebAuditConfig_1.WebAuditConfig.logger.warning(`Not a valid url ${href}`);
             }
         });
         return this.getEligibleUrls(urls);

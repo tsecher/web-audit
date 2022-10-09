@@ -181,7 +181,7 @@ export class WebAuditCrawler {
             try {
                 urls.push(this.getCleanUrlFromHref(href, origin));
             } catch (e) {
-                // Config.logger.warning(`Not a valid url ${href}`);
+                Config.logger.warning(`Not a valid url ${href}`);
             }
         })
 
