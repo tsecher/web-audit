@@ -8,31 +8,46 @@ const Crawler = require('crawler');
  * Website crawler.
  */
 class WebAuditCrawler {
+    /**
+     * Constructor.
+     *
+     * @param options
+     */
     constructor(options) {
-        this.parsed_urls = [];
+        var _a;
         this.defaultOptions = {
-            crawler_options: {
+            crawlerOptions: {
                 maxConnections: 10,
                 userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
                 retries: 0,
             },
-            allowed_status: [200, 201, 202, 203, 204]
+            allowedStatus: [200, 201, 202, 203, 204],
         };
+        this.parsedUrls = [];
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
+        // Prepare options.
         this.cleanBaseUrl();
+        // Prepare storage.
+        (_a = WebAuditConfig_1.WebAuditConfig.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', WebAuditContext_1.WebAuditContext.current, {
+            url: 'Referenced url',
+            parsedUrl: 'Final URL (if redirected)',
+            origin: `Orignal page (where url is referenced)`,
+            status: `Status`,
+        });
     }
     /**
      * Crawl url.
      */
     crawl() {
         // Define crawler.
-        this.crawler = new Crawler(this.options.crawler_options);
+        this.crawler = new Crawler(this.options.crawlerOptions);
         this.crawler.on('drain', () => {
-            // @ts-ignore
-            this.onDone(this.parsed_urls);
+            if (this.onDone) {
+                this.onDone(this.parsedUrls);
+            }
         });
-        this.crawlUrls([this.options.base_url]);
-        return new Promise((resolve, reject) => {
+        this.crawlUrls([this.options.baseUrl]);
+        return new Promise((resolve) => {
             this.onDone = resolve;
         });
     }
@@ -45,38 +60,17 @@ class WebAuditCrawler {
      */
     crawlUrls(urls, origin) {
         // Filter eligible urls (html, domain and not already crawled).
-        const eligible_urls = this.getEligibleUrls(urls);
-        this.addToParsedUrls(eligible_urls);
+        const eligibleUrls = this.getEligibleUrls(urls);
         // Add new urls to queue
-        if (eligible_urls.length) {
-            this.crawler.queue(eligible_urls.map(url => {
+        if (eligibleUrls.length) {
+            this.addToParsedUrls(eligibleUrls);
+            this.crawler.queue(eligibleUrls.map((url) => {
                 return {
-                    'uri': url.toString(),
-                    'callback': (error, res, done) => this.onPageCrawled(error, res, done, url, origin)
+                    uri: url.toString(),
+                    callback: (error, res, done) => this.onPageCrawled(error, res, done, url, origin),
                 };
             }));
         }
-    }
-    /**
-     * Parse only domain url.
-     *
-     * @param url
-     * @private
-     */
-    isDomainUrl(url) {
-        return url.host === this.options.base_url.host;
-    }
-    /**
-     * Return true if url is eligible (may be HMTL extension)
-     * @param url
-     * @private
-     */
-    isHtmlUrl(url) {
-        const ext = url.pathname.split('.');
-        if (ext.length > 1) {
-            return ['html', 'html'].indexOf(ext.slice(-1)[0]) > -1;
-        }
-        return true;
     }
     /**
      * On page crawled.
@@ -88,43 +82,45 @@ class WebAuditCrawler {
      * @private
      */
     onPageCrawled(error, res, done, url, origin) {
-        var _a, _b;
+        var _a, _b, _c;
         WebAuditContext_1.WebAuditContext.current.setData('Page crawled').setUrl(url);
         // Error.
         if (error) {
             WebAuditConfig_1.WebAuditConfig.logger.error(error);
             done();
+            return;
         }
         // Status.
-        // @ts-ignore
-        if (this.options.allowed_status.indexOf(res.statusCode) < 0) {
+        if (this.options.allowedStatus && ((_a = this.options.allowedStatus) === null || _a === void 0 ? void 0 : _a.indexOf(res.statusCode)) < 0) {
             WebAuditConfig_1.WebAuditConfig.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
             done();
+            return;
         }
         // No returned uri.
-        if (!((_a = res.request) === null || _a === void 0 ? void 0 : _a.uri.href)) {
+        if (!((_b = res.request) === null || _b === void 0 ? void 0 : _b.uri.href)) {
             WebAuditConfig_1.WebAuditConfig.logger.error(`No uri`);
             done();
+            return;
         }
-        const parsed_url = new URL(res.request.uri.href);
+        const parsedUrl = new URL(res.request.uri.href);
         // Store found page.
-        (_b = WebAuditConfig_1.WebAuditConfig.storage) === null || _b === void 0 ? void 0 : _b.add('page_found', WebAuditContext_1.WebAuditContext.current, {
-            url: url,
-            parsed_url: parsed_url,
-            origin: origin,
-            status: res.statusCode
+        (_c = WebAuditConfig_1.WebAuditConfig.storage) === null || _c === void 0 ? void 0 : _c.add('page_found', WebAuditContext_1.WebAuditContext.current, {
+            url,
+            parsedUrl,
+            origin,
+            status: res.statusCode,
         });
         // Redirection
-        if (parsed_url.toString() !== url.toString()) {
-            WebAuditConfig_1.WebAuditConfig.logger.warning(`Server redirection from ${url.toString()} to ${parsed_url.toString()}`);
+        if (parsedUrl.toString() !== url.toString()) {
+            WebAuditConfig_1.WebAuditConfig.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
         }
         // Parse content.
         try {
-            WebAuditConfig_1.WebAuditConfig.logger.message(`Parsing ${parsed_url}`);
-            this.crawlUrls(this.getUrlsInBody(res.$, parsed_url));
+            WebAuditConfig_1.WebAuditConfig.logger.message(`Parsing ${parsedUrl}`);
+            this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
         }
-        catch (e) {
-            WebAuditConfig_1.WebAuditConfig.logger.warning(e);
+        catch (error) {
+            WebAuditConfig_1.WebAuditConfig.logger.warning(error);
         }
         done();
     }
@@ -136,14 +132,15 @@ class WebAuditCrawler {
      */
     getUrlsInBody($, origin) {
         const urls = [];
-        if (!$)
+        if (!$) {
             return urls;
+        }
         $('a[href], link[rel="alternate"]').each((i, link) => {
-            let href = $(link).attr('href');
+            const href = $(link).attr('href');
             try {
                 urls.push(this.getCleanUrlFromHref(href, origin));
             }
-            catch (e) {
+            catch (error) {
                 WebAuditConfig_1.WebAuditConfig.logger.warning(`Not a valid url ${href}`);
             }
         });
@@ -156,16 +153,38 @@ class WebAuditCrawler {
      */
     cleanBaseUrl() {
         try {
-            this.options.base_url = new URL(this.options.base_url);
+            this.options.baseUrl = new URL(this.options.baseUrl);
             // define domain
-            this.options.domain = new URL(this.options.base_url);
+            this.options.domain = new URL(this.options.baseUrl);
             this.options.domain.hash = '';
             this.options.domain.pathname = '';
             this.options.domain.search = '';
         }
-        catch (e) {
+        catch (erro) {
             WebAuditConfig_1.WebAuditConfig.logger.exit(`Base URL is not of type URL`);
         }
+    }
+    /**
+     * Parse only domain url.
+     *
+     * @param url
+     * @private
+     */
+    isDomainUrl(url) {
+        return url.host === this.options.baseUrl.host;
+    }
+    /**
+     * Return true if url is eligible (may be HMTL extension)
+     *
+     * @param url
+     * @private
+     */
+    isHtmlUrl(url) {
+        const ext = url.pathname.split('.');
+        if (ext.length > 1) {
+            return ['html', 'html'].indexOf(ext.slice(-1)[0]) > -1;
+        }
+        return true;
     }
     /**
      * Return true if url is already queued.
@@ -174,7 +193,7 @@ class WebAuditCrawler {
      * @private
      */
     isAlreadyParsed(url) {
-        return this.parsed_urls.filter(parsed => {
+        return this.parsedUrls.filter((parsed) => {
             return parsed.toString().replace(parsed.hash, '') === url.toString().replace(url.hash, '');
         }).length;
     }
@@ -185,7 +204,7 @@ class WebAuditCrawler {
      */
     addToParsedUrl(url) {
         if (!this.isAlreadyParsed(url)) {
-            this.parsed_urls.push(url);
+            this.parsedUrls.push(url);
         }
     }
     /**
@@ -195,7 +214,7 @@ class WebAuditCrawler {
      * @private
      */
     addToParsedUrls(urls) {
-        urls.forEach(url => this.addToParsedUrl(url));
+        urls.forEach((url) => this.addToParsedUrl(url));
     }
     /**
      * Return only crawl eligible urls.
@@ -204,7 +223,11 @@ class WebAuditCrawler {
      * @private
      */
     getEligibleUrls(urls) {
-        return urls.filter(url => !this.isAlreadyParsed(url) && this.isDomainUrl(url) && this.isHtmlUrl(url));
+        let eligibleUrls = urls.filter((url) => !this.isAlreadyParsed(url) && this.isDomainUrl(url) && this.isHtmlUrl(url));
+        if (eligibleUrls.length > 1) {
+            eligibleUrls = this.uniqueUrls(eligibleUrls);
+        }
+        return eligibleUrls;
     }
     /**
      * To readable urls.
@@ -213,7 +236,21 @@ class WebAuditCrawler {
      * @private
      */
     readable(urls) {
-        return urls.map(url => url.toString());
+        return urls.map((url) => url.toString());
+    }
+    /**
+     * Unique urls.
+     *
+     * @param urls
+     * @private
+     */
+    uniqueUrls(urls) {
+        const count = {};
+        return urls.filter((url) => {
+            const str = url.toString();
+            count[str] = count[str] ? count[str] + 1 : 1;
+            return count[str] < 2;
+        });
     }
     /**
      * Return clea url from href.
@@ -223,18 +260,19 @@ class WebAuditCrawler {
      * @private
      */
     getCleanUrlFromHref(href, origin) {
+        var _a;
+        let input = href;
         // Deal with relative href.
-        if (href.indexOf('/') === 0 && href.length > 1) {
-            // @ts-ignore
-            href = (`${this.options.domain.toString()}${href}`);
+        if (input.indexOf('/') === 0 && input.length > 1) {
+            input = `${(_a = this.options.domain) === null || _a === void 0 ? void 0 : _a.toString()}${input}`;
         }
         // Deal with parameters urls.
-        if (href.indexOf('?') === 0 && href.length > 1) {
+        if (input.indexOf('?') === 0 && input.length > 1) {
             const url = new URL(origin);
-            url.search = href;
-            href = url.toString();
+            url.search = input;
+            input = url.toString();
         }
-        return new URL(href.replace(/\/\//g, '/'));
+        return new URL(input.replace(/\/\//g, '/'));
     }
 }
 exports.WebAuditCrawler = WebAuditCrawler;

@@ -1,9 +1,9 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WebAuditContext = exports.WebAuditContextClass = void 0;
 /**
  * Context.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditContext = exports.WebAuditContextClass = void 0;
 class WebAuditContextClass {
     setId(id) {
         this._id = id;
@@ -17,6 +17,13 @@ class WebAuditContextClass {
         this._data = data;
         return this;
     }
+    setVersion(version) {
+        if (typeof this._version !== 'undefined') {
+            throw Error(`You cannot update context version anymore.`);
+        }
+        this._version = version;
+        return this;
+    }
     get id() {
         return this._id;
     }
@@ -25,6 +32,9 @@ class WebAuditContextClass {
     }
     get data() {
         return this._data;
+    }
+    get version() {
+        return this._version || 0;
     }
     /**
      * Check if context is same.
@@ -42,7 +52,7 @@ class WebAuditContextClass {
         const tid = this.id || '';
         let tdata = '';
         if (this.data) {
-            tdata += ' : ' + ((typeof this.data === 'string') ? this.data : JSON.stringify(this.data));
+            tdata += ` : ${typeof this.data === 'string' ? this.data : JSON.stringify(this.data)}`;
         }
         const turl = this.url ? `(${this.url})` : '';
         return `${tid} ${tdata} ${turl}`;
@@ -53,5 +63,5 @@ exports.WebAuditContextClass = WebAuditContextClass;
  * Context manager.
  */
 exports.WebAuditContext = {
-    current: new WebAuditContextClass()
+    current: new WebAuditContextClass(),
 };

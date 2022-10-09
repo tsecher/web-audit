@@ -1,5 +1,6 @@
-import {WebAuditCrawler} from "../crawlers/Crawler";
-import {WebAuditContext as Context} from "./WebAuditContext";
+import {WebAuditCrawler} from '../crawlers/Crawler';
+
+import {WebAuditContext as Context} from './WebAuditContext';
 
 
 /**
@@ -7,18 +8,19 @@ import {WebAuditContext as Context} from "./WebAuditContext";
  */
 export class WebAuditCoreClass {
 
-    public auditUrl(url: string, options: any = {}): any {
-    }
+  /**
+   * Craw website.
+   *
+   * @param baseUrl
+   * @param options
+   */
+  public crawlWebsite(baseUrl: URL, options: any = {}): Promise<any> {
+    // Define context.
+    Context.current.setId('Crawl').setUrl(baseUrl);
 
-    public crawlWebsite(base_url: URL, options: any = {}): Promise<any> {
-        
-        // Define context.
-        Context.current.setId('Crawl').setUrl(base_url);
-
-        // Crawl domain.
-        const crawler = new WebAuditCrawler({
-            base_url: base_url,
-        });
-        return crawler.crawl();
-    }
+    // Crawl domain.
+    options.baseUrl = baseUrl;
+    const crawler = new WebAuditCrawler(options);
+    return crawler.crawl();
+  }
 }

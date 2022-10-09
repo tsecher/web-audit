@@ -7,15 +7,18 @@ const WebAuditContext_1 = require("./WebAuditContext");
  * Web Audit core main entry point for web audition.
  */
 class WebAuditCoreClass {
-    auditUrl(url, options = {}) {
-    }
-    crawlWebsite(base_url, options = {}) {
+    /**
+     * Craw website.
+     *
+     * @param baseUrl
+     * @param options
+     */
+    crawlWebsite(baseUrl, options = {}) {
         // Define context.
-        WebAuditContext_1.WebAuditContext.current.setId('Crawl').setUrl(base_url);
+        WebAuditContext_1.WebAuditContext.current.setId('Crawl').setUrl(baseUrl);
         // Crawl domain.
-        const crawler = new Crawler_1.WebAuditCrawler({
-            base_url: base_url,
-        });
+        options.baseUrl = baseUrl;
+        const crawler = new Crawler_1.WebAuditCrawler(options);
         return crawler.crawl();
     }
 }

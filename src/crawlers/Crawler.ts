@@ -1,13 +1,13 @@
-import {WebAuditConfig as Config} from "../core/WebAuditConfig";
-import {WebAuditContext as Context} from "../core/WebAuditContext";
+import {WebAuditConfig as Config} from '../core/WebAuditConfig';
+import {WebAuditContext as Context} from '../core/WebAuditContext';
 
-const Crawler = require('crawler')
+const Crawler = require('crawler');
 
-export type WebAuditCrawlerType = {
-    base_url: URL,
-    domain?: URL,
-    crawler_options?: any,
-    allowed_status?: Array<number>,
+export interface WebAuditCrawlerType {
+  baseUrl: URL;
+  domain?: URL;
+  crawlerOptions?: any;
+  allowedStatus?: number[];
 }
 
 /**
@@ -15,274 +15,324 @@ export type WebAuditCrawlerType = {
  */
 export class WebAuditCrawler {
 
-    private options: WebAuditCrawlerType;
+  protected defaultOptions: any = {
+    crawlerOptions: {
+      maxConnections: 10,
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+      retries: 0,
+    },
+    allowedStatus: [200, 201, 202, 203, 204],
+  };
 
-    private parsed_urls: Array<URL> = [];
+  private options: WebAuditCrawlerType;
 
-    private crawler?: any;
+  private parsedUrls: URL[] = [];
 
-    private onDone?: Function;
+  private crawler?: any;
 
-    protected defaultOptions: any = {
-        crawler_options: {
-            maxConnections: 10,
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
-            retries: 0,
-        },
-        allowed_status: [200, 201, 202, 203, 204]
+  private onDone?: Function;
+
+  /**
+   * Constructor.
+   *
+   * @param options
+   */
+  constructor(options?: WebAuditCrawlerType) {
+    this.options = {
+      ...this.defaultOptions,
+      ...options,
+    };
+
+    // Prepare options.
+    this.cleanBaseUrl();
+
+    // Prepare storage.
+    Config.storage?.installStore(
+      'page_found',
+      Context.current,
+      {
+        url: 'Referenced url',
+        parsedUrl: 'Final URL (if redirected)',
+        origin: `Orignal page (where url is referenced)`,
+        status: `Status`,
+      },
+    );
+  }
+
+  /**
+   * Crawl url.
+   */
+  crawl() {
+    // Define crawler.
+    this.crawler = new Crawler(this.options.crawlerOptions);
+    this.crawler.on('drain', () => {
+      if (this.onDone) {
+        this.onDone(this.parsedUrls);
+      }
+    });
+
+    this.crawlUrls([this.options.baseUrl]);
+
+    return new Promise((resolve) => {
+      this.onDone = resolve;
+    });
+  }
+
+  /**
+   * Crawl a page.
+   *
+   * @param urls
+   * @param origin
+   * @private
+   */
+  private crawlUrls(urls: URL[], origin?: URL) {
+    // Filter eligible urls (html, domain and not already crawled).
+    const eligibleUrls = this.getEligibleUrls(urls);
+
+    // Add new urls to queue
+    if (eligibleUrls.length) {
+      this.addToParsedUrls(eligibleUrls);
+
+      this.crawler.queue(
+        eligibleUrls.map((url) => {
+          return {
+            uri: url.toString(),
+            callback: (error: any, res: any, done: Function) => this.onPageCrawled(error, res, done, url, origin),
+          };
+        }),
+      );
+    }
+  }
+
+  /**
+   * On page crawled.
+   *
+   * @param error
+   * @param res
+   * @param done
+   * @param origin
+   * @private
+   */
+  private onPageCrawled(error: any, res: any, done: Function, url: URL, origin?: URL) {
+    Context.current.setData('Page crawled').setUrl(url);
+
+    // Error.
+    if (error) {
+      Config.logger.error(error);
+      done();
+      return;
     }
 
-    constructor(options?: WebAuditCrawlerType) {
-        this.options = {
-            ...this.defaultOptions,
-            ...options,
-        }
-
-        this.cleanBaseUrl();
+    // Status.
+    if (this.options.allowedStatus && this.options.allowedStatus?.indexOf(res.statusCode) < 0) {
+      Config.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
+      done();
+      return;
     }
 
-    /**
-     * Crawl url.
-     */
-    crawl() {
-        // Define crawler.
-        this.crawler = new Crawler(this.options.crawler_options);
-        this.crawler.on('drain', () => {
-            // @ts-ignore
-            this.onDone(this.parsed_urls);
-        });
-
-        this.crawlUrls([this.options.base_url]);
-
-        return new Promise((resolve, reject) => {
-            this.onDone = resolve;
-        })
+    // No returned uri.
+    if (!res.request?.uri.href) {
+      Config.logger.error(`No uri`);
+      done();
+      return;
     }
 
-    /**
-     * Crawl a page.
-     *
-     * @param urls
-     * @param origin
-     * @private
-     */
-    private crawlUrls(urls: Array<URL>, origin?: URL) {
-        // Filter eligible urls (html, domain and not already crawled).
-        const eligible_urls = this.getEligibleUrls(urls);
-        this.addToParsedUrls(eligible_urls);
+    const parsedUrl = new URL(res.request.uri.href);
 
-        // Add new urls to queue
-        if (eligible_urls.length) {
-            this.crawler.queue(
-                eligible_urls.map(url => {
-                    return {
-                        'uri': url.toString(),
-                        'callback': (error: any, res: any, done: Function) => this.onPageCrawled(error, res, done, url, origin)
-                    }
-                })
-            )
-        }
+    // Store found page.
+    Config.storage?.add(
+      'page_found',
+      Context.current, {
+        url,
+        parsedUrl,
+        origin,
+        status: res.statusCode,
+      },
+    );
+
+    // Redirection
+    if (parsedUrl.toString() !== url.toString()) {
+      Config.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
     }
 
-    /**
-     * Parse only domain url.
-     *
-     * @param url
-     * @private
-     */
-    private isDomainUrl(url: URL): boolean {
-        return url.host === this.options.base_url.host;
+    // Parse content.
+    try {
+      Config.logger.message(`Parsing ${parsedUrl}`);
+      this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
+    } catch (error) {
+      Config.logger.warning(error);
     }
 
-    /**
-     * Return true if url is eligible (may be HMTL extension)
-     * @param url
-     * @private
-     */
-    private isHtmlUrl(url: URL): boolean {
-        const ext = url.pathname.split('.');
-        if (ext.length > 1) {
-            return ['html', 'html'].indexOf(ext.slice(-1)[0]) > -1;
-        }
-        return true;
+    done();
+  }
+
+  /**
+   * Return all eligible url available in the body.
+   *
+   * @param $
+   * @private
+   */
+  private getUrlsInBody($: any, origin: URL) {
+    const urls: URL[] = [];
+
+    if (!$) {
+      return urls;
     }
 
-    /**
-     * On page crawled.
-     *
-     * @param error
-     * @param res
-     * @param done
-     * @param origin
-     * @private
-     */
-    private onPageCrawled(error: any, res: any, done: Function, url: URL, origin?: URL) {
-        Context.current.setData('Page crawled').setUrl(url)
+    $('a[href], link[rel="alternate"]').each((i: any, link: any) => {
+      const href = $(link).attr('href');
 
-        // Error.
-        if (error) {
-            Config.logger.error(error);
-            done();
-        }
+      try {
+        urls.push(this.getCleanUrlFromHref(href, origin));
+      } catch (error) {
+        Config.logger.warning(`Not a valid url ${href}`);
+      }
+    });
 
-        // Status.
-        // @ts-ignore
-        if (this.options.allowed_status.indexOf(res.statusCode) < 0) {
-            Config.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
-            done();
-        }
+    return this.getEligibleUrls(urls);
+  }
 
-        // No returned uri.
-        if (!res.request?.uri.href) {
-            Config.logger.error(`No uri`);
-            done();
-        }
+  /**
+   * Clean base url.
+   *
+   * @private
+   */
+  private cleanBaseUrl() {
+    try {
+      this.options.baseUrl = new URL(this.options.baseUrl);
 
-        const parsed_url = new URL(res.request.uri.href);
+      // define domain
+      this.options.domain = new URL(this.options.baseUrl);
+      this.options.domain.hash = '';
+      this.options.domain.pathname = '';
+      this.options.domain.search = '';
 
-        // Store found page.
-        Config.storage?.add('page_found', Context.current, {
-            url: url,
-            parsed_url: parsed_url,
-            origin: origin,
-            status: res.statusCode
-        })
+    } catch (erro) {
+      Config.logger.exit(`Base URL is not of type URL`);
+    }
+  }
 
-        // Redirection
-        if (parsed_url.toString() !== url.toString()) {
-            Config.logger.warning(`Server redirection from ${url.toString()} to ${parsed_url.toString()}`);
-        }
 
-        // Parse content.
-        try {
-            Config.logger.message(`Parsing ${parsed_url}`);
-            this.crawlUrls(this.getUrlsInBody(res.$, parsed_url));
-        } catch (e) {
-            Config.logger.warning(e);
-        }
+  /**
+   * Parse only domain url.
+   *
+   * @param url
+   * @private
+   */
+  private isDomainUrl(url: URL): boolean {
+    return url.host === this.options.baseUrl.host;
+  }
 
-        done();
+  /**
+   * Return true if url is eligible (may be HMTL extension)
+   *
+   * @param url
+   * @private
+   */
+  private isHtmlUrl(url: URL): boolean {
+    const ext = url.pathname.split('.');
+    if (ext.length > 1) {
+      return ['html', 'html'].indexOf(ext.slice(-1)[0]) > -1;
+    }
+    return true;
+  }
+
+  /**
+   * Return true if url is already queued.
+   *
+   * @param url
+   * @private
+   */
+  private isAlreadyParsed(url: URL) {
+    return this.parsedUrls.filter((parsed) => {
+      return parsed.toString().replace(parsed.hash, '') === url.toString().replace(url.hash, '');
+    }).length;
+
+  }
+
+  /**
+   * Add Url to parsed URLS.
+   * @param url
+   * @private
+   */
+  private addToParsedUrl(url: URL) {
+    if (!this.isAlreadyParsed(url)) {
+      this.parsedUrls.push(url);
+    }
+  }
+
+  /**
+   * Add urls to parsed urls.
+   *
+   * @param urls
+   * @private
+   */
+  private addToParsedUrls(urls: URL[]) {
+    urls.forEach((url) => this.addToParsedUrl(url));
+  }
+
+  /**
+   * Return only crawl eligible urls.
+   *
+   * @param urls
+   * @private
+   */
+  private getEligibleUrls(urls: URL[]) {
+    let eligibleUrls = urls.filter((url) => !this.isAlreadyParsed(url) && this.isDomainUrl(url) && this.isHtmlUrl(url));
+
+    if (eligibleUrls.length > 1) {
+      eligibleUrls = this.uniqueUrls(eligibleUrls);
     }
 
-    /**
-     * Return all eligible url available in the body.
-     *
-     * @param $
-     * @private
-     */
-    private getUrlsInBody($: any, origin: URL) {
-        const urls: Array<URL> = [];
+    return eligibleUrls;
+  }
 
-        if (!$) return urls;
+  /**
+   * To readable urls.
+   *
+   * @param urls
+   * @private
+   */
+  private readable(urls: URL[]) {
+    return urls.map((url) => url.toString());
+  }
 
-        $('a[href], link[rel="alternate"]').each((i: any, link: any) => {
-            let href = $(link).attr('href');
+  /**
+   * Unique urls.
+   *
+   * @param urls
+   * @private
+   */
+  private uniqueUrls(urls: URL[]) {
+    const count: any = {};
+    return urls.filter((url) => {
+      const str = url.toString();
+      count[str] = count[str] ? count[str] + 1 : 1;
+      return count[str] < 2;
+    });
+  }
 
-            try {
-                urls.push(this.getCleanUrlFromHref(href, origin));
-            } catch (e) {
-                Config.logger.warning(`Not a valid url ${href}`);
-            }
-        })
-
-        return this.getEligibleUrls(urls);
+  /**
+   * Return clea url from href.
+   *
+   * @param href
+   * @param origin
+   * @private
+   */
+  private getCleanUrlFromHref(href: string, origin: URL) {
+    let input = href;
+    // Deal with relative href.
+    if (input.indexOf('/') === 0 && input.length > 1) {
+      input = `${this.options.domain?.toString()}${input}`;
     }
 
-    /**
-     * Clean base url.
-     *
-     * @private
-     */
-    private cleanBaseUrl() {
-        try {
-            this.options.base_url = new URL(this.options.base_url);
-
-            // define domain
-            this.options.domain = new URL(this.options.base_url);
-            this.options.domain.hash = '';
-            this.options.domain.pathname = '';
-            this.options.domain.search = '';
-
-        } catch (e) {
-            Config.logger.exit(`Base URL is not of type URL`);
-        }
+    // Deal with parameters urls.
+    if (input.indexOf('?') === 0 && input.length > 1) {
+      const url = new URL(origin);
+      url.search = input;
+      input = url.toString();
     }
 
-    /**
-     * Return true if url is already queued.
-     *
-     * @param url
-     * @private
-     */
-    private isAlreadyParsed(url: URL) {
-        return this.parsed_urls.filter(parsed => {
-            return parsed.toString().replace(parsed.hash, '') === url.toString().replace(url.hash, '')
-        }).length;
-
-    }
-
-    /**
-     * Add Url to parsed URLS.
-     * @param url
-     * @private
-     */
-    private addToParsedUrl(url: URL) {
-        if (!this.isAlreadyParsed(url)) {
-            this.parsed_urls.push(url);
-        }
-    }
-
-    /**
-     * Add urls to parsed urls.
-     *
-     * @param urls
-     * @private
-     */
-    private addToParsedUrls(urls: Array<URL>) {
-        urls.forEach(url => this.addToParsedUrl(url));
-    }
-
-    /**
-     * Return only crawl eligible urls.
-     *
-     * @param urls
-     * @private
-     */
-    private getEligibleUrls(urls: Array<URL>) {
-        return urls.filter(url => !this.isAlreadyParsed(url) && this.isDomainUrl(url) && this.isHtmlUrl(url));
-    }
-
-    /**
-     * To readable urls.
-     *
-     * @param urls
-     * @private
-     */
-    private readable(urls: Array<URL>) {
-        return urls.map(url => url.toString());
-    }
-
-    /**
-     * Return clea url from href.
-     *
-     * @param href
-     * @param origin
-     * @private
-     */
-    private getCleanUrlFromHref(href: string, origin: URL) {
-        // Deal with relative href.
-        if (href.indexOf('/') === 0 && href.length > 1) {
-            // @ts-ignore
-            href = (`${this.options.domain.toString()}${href}`);
-        }
-
-        // Deal with parameters urls.
-        if (href.indexOf('?') === 0 && href.length > 1) {
-            const url = new URL(origin);
-            url.search = href;
-            href = url.toString();
-        }
-
-        return new URL(href.replace(/\/\//g, '/'));
-    }
+    return new URL(input.replace(/\/\//g, '/'));
+  }
 }
