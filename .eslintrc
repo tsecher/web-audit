@@ -16,7 +16,8 @@
     "@typescript-eslint/no-var-requires": 0,
     "import/no-unresolved": 0,
     "no-console": 0,
-    "no-catch-shadow": 0
+    "no-catch-shadow": 0,
+    "@shopify/binary-assignment-parens": 0
 
   }
 }

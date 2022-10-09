@@ -8,6 +8,8 @@ export interface WebAuditCrawlerType {
   domain?: URL;
   crawlerOptions?: any;
   allowedStatus?: number[];
+  followSearchParams?: boolean;
+  isEligibleUrl?: Function;
 }
 
 /**
@@ -22,6 +24,7 @@ export class WebAuditCrawler {
       retries: 0,
     },
     allowedStatus: [200, 201, 202, 203, 204],
+    followSearchParams: true,
   };
 
   private options: WebAuditCrawlerType;
@@ -137,21 +140,21 @@ export class WebAuditCrawler {
       return;
     }
 
-    const parsedUrl = new URL(res.request.uri.href);
+    const parsedUrl: URL = new URL(res.request.uri.href);
+    const gotRedirected: boolean = parsedUrl.toString() !== url.toString();
 
     // Store found page.
-    Config.storage?.add(
-      'page_found',
-      Context.current, {
-        url,
-        parsedUrl,
-        origin,
-        status: res.statusCode,
-      },
-    );
+    const _parsedUrl = gotRedirected ? parsedUrl : null;
+
+    Config.storage?.add('page_found', Context.current, {
+      url,
+      _parsedUrl,
+      origin,
+      status: res.statusCode,
+    });
 
     // Redirection
-    if (parsedUrl.toString() !== url.toString()) {
+    if (gotRedirected) {
       Config.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
     }
 
@@ -183,7 +186,10 @@ export class WebAuditCrawler {
       const href = $(link).attr('href');
 
       try {
-        urls.push(this.getCleanUrlFromHref(href, origin));
+        const url = this.getCleanUrlFromHref(href, origin);
+        if (url) {
+          urls.push(url);
+        }
       } catch (error) {
         Config.logger.warning(`Not a valid url ${href}`);
       }
@@ -321,18 +327,38 @@ export class WebAuditCrawler {
    */
   private getCleanUrlFromHref(href: string, origin: URL) {
     let input = href;
+
+    // Deal with anchor.
+    if (input.indexOf('#') === 0) {
+      return null;
+    }
+
     // Deal with relative href.
     if (input.indexOf('/') === 0 && input.length > 1) {
       input = `${this.options.domain?.toString()}${input}`;
     }
 
     // Deal with parameters urls.
-    if (input.indexOf('?') === 0 && input.length > 1) {
-      const url = new URL(origin);
-      url.search = input;
-      input = url.toString();
+    if (this.options.followSearchParams && input.indexOf('?') === 0) {
+      if (input.length > 1) {
+        const url = new URL(origin);
+        url.search = input;
+        input = url.toString();
+      } else {
+        return null;
+      }
     }
 
-    return new URL(input.replace(/\/\//g, '/'));
+    const url = new URL(input.replace(/\/\//g, '/'));
+
+    // Check user eligibility.
+    if (this.options.isEligibleUrl && !this.options.isEligibleUrl(url)) {
+      Config.logger.warning(`Not eligible : ${url.toString()}`);
+      return null;
+    } else if (!this.options.followSearchParams) {
+      url.search = '';
+    }
+
+    return url;
   }
 }

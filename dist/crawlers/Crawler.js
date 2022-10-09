@@ -22,6 +22,7 @@ class WebAuditCrawler {
                 retries: 0,
             },
             allowedStatus: [200, 201, 202, 203, 204],
+            followSearchParams: true,
         };
         this.parsedUrls = [];
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
@@ -103,15 +104,17 @@ class WebAuditCrawler {
             return;
         }
         const parsedUrl = new URL(res.request.uri.href);
+        const gotRedirected = parsedUrl.toString() !== url.toString();
         // Store found page.
+        const _parsedUrl = gotRedirected ? parsedUrl : null;
         (_c = WebAuditConfig_1.WebAuditConfig.storage) === null || _c === void 0 ? void 0 : _c.add('page_found', WebAuditContext_1.WebAuditContext.current, {
             url,
-            parsedUrl,
+            _parsedUrl,
             origin,
             status: res.statusCode,
         });
         // Redirection
-        if (parsedUrl.toString() !== url.toString()) {
+        if (gotRedirected) {
             WebAuditConfig_1.WebAuditConfig.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
         }
         // Parse content.
@@ -138,7 +141,10 @@ class WebAuditCrawler {
         $('a[href], link[rel="alternate"]').each((i, link) => {
             const href = $(link).attr('href');
             try {
-                urls.push(this.getCleanUrlFromHref(href, origin));
+                const url = this.getCleanUrlFromHref(href, origin);
+                if (url) {
+                    urls.push(url);
+                }
             }
             catch (error) {
                 WebAuditConfig_1.WebAuditConfig.logger.warning(`Not a valid url ${href}`);
@@ -262,17 +268,35 @@ class WebAuditCrawler {
     getCleanUrlFromHref(href, origin) {
         var _a;
         let input = href;
+        // Deal with anchor.
+        if (input.indexOf('#') === 0) {
+            return null;
+        }
         // Deal with relative href.
         if (input.indexOf('/') === 0 && input.length > 1) {
             input = `${(_a = this.options.domain) === null || _a === void 0 ? void 0 : _a.toString()}${input}`;
         }
         // Deal with parameters urls.
-        if (input.indexOf('?') === 0 && input.length > 1) {
-            const url = new URL(origin);
-            url.search = input;
-            input = url.toString();
+        if (this.options.followSearchParams && input.indexOf('?') === 0) {
+            if (input.length > 1) {
+                const url = new URL(origin);
+                url.search = input;
+                input = url.toString();
+            }
+            else {
+                return null;
+            }
         }
-        return new URL(input.replace(/\/\//g, '/'));
+        const url = new URL(input.replace(/\/\//g, '/'));
+        // Check user eligibility.
+        if (this.options.isEligibleUrl && !this.options.isEligibleUrl(url)) {
+            WebAuditConfig_1.WebAuditConfig.logger.warning(`Not eligible : ${url.toString()}`);
+            return null;
+        }
+        else if (!this.options.followSearchParams) {
+            url.search = '';
+        }
+        return url;
     }
 }
 exports.WebAuditCrawler = WebAuditCrawler;

@@ -27,7 +27,7 @@ class CSVStorage {
     installStore(id, context, data) {
         const filePath = this.getFilePath(id, context);
         if (!fs_1.default.existsSync(path_1.default.dirname(filePath))) {
-            fs_1.default.mkdirSync(path_1.default.dirname(filePath));
+            fs_1.default.mkdirSync(path_1.default.dirname(filePath), { recursive: true });
         }
         if (!fs_1.default.existsSync(filePath)) {
             fs_1.default.writeFileSync(filePath, this.getCSVLine(data));
@@ -51,7 +51,7 @@ class CSVStorage {
      */
     getCSVValues(data) {
         return Object.values(data).map((value) => {
-            if (typeof value !== 'undefined') {
+            if (value && typeof value !== 'undefined') {
                 return value.toString() || JSON.stringify(value);
             }
             return '';
