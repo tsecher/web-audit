@@ -1,29 +1,24 @@
-import {WebAuditConfig as Config} from "./WebAuditConfig";
-
-export interface WebAuditCoreInterface {
-    parseDomain(url: string, options?: any): string[];
-
-    auditUrl(url: string, options?: any): any;
-}
+import {WebAuditCrawler} from "../crawlers/Crawler";
+import {WebAuditContext as Context} from "./WebAuditContext";
 
 
 /**
  * Web Audit core main entry point for web audition.
  */
-export class WebAuditCoreClass implements WebAuditCoreInterface {
+export class WebAuditCoreClass {
 
     public auditUrl(url: string, options: any = {}): any {
     }
 
-    public parseDomain(url: string, options: any = {}): string[] {
+    public crawlWebsite(base_url: URL, options: any = {}): Promise<any> {
+        
+        // Define context.
+        Context.current.setId('Crawl').setUrl(base_url);
 
-        Config.logger.error("mon erreur","test", "ok");
-        Config.logger.message("message","test", "ok");
-        Config.logger.warning("warning","test", "ok");
-        Config.logger.success("success","test", "ok");
-
-        Config.storage?.installStore("mon", "context", {"oker":"jje"});
-
-        return ["test", "ok"];
+        // Crawl domain.
+        const crawler = new WebAuditCrawler({
+            base_url: base_url,
+        });
+        return crawler.crawl();
     }
 }

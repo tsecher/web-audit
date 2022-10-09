@@ -1,76 +1,107 @@
 import colors from "colors";
+import {WebAuditContextClass as ContextClass, WebAuditContext as Context} from "../core/WebAuditContext";
 
+/**
+ * Logger Interface.
+ */
 export interface LoggerInterface {
-    exit(data?: any, id?: any, context?: any): void
 
-    error(data?: any, id?: any, context?: any): void
+    /**
+     * Log a message.
+     *
+     * @param data
+     * @param context
+     */
+    message(data?: any, id?: string): void
 
-    warning(data?: any, id?: any, context?: any): void
+    /**
+     * Log a success message.
+     *
+     * @param data
+     * @param context
+     */
+    success(data?: any, id?: string): void
 
-    success(data?: any, id?: any, context?: any): void
+    /**
+     * Log a warning message.
+     *
+     * @param data
+     * @param context
+     */
+    warning(data?: any, id?: string): void
 
-    message(data?: any, id?: any, context?: any): void
+    /**
+     * Log an error message.
+     *
+     * @param data
+     * @param context
+     */
+    error(data?: any, id?: string): void
+
+    /**
+     * Log an error message and exit process.
+     *
+     * @param data
+     * @param context
+     */
+    exit(data?: any, id?: string): void
 }
 
+/**
+ * Logger class.
+ */
 export class LoggerClass implements LoggerInterface {
 
     /**
      * Log cache
      */
-    cache: any = {
-        id: null,
-        context: null,
-    }
-
-    defaultColor = (x: any) => {
-        return x;
-    }
+    previousContext?: ContextClass;
 
     /**
      * {@inheritdoc}
      */
-    private log(data: any, id?: any, context?: any, color?: Function): void {
-        color = color || this.defaultColor;
-        if (this.isNewIdAndContext(id, context)) {
-            console.log(color(`======== ${id || ''} : ${context || ''}`));
+    private log(data: any, id?: string, color?: Function): void {
+        if (!Context.current?.isSame(this.previousContext)) {
+            console.log(`======== ${Context.current?.toString()}`);
+            this.previousContext = Context.current;
         }
-        console.log(color(data));
+
+        const variables = [];
+        if (id) variables.push(`[${id}] `);
+        variables.push(data);
+
+        if (color){
+            console.log(color(...variables));
+        }
+        else{
+            console.log(...variables);
+        }
+
     }
 
-    error(data: any, id?: any, context?: any,): void {
-        this.log(data, id, context, colors.red);
+    error(data: any, id?: string): void {
+        this.log(data, id, colors.red);
     }
 
-    message(data: any, id?: any, context?: any,): void {
-        this.log(data, id, context);
+    message(data: any, id?: string): void {
+        this.log(data, id);
     }
 
-    success(data: any, id?: any, context?: any,): void {
-        this.log(data, id, context, colors.green);
+    success(data: any, id?: string): void {
+        this.log(data, id, colors.green);
     }
 
-    warning(data: any, id?: any, context?: any,): void {
-        this.log(data, id, context, colors.yellow);
+    warning(data: any, id?: string): void {
+        this.log(data, id, colors.yellow);
     }
 
-    exit(data?: any, id?: any, context?: any): void {
-        this.error(data, id, context);
+    exit(data?: any, id?: string): void {
+        this.error(data, id);
         process.exit();
-    }
-
-
-    private isNewIdAndContext(id: string, context: string) {
-        if (!id && !context) {
-            return false;
-        }
-        if (`${id}||${context}` !== `${this.cache.id}||${this.cache.context}`) {
-            this.cache.id = id;
-            this.cache.context = context;
-            return true;
-        }
-
-        return false;
     }
 }
 
+/**
+ * Default logger class.
+ */
 export const WebAuditLogger = new LoggerClass();
