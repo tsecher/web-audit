@@ -54,10 +54,10 @@ export class WebAuditCrawler {
       'page_found',
       Context.current,
       {
+        status: `Status`,
         url: 'Referenced url',
         parsedUrl: 'Final URL (if redirected)',
         origin: `Orignal page (where url is referenced)`,
-        status: `Status`,
       },
     );
   }
