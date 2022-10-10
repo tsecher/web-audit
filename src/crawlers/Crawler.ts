@@ -284,13 +284,30 @@ export class WebAuditCrawler {
    * @private
    */
   private getEligibleUrls(urls: URL[]) {
-    let eligibleUrls = urls.filter((url) => !this.isAlreadyParsed(url) && this.isDomainUrl(url) && this.isHtmlUrl(url));
+    let eligibleUrls = urls.filter((url) => {
+      return (
+        !this.isAlreadyParsed(url) &&
+        this.isDomainUrl(url) &&
+        this.isHtmlUrl(url) &&
+        this.isUserEligible(url)
+      );
+    });
 
     if (eligibleUrls.length > 1) {
       eligibleUrls = this.uniqueUrls(eligibleUrls);
     }
 
     return eligibleUrls;
+  }
+
+  /**
+   * Return true if url is eligible from user callback.
+   *
+   * @param url
+   * @private
+   */
+  private isUserEligible(url: URL) {
+    return this.options.isEligibleUrl ? this.options.isEligibleUrl(url) : true;
   }
 
   /**
@@ -352,10 +369,7 @@ export class WebAuditCrawler {
     const url = new URL(input.replace(/\/\//g, '/'));
 
     // Check user eligibility.
-    if (this.options.isEligibleUrl && !this.options.isEligibleUrl(url)) {
-      Config.logger.warning(`Not eligible : ${url.toString()}`);
-      return null;
-    } else if (!this.options.followSearchParams) {
+    if (!this.options.followSearchParams) {
       url.search = '';
     }
 
