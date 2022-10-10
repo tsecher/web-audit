@@ -16,10 +16,12 @@
     "@types/node": "^18.8.3",
     "@typescript-eslint/eslint-plugin": "^5.39.0",
     "@typescript-eslint/parser": "^5.39.0",
+    "GreenIT-Analysis": "https://github.com/cnumr/GreenIT-Analysis",
     "colors": "^1.4.0",
     "crawler": "^1.3.0",
     "eslint": "^8.25.0",
     "nodemon": "^2.0.20",
+    "puppeteer": "^18.2.1",
     "rimraf": "^3.0.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditConfig = void 0;
+exports.WebAuditConfig = exports.WebAuditConfigClass = void 0;
 const Logger_1 = require("../loggers/Logger");
 /**
  * Config.
@@ -37,4 +37,5 @@ class WebAuditConfigClass {
         this._storage = storage;
     }
 }
+exports.WebAuditConfigClass = WebAuditConfigClass;
 exports.WebAuditConfig = new WebAuditConfigClass();
