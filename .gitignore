@@ -1,4 +1,5 @@
 /.idea
 /node_modules
 /data
+/analyses
 yarn-error.log

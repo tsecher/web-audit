@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EcoIndexModule = void 0;
 const puppeteer_1 = __importDefault(require("puppeteer"));
 class EcoIndexModule {
-    constructor(userOptions) {
+    constructor(userOptions = {}) {
         this.defaultOptions = {
             browserArgs: [
                 '--no-sandbox',

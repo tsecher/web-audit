@@ -32,7 +32,7 @@ export class EcoIndexModule implements ModuleInterface {
   };
 
   constructor(
-    userOptions: any,
+    userOptions: any = {},
   ) {
     this.options = {
       ...this.defaultOptions,
