@@ -24,9 +24,6 @@ export class WebAuditContextClass {
   }
 
   setVersion(version: string): WebAuditContextClass {
-    if (typeof this._version !== 'undefined') {
-      throw Error(`You cannot update context version anymore.`);
-    }
     this._version = version;
     return this;
   }
