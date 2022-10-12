@@ -4,15 +4,9 @@ import {WebAuditConfig as Config} from '../core/WebAuditConfig';
 import CSVStorage from '../storage/csv/CSVStorage';
 import {EcoIndexModule} from '../modules/ecoindex/EcoIndexModule';
 
-const yargs = require('yargs/yargs');
-const {hideBin} = require('yargs/helpers');
+import {getArgs} from './args';
 
-const params: any = yargs(hideBin(process.argv)).argv;
-
-
-const url: URL = new URL(params.url || 'https://holidev.thomas-secher.fr');
-// const url = new URL('https://www.google.com/');
-
+const {urls} = getArgs(['urls'], Config.logger);
 
 /** ======================================================
  ||                  OPTIONS                      ||
@@ -42,21 +36,15 @@ Context.current.setVersion(version);
  ||                  Storage                      ||
  =======================================================*/
 // Storage.
-Config.setStorage(new CSVStorage(`./analyses/${url.hostname}`));
-
-/** ======================================================
- ||                  Crawl                      ||
- =======================================================*/
-// const result = WebAudit.Core.crawlWebsite(new URL('https://www.google.com/'));
-// const result = Core.crawlWebsite(url, options);
-
+Config.setStorage(new CSVStorage(`./analyses/${urls[0].hostname}`));
 
 /** ======================================================
  ||                  Analyse                      ||
  =======================================================*/
-Core.analyseUrls(
-  [url],
-  [
-    new EcoIndexModule(),
-  ],
-);
+const success = () => Config.logger.success(`Analyse success`);
+const error = (error: any) => {
+  Config.logger.error(`Analyse error :`);
+  Config.logger.error(error);
+};
+
+Core.analyseUrls(urls, [new EcoIndexModule()]).then(success).catch(error);

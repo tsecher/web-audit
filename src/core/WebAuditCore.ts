@@ -31,23 +31,27 @@ export class WebAuditCoreClass {
    * @param urls
    * @param modules
    */
-  public analyseUrls(urls: URL[], modules: ModuleInterface[]) {
+  public async analyseUrls(urls: URL[], modules: ModuleInterface[]) {
     // Define context.
     Context.current.setId('Crawl').setUrl().setData();
 
     // Init modules.
-    modules.forEach((module) => module.init(WebAuditConfig, Context.current));
+    for (const module of modules) {
+      await module.init(WebAuditConfig, Context.current);
+    }
 
     // Parse urls.
-    urls.forEach((url) => {
-      Context.current.setUrl(url);
+    for (const url of urls) {
+      // TODO : optimize async.
+      for (const module of modules) {
+        Context.current.setData(module?.name);
+        await module.analyse(url);
+      }
+    }
 
-      // Prepare analyser.
-      modules.forEach((module) => {
-        Context.current.setData(module.name);
-        module.analyse(url);
-      });
-    });
+    // Close modules.
+    for (const module of modules) {
+      await module.finish();
+    }
   }
-
 }

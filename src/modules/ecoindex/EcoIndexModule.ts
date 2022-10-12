@@ -1,8 +1,13 @@
+import fs from 'fs';
+import path from 'path';
+
 import puppeteer from 'puppeteer';
 
 import {ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
+
+import {analyseURL} from './Page';
 
 export class EcoIndexModule implements ModuleInterface {
 
@@ -18,10 +23,13 @@ export class EcoIndexModule implements ModuleInterface {
 
   private context?: Context;
 
+  private compiledScriptPath?: string;
+
   private defaultOptions = {
     browserArgs: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
+      '--single-process',
     ],
     viewport: {
       width: 1920,
@@ -34,6 +42,7 @@ export class EcoIndexModule implements ModuleInterface {
   constructor(
     userOptions: any = {},
   ) {
+    // Build dependencies.
     this.options = {
       ...this.defaultOptions,
       ...userOptions,
@@ -43,65 +52,178 @@ export class EcoIndexModule implements ModuleInterface {
   /**
    * {@inheritdoc}
    */
-  init(config: Config, context: Context): void {
+  async init(config: Config, context: Context): Promise<any> {
     this.config = config;
     this.context = context;
+
+    this.compiledScriptPath = this.getGreenITCompiledScript();
+
+    // Install eco index store.
+    this.config.storage?.installStore('ecoindex', this.context, {
+      url: 'Url',
+      grade: 'Grade',
+      ecoIndex: 'Ecoindex',
+      domSize: 'Dom Size',
+      nbRequest: 'NB request',
+      responsesSize: 'Responses Size',
+      responsesSizeUncompress: 'Responses Size Uncompress',
+      waterConsumption: 'Water consumption',
+      greenhouseGasesEmission: 'Greenhouse Gases Emission',
+      nbBestPracticesToCorrect: 'Nb Best practices to correct',
+    });
+
+    // Install eco index best_practices.
+    this.config.storage?.installStore('ecoindex_best_practices', this.context, {
+      url: 'Url',
+      id: 'ID',
+      comment: 'Message',
+      complianceLevel: 'Compliance level',
+      detailComment: 'Detail',
+    });
   }
 
   /**
    * {@inheritdoc}
    */
   async analyse(url: URL): Promise<any> {
-
     const browser = await this.getBrowser();
 
-    const page = this.getPage(browser, url);
+    const result: any = await this.getAnalysisResult(browser, url);
+    result.url = url.toString();
+
+    this.storeResult(result);
+
+    if (result?.success) {
+      this.config?.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, url.toString());
+    } else {
+      this.config?.logger.error(`Could not analyse page`);
+    }
+
+    return result?.success || false;
   }
+
+  /**
+   * Finish analyse process.
+   *
+   * @returns {Promise<any>}
+   */
+  async finish(): Promise<any> {
+    const browser = await this.getBrowser();
+    await browser?.close();
+  }
+
 
   /**
    * Return browser.
    *
    * @returns {Promise<any>}
    */
-  async getBrowser(): Promise<any> {
+  private async getBrowser(): Promise<any> {
     if (this.browser) {
       return new Promise((resolve) => resolve(this.browser));
     }
 
-    return puppeteer.launch({
+    // Launch browser.
+    this.config?.logger.message('First, launch browser');
+    this.browser = await puppeteer.launch({
       headless: true,
       args: this.options.browserArgs,
-      pipe: true,
+      ignoreHTTPSErrors: true,
       ignoreDefaultArgs: [
         '--disable-gpu',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--disable-setuid-sandbox',
-        '--no-first-run',
-        '--no-sandbox',
-        '--no-zygote',
-        '--single-process',
       ],
     });
+
+    return this.browser;
   }
 
-  private async getPage(browser: any, url: URL) {
-    this.config?.logger.message('0');
-
+  /**
+   * Get page.
+   *
+   * @param browser
+   * @param {URL} url
+   * @returns {Promise<void>}
+   * @private
+   */
+  private async getAnalysisResult(browser: any, url: URL) {
+    // Init page configuration.
     const page = await browser.newPage();
-    this.config?.logger.message('1');
-
     await page.setViewport(this.options.viewport);
-    this.config?.logger.message('2');
-
     await page.setCacheEnabled(false);
-    this.config?.logger.message('3');
 
-    try {
-      this.config?.logger.message('Try');
-      await page.goto(url.toString(), {timeout: this.options.timeout});
-    } finally {
-      this.config?.logger.message('ok');
+    const result: any = await analyseURL(page, url.toString(), this.options, this.compiledScriptPath);
+    return result;
+  }
+
+  /**
+   * Create a concatained script from
+   * @private
+   */
+  private getGreenITCompiledScript() {
+    const destinationFile: string = path.resolve(__dirname, '../../../dist/modules/ecoindex/scripts/ecoindex-core.js');
+
+    if (!fs.existsSync(destinationFile)) {
+      this.compileGreenITScript(destinationFile);
+    }
+
+    return destinationFile;
+  }
+
+  /**
+   * Compile green IT scripts that will be added to the audited page.
+   *
+   * @param {string} destinationFile
+   * @private
+   */
+  private compileGreenITScript(destinationFile: string) {
+    // Create directory;
+    fs.mkdirSync(path.dirname(destinationFile), {recursive: true});
+
+    // Concat green it core files.
+    const concat: any = require('concat-files');
+    const glob: any = require('glob');
+    const rulesDirPath = path.resolve(
+      path.dirname(require.resolve('greenit-cli/greenit-core/analyseFrameCore')),
+      'rules',
+    );
+    const rules = glob.sync(`${rulesDirPath}/*.js`);
+
+    // GreenIT-Analysis concatanation.
+    concat(
+      [
+        require.resolve('greenit-cli/greenit-core/analyseFrameCore'),
+        require.resolve('greenit-cli/greenit-core/utils'),
+        require.resolve('greenit-cli/greenit-core/rulesManager'),
+        require.resolve('greenit-cli/greenit-core/ecoIndex'),
+        ...rules,
+        require.resolve('greenit-cli/greenit-core/greenpanel'),
+      ],
+      destinationFile,
+      (err?: any) => {
+        if (err) {
+          this.config?.logger.error(`Error trying to execute Green IT Analyse compilation`);
+          this.config?.logger.exit(err);
+        }
+      },
+    );
+  }
+
+  private storeResult(result: any) {
+    this.config?.storage?.add('ecoindex', this.context, result);
+
+    if (result.bestPractices) {
+      Object.keys(result.bestPractices).forEach((bestPracticeId) => {
+        const compliance: string = result.bestPractices[bestPracticeId]?.complianceLevel || 'A';
+        if (compliance && compliance !== 'A') {
+          this.config?.storage?.add('ecoindex_best_practices', this.context, {
+            ...{
+              url: result.url,
+              id: bestPracticeId,
+            },
+            ...result.bestPractices[bestPracticeId],
+          });
+        }
+      });
     }
   }
 

@@ -98,16 +98,17 @@ class CSVStorage {
      * @private
      */
     getStringifiedValues(data) {
+        const values = {};
         Object.keys(data).forEach((key) => {
             const value = data[key];
             if (value && typeof value !== 'undefined') {
-                data[key] = value.toString() || JSON.stringify(value);
+                values[key] = value.toString() || JSON.stringify(value);
             }
             else {
-                data[key] = '';
+                values[key] = '';
             }
         });
-        return data;
+        return values;
     }
 }
 exports.default = CSVStorage;

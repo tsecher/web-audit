@@ -21,4 +21,9 @@ export interface ModuleInterface {
    */
   analyse(url: URL): void;
 
+  /**
+   * Finish process.
+   */
+  finish(): void;
+
 }

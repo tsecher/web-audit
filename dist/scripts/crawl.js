@@ -7,11 +7,8 @@ const index_1 = require("../index");
 const WebAuditContext_1 = require("../core/WebAuditContext");
 const WebAuditConfig_1 = require("../core/WebAuditConfig");
 const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
-const params = yargs(hideBin(process.argv)).argv;
-const url = new URL(params.url || 'https://holidev.thomas-secher.fr');
-// const url = new URL('https://www.google.com/');
+const args_1 = require("./args");
+const { urls } = (0, args_1.getArgs)(['urls'], WebAuditConfig_1.WebAuditConfig.logger);
 /** ======================================================
  ||                  OPTIONS                      ||
  =======================================================*/
@@ -36,9 +33,9 @@ WebAuditContext_1.WebAuditContext.current.setVersion(version);
  ||                  Storage                      ||
  =======================================================*/
 // Storage.
-WebAuditConfig_1.WebAuditConfig.setStorage(new CSVStorage_1.default(`./analyses/${url.hostname}`));
+WebAuditConfig_1.WebAuditConfig.setStorage(new CSVStorage_1.default(`./analyses/${urls[0].hostname}`));
 /** ======================================================
  ||                  Crawl                      ||
  =======================================================*/
 // const result = WebAudit.Core.crawlWebsite(new URL('https://www.google.com/'));
-const result = index_1.Core.crawlWebsite(url, options);
+const result = index_1.Core.crawlWebsite(urls[0], options);

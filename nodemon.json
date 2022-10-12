@@ -2,5 +2,5 @@
   "watch": ["src"],
   "ext": ".ts,.js",
   "ignore": [],
-  "exec": "tsc && yarn lint --fix"
+  "exec": "tsc && yarn lint"
 }

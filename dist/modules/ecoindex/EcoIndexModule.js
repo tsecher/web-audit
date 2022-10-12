@@ -13,13 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EcoIndexModule = void 0;
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const puppeteer_1 = __importDefault(require("puppeteer"));
+const Page_1 = require("./Page");
 class EcoIndexModule {
     constructor(userOptions = {}) {
         this.defaultOptions = {
             browserArgs: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
+                '--single-process',
             ],
             viewport: {
                 width: 1920,
@@ -28,6 +32,7 @@ class EcoIndexModule {
             },
             timeout: 180000,
         };
+        // Build dependencies.
         this.options = Object.assign(Object.assign({}, this.defaultOptions), userOptions);
     }
     get name() {
@@ -37,16 +42,62 @@ class EcoIndexModule {
      * {@inheritdoc}
      */
     init(config, context) {
-        this.config = config;
-        this.context = context;
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            this.config = config;
+            this.context = context;
+            this.compiledScriptPath = this.getGreenITCompiledScript();
+            // Install eco index store.
+            (_a = this.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('ecoindex', this.context, {
+                url: 'Url',
+                grade: 'Grade',
+                ecoIndex: 'Ecoindex',
+                domSize: 'Dom Size',
+                nbRequest: 'NB request',
+                responsesSize: 'Responses Size',
+                responsesSizeUncompress: 'Responses Size Uncompress',
+                waterConsumption: 'Water consumption',
+                greenhouseGasesEmission: 'Greenhouse Gases Emission',
+                nbBestPracticesToCorrect: 'Nb Best practices to correct',
+            });
+            // Install eco index best_practices.
+            (_b = this.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('ecoindex_best_practices', this.context, {
+                url: 'Url',
+                id: 'ID',
+                comment: 'Message',
+                complianceLevel: 'Compliance level',
+                detailComment: 'Detail',
+            });
+        });
     }
     /**
      * {@inheritdoc}
      */
     analyse(url) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             const browser = yield this.getBrowser();
-            const page = this.getPage(browser, url);
+            const result = yield this.getAnalysisResult(browser, url);
+            result.url = url.toString();
+            this.storeResult(result);
+            if (result === null || result === void 0 ? void 0 : result.success) {
+                (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, url.toString());
+            }
+            else {
+                (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.error(`Could not analyse page`);
+            }
+            return (result === null || result === void 0 ? void 0 : result.success) || false;
+        });
+    }
+    /**
+     * Finish analyse process.
+     *
+     * @returns {Promise<any>}
+     */
+    finish() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const browser = yield this.getBrowser();
+            yield (browser === null || browser === void 0 ? void 0 : browser.close());
         });
     }
     /**
@@ -55,45 +106,98 @@ class EcoIndexModule {
      * @returns {Promise<any>}
      */
     getBrowser() {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             if (this.browser) {
                 return new Promise((resolve) => resolve(this.browser));
             }
-            return puppeteer_1.default.launch({
+            // Launch browser.
+            (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.message('First, launch browser');
+            this.browser = yield puppeteer_1.default.launch({
                 headless: true,
                 args: this.options.browserArgs,
-                pipe: true,
+                ignoreHTTPSErrors: true,
                 ignoreDefaultArgs: [
                     '--disable-gpu',
-                    '--disable-gpu',
-                    '--disable-dev-shm-usage',
-                    '--disable-setuid-sandbox',
-                    '--no-first-run',
-                    '--no-sandbox',
-                    '--no-zygote',
-                    '--single-process',
                 ],
             });
+            return this.browser;
         });
     }
-    getPage(browser, url) {
-        var _a, _b, _c, _d, _e, _f;
+    /**
+     * Get page.
+     *
+     * @param browser
+     * @param {URL} url
+     * @returns {Promise<void>}
+     * @private
+     */
+    getAnalysisResult(browser, url) {
         return __awaiter(this, void 0, void 0, function* () {
-            (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.message('0');
+            // Init page configuration.
             const page = yield browser.newPage();
-            (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.message('1');
             yield page.setViewport(this.options.viewport);
-            (_c = this.config) === null || _c === void 0 ? void 0 : _c.logger.message('2');
             yield page.setCacheEnabled(false);
-            (_d = this.config) === null || _d === void 0 ? void 0 : _d.logger.message('3');
-            try {
-                (_e = this.config) === null || _e === void 0 ? void 0 : _e.logger.message('Try');
-                yield page.goto(url.toString(), { timeout: this.options.timeout });
-            }
-            finally {
-                (_f = this.config) === null || _f === void 0 ? void 0 : _f.logger.message('ok');
+            const result = yield (0, Page_1.analyseURL)(page, url.toString(), this.options, this.compiledScriptPath);
+            return result;
+        });
+    }
+    /**
+     * Create a concatained script from
+     * @private
+     */
+    getGreenITCompiledScript() {
+        const destinationFile = path_1.default.resolve(__dirname, '../../../dist/modules/ecoindex/scripts/ecoindex-core.js');
+        if (!fs_1.default.existsSync(destinationFile)) {
+            this.compileGreenITScript(destinationFile);
+        }
+        return destinationFile;
+    }
+    /**
+     * Compile green IT scripts that will be added to the audited page.
+     *
+     * @param {string} destinationFile
+     * @private
+     */
+    compileGreenITScript(destinationFile) {
+        // Create directory;
+        fs_1.default.mkdirSync(path_1.default.dirname(destinationFile), { recursive: true });
+        // Concat green it core files.
+        const concat = require('concat-files');
+        const glob = require('glob');
+        const rulesDirPath = path_1.default.resolve(path_1.default.dirname(require.resolve('greenit-cli/greenit-core/analyseFrameCore')), 'rules');
+        const rules = glob.sync(`${rulesDirPath}/*.js`);
+        // GreenIT-Analysis concatanation.
+        concat([
+            require.resolve('greenit-cli/greenit-core/analyseFrameCore'),
+            require.resolve('greenit-cli/greenit-core/utils'),
+            require.resolve('greenit-cli/greenit-core/rulesManager'),
+            require.resolve('greenit-cli/greenit-core/ecoIndex'),
+            ...rules,
+            require.resolve('greenit-cli/greenit-core/greenpanel'),
+        ], destinationFile, (err) => {
+            var _a, _b;
+            if (err) {
+                (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.error(`Error trying to execute Green IT Analyse compilation`);
+                (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.exit(err);
             }
         });
+    }
+    storeResult(result) {
+        var _a, _b;
+        (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.storage) === null || _b === void 0 ? void 0 : _b.add('ecoindex', this.context, result);
+        if (result.bestPractices) {
+            Object.keys(result.bestPractices).forEach((bestPracticeId) => {
+                var _a, _b, _c;
+                const compliance = ((_a = result.bestPractices[bestPracticeId]) === null || _a === void 0 ? void 0 : _a.complianceLevel) || 'A';
+                if (compliance && compliance !== 'A') {
+                    (_c = (_b = this.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('ecoindex_best_practices', this.context, Object.assign({
+                        url: result.url,
+                        id: bestPracticeId,
+                    }, result.bestPractices[bestPracticeId]));
+                }
+            });
+        }
     }
 }
 exports.EcoIndexModule = EcoIndexModule;
