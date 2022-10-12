@@ -6,7 +6,7 @@ export class WebAuditContextClass {
   private _id?: string;
   private _url?: URL;
   private _data?: any;
-  private _version?: number;
+  private _version?: string;
 
   setId(id?: string): WebAuditContextClass {
     this._id = id;
@@ -23,7 +23,7 @@ export class WebAuditContextClass {
     return this;
   }
 
-  setVersion(version: number): WebAuditContextClass {
+  setVersion(version: string): WebAuditContextClass {
     if (typeof this._version !== 'undefined') {
       throw Error(`You cannot update context version anymore.`);
     }
@@ -43,8 +43,8 @@ export class WebAuditContextClass {
     return this._data;
   }
 
-  get version(): number {
-    return this._version || 0;
+  get version(): string {
+    return this._version || '0';
   }
 
   /**

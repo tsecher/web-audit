@@ -34,7 +34,7 @@ class WebAuditContextClass {
         return this._data;
     }
     get version() {
-        return this._version || 0;
+        return this._version || '0';
     }
     /**
      * Check if context is same.

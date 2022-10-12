@@ -30,8 +30,9 @@ class WebAuditCrawler {
         this.cleanBaseUrl();
         // Prepare storage.
         (_a = WebAuditConfig_1.WebAuditConfig.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', WebAuditContext_1.WebAuditContext.current, {
-            status: `Status`,
             url: 'Referenced url',
+            status: `Status`,
+            size: `Content length`,
             parsedUrl: 'Final URL (if redirected)',
             origin: `Orignal page (where url is referenced)`,
         });
@@ -112,6 +113,7 @@ class WebAuditCrawler {
             _parsedUrl,
             origin,
             status: res.statusCode,
+            size: res.headers['content-length'],
         });
         // Redirection
         if (gotRedirected) {

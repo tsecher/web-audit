@@ -114,16 +114,17 @@ export default class CSVStorage implements StorageInterface {
    * @private
    */
   private getStringifiedValues(data: any): any {
+    const values: any = {};
     Object.keys(data).forEach((key: string) => {
       const value = data[key];
       if (value && typeof value !== 'undefined') {
-        data[key] = value.toString() || JSON.stringify(value);
+        values[key] = value.toString() || JSON.stringify(value);
       } else {
-        data[key] = '';
+        values[key] = '';
       }
     });
 
-    return data;
+    return values;
   }
 
 }

@@ -54,8 +54,9 @@ export class WebAuditCrawler {
       'page_found',
       Context.current,
       {
-        status: `Status`,
         url: 'Referenced url',
+        status: `Status`,
+        size: `Content length`,
         parsedUrl: 'Final URL (if redirected)',
         origin: `Orignal page (where url is referenced)`,
       },
@@ -151,6 +152,7 @@ export class WebAuditCrawler {
       _parsedUrl,
       origin,
       status: res.statusCode,
+      size: res.headers['content-length'],
     });
 
     // Redirection

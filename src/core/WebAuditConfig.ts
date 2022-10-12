@@ -4,7 +4,7 @@ import {LoggerInterface, WebAuditLogger} from '../loggers/Logger';
 /**
  * Config.
  */
-class WebAuditConfigClass {
+export class WebAuditConfigClass {
 
     /**
      * Logger object displaying process message.
