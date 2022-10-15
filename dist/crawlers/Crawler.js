@@ -1,9 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditCrawler = void 0;
+exports.WebAuditCrawler = exports.WebAuditCrawlerEvents = void 0;
 const WebAuditConfig_1 = require("../core/WebAuditConfig");
 const WebAuditContext_1 = require("../core/WebAuditContext");
+const WebAuditEvent_1 = require("../core/WebAuditEvent");
 const Crawler = require('crawler');
+/**
+ * Events.
+ *
+ * @type {{onCreateCrawl: string}}
+ */
+exports.WebAuditCrawlerEvents = {
+    createCrawl: 'crawler__createCrawl',
+    beforeCrawl: 'crawler__beforeCrawl',
+    afterCrawl: 'crawler__afterCrawl',
+    onCrawlUrls: 'crawler__onCrawlUrls',
+    onPageCrawled: 'crawler__onPageCrawled',
+    onPageCrawledError: 'crawler__onPageCrawledError',
+    onPageCrawledBadStatus: 'crawler__onPageCrawledBadStatus',
+    onPageCrawledNoUri: 'crawler__onPageCrawledNoUri',
+    onPageCrawledRedirected: 'crawler__onPageCrawledRedirected',
+};
 /**
  * Website crawler.
  */
@@ -28,6 +45,8 @@ class WebAuditCrawler {
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
         // Prepare options.
         this.cleanBaseUrl();
+        // Emit.
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.createCrawl, { crawler: this });
         // Prepare storage.
         (_a = WebAuditConfig_1.WebAuditConfig.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', WebAuditContext_1.WebAuditContext.current, {
             url: 'Referenced url',
@@ -43,9 +62,11 @@ class WebAuditCrawler {
     crawl() {
         // Define crawler.
         this.crawler = new Crawler(this.options.crawlerOptions);
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.beforeCrawl, { crawler: this });
         this.crawler.on('drain', () => {
             if (this.onDone) {
                 this.onDone(this.parsedUrls);
+                WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.afterCrawl, { crawler: this });
             }
         });
         this.crawlUrls([this.options.baseUrl]);
@@ -63,6 +84,7 @@ class WebAuditCrawler {
     crawlUrls(urls, origin) {
         // Filter eligible urls (html, domain and not already crawled).
         const eligibleUrls = this.getEligibleUrls(urls);
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, { crawler: this, urlsList: urls });
         // Add new urls to queue
         if (eligibleUrls.length) {
             this.addToParsedUrls(eligibleUrls);
@@ -86,21 +108,26 @@ class WebAuditCrawler {
     onPageCrawled(error, res, done, url, origin) {
         var _a, _b, _c;
         WebAuditContext_1.WebAuditContext.current.setData('Page crawled').setUrl(url);
+        const eventData = { error: error, res: res, url: url, origin: origin };
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawled, { crawler: this, data: eventData });
         // Error.
         if (error) {
             WebAuditConfig_1.WebAuditConfig.logger.error(error);
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledError, { crawler: this, data: eventData });
             done();
             return;
         }
         // Status.
         if (this.options.allowedStatus && ((_a = this.options.allowedStatus) === null || _a === void 0 ? void 0 : _a.indexOf(res.statusCode)) < 0) {
             WebAuditConfig_1.WebAuditConfig.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledBadStatus, { crawler: this, data: eventData });
             done();
             return;
         }
         // No returned uri.
         if (!((_b = res.request) === null || _b === void 0 ? void 0 : _b.uri.href)) {
             WebAuditConfig_1.WebAuditConfig.logger.error(`No uri`);
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledNoUri, { crawler: this, data: eventData });
             done();
             return;
         }
@@ -118,6 +145,7 @@ class WebAuditCrawler {
         // Redirection
         if (gotRedirected) {
             WebAuditConfig_1.WebAuditConfig.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledRedirected, { crawler: this, data: eventData });
         }
         // Parse content.
         try {

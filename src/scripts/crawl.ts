@@ -1,6 +1,8 @@
 import {Core} from '../index';
 import {WebAuditContext as Context} from '../core/WebAuditContext';
 import {WebAuditConfig as Config} from '../core/WebAuditConfig';
+import {WebAuditEvent as Event} from '../core/WebAuditEvent';
+import {WebAuditCrawlerEvents} from '../crawlers/Crawler';
 import CSVStorage from '../storage/csv/CSVStorage';
 
 import {getArgs} from './args';
@@ -36,6 +38,7 @@ Context.current.setVersion(version);
  =======================================================*/
 // Storage.
 Config.setStorage(new CSVStorage(`./analyses/${urls[0].hostname}`));
+
 
 /** ======================================================
  ||                  Crawl                      ||

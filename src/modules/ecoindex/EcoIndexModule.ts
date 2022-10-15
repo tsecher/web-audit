@@ -6,8 +6,19 @@ import puppeteer from 'puppeteer';
 import {ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
+import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
 
 import {analyseURL} from './Page';
+
+export const EcoIndexModuleEvents: any = {
+  createEcoIndexModule: 'ecoindex_module__createEcoIndexModule',
+  beforeAnalyse: 'ecoindex_module__beforeAnalyse',
+  onResult: 'ecoindex_module__onResult',
+  onBrowserClose: 'ecoindex_module__onBrowserClose',
+  onBrowserLaunch: 'ecoindex_module__onBrowserLaunch',
+  onNewPage: 'ecoindex_module__onNewPage',
+  afterAnalyse: 'ecoindex_module__afterAnalyse',
+};
 
 export class EcoIndexModule implements ModuleInterface {
 
@@ -80,16 +91,22 @@ export class EcoIndexModule implements ModuleInterface {
       complianceLevel: 'Compliance level',
       detailComment: 'Detail',
     });
+
+    // Emit.
+    Event.emit(EcoIndexModuleEvents.createEcoIndexModule, {module: this});
   }
 
   /**
    * {@inheritdoc}
    */
   async analyse(url: URL): Promise<any> {
+    Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this});
+
     const browser = await this.getBrowser();
 
     const result: any = await this.getAnalysisResult(browser, url);
     result.url = url.toString();
+    Event.emit(EcoIndexModuleEvents.onResult, {module: this, url: url, browser: this.browser, result: result});
 
     this.storeResult(result);
 
@@ -98,6 +115,8 @@ export class EcoIndexModule implements ModuleInterface {
     } else {
       this.config?.logger.error(`Could not analyse page`);
     }
+
+    Event.emit(EcoIndexModuleEvents.afterAnalyse, {module: this, url: url, result: result});
 
     return result?.success || false;
   }
@@ -110,6 +129,7 @@ export class EcoIndexModule implements ModuleInterface {
   async finish(): Promise<any> {
     const browser = await this.getBrowser();
     await browser?.close();
+    Event.emit(EcoIndexModuleEvents.onBrowserClose, {module: this, browser: this.browser});
   }
 
 
@@ -134,6 +154,8 @@ export class EcoIndexModule implements ModuleInterface {
       ],
     });
 
+    Event.emit(EcoIndexModuleEvents.onBrowserLaunch, {module: this, browser: this.browser});
+
     return this.browser;
   }
 
@@ -150,6 +172,8 @@ export class EcoIndexModule implements ModuleInterface {
     const page = await browser.newPage();
     await page.setViewport(this.options.viewport);
     await page.setCacheEnabled(false);
+
+    Event.emit(EcoIndexModuleEvents.onNewPage, {module: this, browser: browser, page: page, url: url});
 
     const result: any = await analyseURL(page, url.toString(), this.options, this.compiledScriptPath);
     return result;

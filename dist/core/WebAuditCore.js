@@ -17,6 +17,11 @@ const WebAuditConfig_1 = require("./WebAuditConfig");
  * Web Audit core main entry point for web audition.
  */
 class WebAuditCoreClass {
+    constructor() {
+        this.events = {
+            beforeCrawlWebsite: 'core_beforeCrawlWebsite',
+        };
+    }
     /**
      * Craw website.
      *

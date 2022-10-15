@@ -19,6 +19,8 @@
     "no-catch-shadow": 0,
     "@shopify/binary-assignment-parens": 0,
     "no-empty-pattern": 0,
-    "no-warning-comments": 0
+    "no-warning-comments": 0,
+    "prefer-rest-params": 0,
+    "object-shorthand": 0
   }
 }

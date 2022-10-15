@@ -9,6 +9,10 @@ import {WebAuditConfig} from './WebAuditConfig';
  */
 export class WebAuditCoreClass {
 
+  events: any = {
+    beforeCrawlWebsite: 'core_beforeCrawlWebsite',
+  };
+
   /**
    * Craw website.
    *
