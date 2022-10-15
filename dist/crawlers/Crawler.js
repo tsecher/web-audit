@@ -40,8 +40,9 @@ class WebAuditCrawler {
             },
             allowedStatus: [200, 201, 202, 203, 204],
             followSearchParams: true,
+            uniqueParams: ['page'],
         };
-        this.parsedUrls = [];
+        this.parsedUrls = {};
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
         // Prepare options.
         this.cleanBaseUrl();
@@ -229,9 +230,7 @@ class WebAuditCrawler {
      * @private
      */
     isAlreadyParsed(url) {
-        return this.parsedUrls.filter((parsed) => {
-            return parsed.toString().replace(parsed.hash, '') === url.toString().replace(url.hash, '');
-        }).length;
+        return typeof this.parsedUrls[this.normalizeURL(url)] !== 'undefined';
     }
     /**
      * Add Url to parsed URLS.
@@ -240,7 +239,7 @@ class WebAuditCrawler {
      */
     addToParsedUrl(url) {
         if (!this.isAlreadyParsed(url)) {
-            this.parsedUrls.push(url);
+            this.parsedUrls[this.normalizeURL(url)] = url;
         }
     }
     /**
@@ -337,6 +336,42 @@ class WebAuditCrawler {
             url.search = '';
         }
         return url;
+    }
+    /**
+     * Normalise url
+     *
+     * @param {URL} url
+     * @returns {string}
+     */
+    normalizeURL(url) {
+        var _a, _b;
+        const idURL = new URL(url);
+        idURL.hash = '';
+        idURL.protocol = '';
+        if (!this.options.followSearchParams) {
+            idURL.search = '';
+        }
+        const uniqueParams = this.options.uniqueParams || [];
+        if ((_b = (_a = this.options) === null || _a === void 0 ? void 0 : _a.uniqueParams) === null || _b === void 0 ? void 0 : _b.length) {
+            Array.from(idURL.searchParams)
+                .filter(([key]) => uniqueParams.indexOf(key) < 0)
+                .forEach(([key]) => {
+                idURL.searchParams.delete(key);
+            });
+        }
+        // Delete protocole.
+        let id = idURL
+            .toString()
+            .replace(`${idURL.protocol}//`, '');
+        // Delete //.
+        while (id.indexOf('//') > -1) {
+            id = id.replace(/\/\//g, '/');
+        }
+        // Delete last /.
+        while (id[id.length - 1] === '/') {
+            id = id.slice(0, -1);
+        }
+        return id;
     }
 }
 exports.WebAuditCrawler = WebAuditCrawler;

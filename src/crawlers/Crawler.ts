@@ -11,6 +11,7 @@ export interface WebAuditCrawlerType {
   allowedStatus?: number[];
   followSearchParams?: boolean;
   isEligibleUrl?: Function;
+  uniqueParams?: string[];
 }
 
 /**
@@ -43,11 +44,12 @@ export class WebAuditCrawler {
     },
     allowedStatus: [200, 201, 202, 203, 204],
     followSearchParams: true,
+    uniqueParams: ['page'],
   };
 
   private options: WebAuditCrawlerType;
 
-  private parsedUrls: URL[] = [];
+  private parsedUrls: any = {};
 
   private crawler?: any;
 
@@ -284,10 +286,7 @@ export class WebAuditCrawler {
    * @private
    */
   private isAlreadyParsed(url: URL) {
-    return this.parsedUrls.filter((parsed) => {
-      return parsed.toString().replace(parsed.hash, '') === url.toString().replace(url.hash, '');
-    }).length;
-
+    return typeof this.parsedUrls[this.normalizeURL(url)] !== 'undefined';
   }
 
   /**
@@ -297,7 +296,7 @@ export class WebAuditCrawler {
    */
   private addToParsedUrl(url: URL) {
     if (!this.isAlreadyParsed(url)) {
-      this.parsedUrls.push(url);
+      this.parsedUrls[this.normalizeURL(url)] = url;
     }
   }
 
@@ -408,5 +407,47 @@ export class WebAuditCrawler {
     }
 
     return url;
+  }
+
+  /**
+   * Normalise url
+   *
+   * @param {URL} url
+   * @returns {string}
+   */
+  private normalizeURL(url: URL): string {
+    const idURL: URL = new URL(url);
+    idURL.hash = '';
+    idURL.protocol = '';
+
+    if (!this.options.followSearchParams) {
+      idURL.search = '';
+    }
+
+    const uniqueParams: string[] = this.options.uniqueParams || [];
+    if (this.options?.uniqueParams?.length) {
+      Array.from(idURL.searchParams)
+        .filter(([key]) => uniqueParams.indexOf(key) < 0)
+        .forEach(([key]) => {
+          idURL.searchParams.delete(key);
+        });
+    }
+
+    // Delete protocole.
+    let id: string = idURL
+      .toString()
+      .replace(`${idURL.protocol}//`, '');
+
+    // Delete //.
+    while (id.indexOf('//') > -1) {
+      id = id.replace(/\/\//g, '/');
+    }
+
+    // Delete last /.
+    while (id[id.length - 1] === '/') {
+      id = id.slice(0, -1);
+    }
+
+    return id;
   }
 }
