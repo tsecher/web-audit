@@ -104,6 +104,8 @@ export class LighthouseModule implements ModuleInterface {
       this.config?.logger.success(`Lighthouse : ${logs.join(' | ')}`, url.toString());
     } else {
       this.config?.logger.error(`Could not analyse page`);
+      this.config?.logger.error(report);
+
     }
 
     report.url = url.toString();

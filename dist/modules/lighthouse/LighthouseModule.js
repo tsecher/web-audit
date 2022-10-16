@@ -58,7 +58,7 @@ class LighthouseModule {
      * {@inheritdoc}
      */
     analyse(url) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         return __awaiter(this, void 0, void 0, function* () {
             WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.beforeAnalyse, { module: this });
             const browser = yield this.getBrowser();
@@ -90,9 +90,10 @@ class LighthouseModule {
             }
             else {
                 (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.error(`Could not analyse page`);
+                (_c = this.config) === null || _c === void 0 ? void 0 : _c.logger.error(report);
             }
             report.url = url.toString();
-            (_d = (_c = this.config) === null || _c === void 0 ? void 0 : _c.storage) === null || _d === void 0 ? void 0 : _d.add('lighthouse', this.context, report);
+            (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.storage) === null || _e === void 0 ? void 0 : _e.add('lighthouse', this.context, report);
             WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: url });
             return true;
         });

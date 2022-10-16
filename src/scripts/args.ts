@@ -14,21 +14,51 @@ const params: any = yargs(hideBin(process.argv)).argv;
  *
  * @returns {URL[]}
  */
-function getUrlsArgs(): URL[] {
-  if (!params.urls) {
-    return [];
+async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<any> {
+  let selected: URL[] = [];
+  if (params.urls && typeof params.urls === 'string') {
+    const urls = params.urls.split(',');
+    selected = urls
+      .map((url: any) => {
+        try {
+          return new URL(url);
+        } catch (error) {
+          return false;
+        }
+      })
+      .filter((url: any) => url);
   }
 
-  return params.urls
-    .split(',')
-    .map((url: string) => {
+  // Manual
+  if (required && !selected.length) {
+    let manual: any = {};
+    let value: string;
+
+    do {
+      manual = await prompts([{
+        type: 'text',
+        name: 'urls',
+        message: `URLs ? (leave empty to stop)`,
+      }]);
+
+      value = manual.urls;
+
       try {
-        return new URL(url);
+        if (value.trim().length > 0) {
+          selected.push(new URL(value));
+        }
       } catch (error) {
-        return null;
+        logger.error(`Bad URL format : ${value}`);
       }
-    })
-    .filter((url: any) => url);
+
+    }
+    while (value.trim().length > 0);
+  }
+
+  return {
+    data: selected,
+    shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
+  };
 }
 
 
@@ -37,7 +67,7 @@ function getUrlsArgs(): URL[] {
  *
  * @returns {ModuleInterface}
  */
-async function getModules(required: boolean): Promise<ModuleInterface[]> {
+async function getModules(required: boolean, logger: LoggerInterface): Promise<any> {
   const allModules: ModuleInterface[] = [
     new EcoIndexModule(),
     new LighthouseModule(),
@@ -67,7 +97,10 @@ async function getModules(required: boolean): Promise<ModuleInterface[]> {
     selected = manual.modules;
   }
 
-  return selected;
+  return {
+    data: selected,
+    shortcut: selected.length ? `--modules=${selected.map((module) => module.id).join()}` : '',
+  };
 }
 
 /**
@@ -76,18 +109,19 @@ async function getModules(required: boolean): Promise<ModuleInterface[]> {
  * @returns {{urls: URL[]}}
  */
 export async function getArgs(required: string[], logger: LoggerInterface) {
+
   const args: any = {
-    urls: getUrlsArgs(),
-    modules: await getModules(required.indexOf('modules') > -1),
+    urls: await getUrlsArgs(required.indexOf('urls') > -1, logger),
+    modules: await getModules(required.indexOf('modules') > -1, logger),
   };
 
-  required.forEach((item: any) => {
-    if (typeof args[item] === 'undefined') {
-      logger.exit(`${item} is required. Please use parameter --${item}=...`);
-    } else if (Array.isArray(args[item]) && !args[item].length) {
-      logger.exit(`${item} is required. Please use parameter --${item}=arg1,arg2`);
-    }
+  logger.warning(`Shortcut: `);
+  logger.warning(Object.values(args).map((value: any) => value.shortcut).join(' '));
+
+  const result: any = {};
+  Object.keys(args).forEach((key: any) => {
+    result[key] = args[key].data;
   });
 
-  return args;
+  return result;
 }

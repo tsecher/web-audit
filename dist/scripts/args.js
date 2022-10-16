@@ -21,28 +21,55 @@ const params = yargs(hideBin(process.argv)).argv;
  *
  * @returns {URL[]}
  */
-function getUrlsArgs() {
-    if (!params.urls) {
-        return [];
-    }
-    return params.urls
-        .split(',')
-        .map((url) => {
-        try {
-            return new URL(url);
+function getUrlsArgs(required, logger) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let selected = [];
+        if (params.urls && typeof params.urls === 'string') {
+            const urls = params.urls.split(',');
+            selected = urls
+                .map((url) => {
+                try {
+                    return new URL(url);
+                }
+                catch (error) {
+                    return false;
+                }
+            })
+                .filter((url) => url);
         }
-        catch (error) {
-            return null;
+        // Manual
+        if (required && !selected.length) {
+            let manual = {};
+            let value;
+            do {
+                manual = yield prompts([{
+                        type: 'text',
+                        name: 'urls',
+                        message: `URLs ? (leave empty to stop)`,
+                    }]);
+                value = manual.urls;
+                try {
+                    if (value.trim().length > 0) {
+                        selected.push(new URL(value));
+                    }
+                }
+                catch (error) {
+                    logger.error(`Bad URL format : ${value}`);
+                }
+            } while (value.trim().length > 0);
         }
-    })
-        .filter((url) => url);
+        return {
+            data: selected,
+            shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
+        };
+    });
 }
 /**
  * Return modules;
  *
  * @returns {ModuleInterface}
  */
-function getModules(required) {
+function getModules(required, logger) {
     return __awaiter(this, void 0, void 0, function* () {
         const allModules = [
             new EcoIndexModule_1.EcoIndexModule(),
@@ -69,7 +96,10 @@ function getModules(required) {
                 }]);
             selected = manual.modules;
         }
-        return selected;
+        return {
+            data: selected,
+            shortcut: selected.length ? `--modules=${selected.map((module) => module.id).join()}` : '',
+        };
     });
 }
 /**
@@ -80,18 +110,16 @@ function getModules(required) {
 function getArgs(required, logger) {
     return __awaiter(this, void 0, void 0, function* () {
         const args = {
-            urls: getUrlsArgs(),
-            modules: yield getModules(required.indexOf('modules') > -1),
+            urls: yield getUrlsArgs(required.indexOf('urls') > -1, logger),
+            modules: yield getModules(required.indexOf('modules') > -1, logger),
         };
-        required.forEach((item) => {
-            if (typeof args[item] === 'undefined') {
-                logger.exit(`${item} is required. Please use parameter --${item}=...`);
-            }
-            else if (Array.isArray(args[item]) && !args[item].length) {
-                logger.exit(`${item} is required. Please use parameter --${item}=arg1,arg2`);
-            }
+        logger.warning(`Shortcut: `);
+        logger.warning(Object.values(args).map((value) => value.shortcut).join(' '));
+        const result = {};
+        Object.keys(args).forEach((key) => {
+            result[key] = args[key].data;
         });
-        return args;
+        return result;
     });
 }
 exports.getArgs = getArgs;
