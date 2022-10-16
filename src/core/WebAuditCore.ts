@@ -37,7 +37,7 @@ export class WebAuditCoreClass {
    */
   public async analyseUrls(urls: URL[], modules: ModuleInterface[]) {
     // Define context.
-    Context.current.setId('Crawl').setUrl().setData();
+    Context.current.setId('Analyse').setUrl().setData();
 
     // Init modules.
     for (const module of modules) {

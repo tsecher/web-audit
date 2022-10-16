@@ -3,3 +3,4 @@
 /data
 /analyses
 yarn-error.log
+/dist/modules/ecoindex/scripts/ecoindex-core.js

@@ -5,6 +5,8 @@ export interface ModuleInterface {
 
   get name(): string;
 
+  get id(): string;
+
   /**
    * Init before configuration.
    *

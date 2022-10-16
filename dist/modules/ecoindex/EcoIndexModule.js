@@ -48,6 +48,9 @@ class EcoIndexModule {
     get name() {
         return 'Eco Index';
     }
+    get id() {
+        return `ecoindex`;
+    }
     /**
      * {@inheritdoc}
      */

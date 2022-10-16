@@ -45,7 +45,7 @@ class WebAuditCoreClass {
     analyseUrls(urls, modules) {
         return __awaiter(this, void 0, void 0, function* () {
             // Define context.
-            WebAuditContext_1.WebAuditContext.current.setId('Crawl').setUrl().setData();
+            WebAuditContext_1.WebAuditContext.current.setId('Analyse').setUrl().setData();
             // Init modules.
             for (const module of modules) {
                 yield module.init(WebAuditConfig_1.WebAuditConfig, WebAuditContext_1.WebAuditContext.current);

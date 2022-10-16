@@ -26,6 +26,10 @@ export class EcoIndexModule implements ModuleInterface {
     return 'Eco Index';
   }
 
+  get id(): string {
+    return `ecoindex`;
+  }
+
   private options: any;
 
   private browser: any;

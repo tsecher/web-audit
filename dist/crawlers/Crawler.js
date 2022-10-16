@@ -20,6 +20,7 @@ exports.WebAuditCrawlerEvents = {
     onPageCrawledBadStatus: 'crawler__onPageCrawledBadStatus',
     onPageCrawledNoUri: 'crawler__onPageCrawledNoUri',
     onPageCrawledRedirected: 'crawler__onPageCrawledRedirected',
+    onPageContent: 'crawler__onPageContent',
 };
 /**
  * Website crawler.
@@ -151,6 +152,8 @@ class WebAuditCrawler {
         // Parse content.
         try {
             WebAuditConfig_1.WebAuditConfig.logger.message(`Parsing ${parsedUrl}`);
+            eventData.res = res;
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageContent, { crawler: this, data: eventData });
             this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
         }
         catch (error) {

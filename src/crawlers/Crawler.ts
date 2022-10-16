@@ -29,6 +29,7 @@ export const WebAuditCrawlerEvents: any = {
   onPageCrawledBadStatus: 'crawler__onPageCrawledBadStatus',
   onPageCrawledNoUri: 'crawler__onPageCrawledNoUri',
   onPageCrawledRedirected: 'crawler__onPageCrawledRedirected',
+  onPageContent: 'crawler__onPageContent',
 };
 
 /**
@@ -197,6 +198,8 @@ export class WebAuditCrawler {
     // Parse content.
     try {
       Config.logger.message(`Parsing ${parsedUrl}`);
+      eventData.res = res;
+      Event.emit(WebAuditCrawlerEvents.onPageContent, {crawler: this, data: eventData});
       this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
     } catch (error) {
       Config.logger.warning(error);
