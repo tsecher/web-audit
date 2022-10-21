@@ -12,6 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArgs = void 0;
 const EcoIndexModule_1 = require("../modules/ecoindex/EcoIndexModule");
 const LighthouseModule_1 = require("../modules/lighthouse/LighthouseModule");
+const fs = require('fs');
+const path = require('path');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const prompts = require('prompts');
@@ -38,9 +40,9 @@ function getUrlsArgs(required, logger) {
                 .filter((url) => url);
         }
         // Manual
-        if (required && !selected.length) {
+        if (!selected.length) {
             let manual = {};
-            let value;
+            let value = '';
             do {
                 manual = yield prompts([{
                         type: 'text',
@@ -56,7 +58,7 @@ function getUrlsArgs(required, logger) {
                 catch (error) {
                     logger.error(`Bad URL format : ${value}`);
                 }
-            } while (value.trim().length > 0);
+            } while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
         }
         return {
             data: selected,
@@ -103,16 +105,83 @@ function getModules(required, logger) {
     });
 }
 /**
+ * Return urls from args.
+ *
+ * @returns {URL[]}
+ */
+function getFilesArgs(required, logger) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        let urlsData = yield getUrlsArgs(false, logger);
+        if (required && !((_a = urlsData.data) === null || _a === void 0 ? void 0 : _a.length)) {
+            let file = params.file || '';
+            let answer = { file: file };
+            while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
+                answer = yield prompts([{
+                        type: 'text',
+                        name: 'file',
+                        message: `File path (relative to ${process.cwd()})`,
+                    }]);
+                file = path.resolve(process.cwd(), answer.file);
+            }
+            // read urls.
+            const urls = fs.readFileSync(file, 'utf-8')
+                .split('\n')
+                .map((row) => {
+                const cell = row.split(',')[0].trim();
+                const value = cell[0] === '"' ? cell.slice(1, -1) : cell;
+                try {
+                    return new URL(value);
+                }
+                catch (error) {
+                    return false;
+                }
+            })
+                .filter((url) => url);
+            urlsData = {
+                data: urls,
+                shortcut: `--file=${answer.file}`,
+            };
+        }
+        return urlsData;
+    });
+}
+/**
+ * Version.
+ *
+ * @param {boolean} required
+ * @param {LoggerInterface} logger
+ * @returns {Promise<any>}
+ */
+function getVersionArgs(required, logger) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let version = params.v;
+        if (required && !params.v) {
+            const answer = yield prompts([{
+                    type: 'text',
+                    name: 'version',
+                    message: `Version ?`,
+                }]);
+            const date = new Date();
+            version = answer.version.length ? answer.version : `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
+        }
+        return {
+            data: version,
+            shortcut: `--v=${version}`,
+        };
+    });
+}
+/**
  * Return user args.
  *
  * @returns {{urls: URL[]}}
  */
 function getArgs(required, logger) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = {
-            urls: yield getUrlsArgs(required.indexOf('urls') > -1, logger),
-            modules: yield getModules(required.indexOf('modules') > -1, logger),
-        };
+        const args = {};
+        args.urls = required.indexOf('urls') > -1 ? yield getUrlsArgs(required.indexOf('urls') > -1, logger) : yield getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
+        args.version = yield getVersionArgs(required.indexOf('version') > -1, logger);
+        args.modules = yield getModules(required.indexOf('modules') > -1, logger);
         logger.warning(`Shortcut: `);
         logger.warning(Object.values(args).map((value) => value.shortcut).join(' '));
         const result = {};

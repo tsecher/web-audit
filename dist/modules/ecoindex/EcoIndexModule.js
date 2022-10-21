@@ -16,8 +16,9 @@ exports.EcoIndexModule = exports.EcoIndexModuleEvents = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const puppeteer_1 = __importDefault(require("puppeteer"));
+const ModuleInterface_1 = require("../ModuleInterface");
 const WebAuditEvent_1 = require("../../core/WebAuditEvent");
-const Page_1 = require("./Page");
+const analyseURL = require('./Page').analyseURL;
 exports.EcoIndexModuleEvents = {
     createEcoIndexModule: 'ecoindex_module__createEcoIndexModule',
     beforeAnalyse: 'ecoindex_module__beforeAnalyse',
@@ -91,11 +92,13 @@ class EcoIndexModule {
     analyse(url) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: url });
             const browser = yield this.getBrowser();
             const result = yield this.getAnalysisResult(browser, url);
             result.url = url.toString();
             WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: url, browser: this.browser, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: url, result: result });
             this.storeResult(result);
             if (result === null || result === void 0 ? void 0 : result.success) {
                 (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, url.toString());
@@ -104,6 +107,7 @@ class EcoIndexModule {
                 (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.error(`Could not analyse page`);
             }
             WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.afterAnalyse, { module: this, url: url, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: url });
             return (result === null || result === void 0 ? void 0 : result.success) || false;
         });
     }
@@ -159,7 +163,7 @@ class EcoIndexModule {
             yield page.setViewport(this.options.viewport);
             yield page.setCacheEnabled(false);
             WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onNewPage, { module: this, browser: browser, page: page, url: url });
-            const result = yield (0, Page_1.analyseURL)(page, url.toString(), this.options, this.compiledScriptPath);
+            const result = yield analyseURL(page, url.toString(), this.options, this.compiledScriptPath);
             return result;
         });
     }

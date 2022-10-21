@@ -43,7 +43,8 @@ class WebAuditCrawler {
             followSearchParams: true,
             uniqueParams: ['page'],
         };
-        this.parsedUrls = {};
+        this.urlsToParse = {};
+        this.alreadyParsedUrls = [];
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
         // Prepare options.
         this.cleanBaseUrl();
@@ -67,7 +68,7 @@ class WebAuditCrawler {
         WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.beforeCrawl, { crawler: this });
         this.crawler.on('drain', () => {
             if (this.onDone) {
-                this.onDone(this.parsedUrls);
+                this.onDone(this.urlsToParse);
                 WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.afterCrawl, { crawler: this });
             }
         });
@@ -89,7 +90,7 @@ class WebAuditCrawler {
         WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, { crawler: this, urlsList: urls });
         // Add new urls to queue
         if (eligibleUrls.length) {
-            this.addToParsedUrls(eligibleUrls);
+            this.addToParseQueueUrls(eligibleUrls);
             this.crawler.queue(eligibleUrls.map((url) => {
                 return {
                     uri: url.toString(),
@@ -109,6 +110,10 @@ class WebAuditCrawler {
      */
     onPageCrawled(error, res, done, url, origin) {
         var _a, _b, _c;
+        if (this.isAlreadyParsed(url)) {
+            done();
+            return;
+        }
         WebAuditContext_1.WebAuditContext.current.setData('Page crawled').setUrl(url);
         const eventData = { error: error, res: res, url: url, origin: origin };
         WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawled, { crawler: this, data: eventData });
@@ -134,6 +139,11 @@ class WebAuditCrawler {
             return;
         }
         const parsedUrl = new URL(res.request.uri.href);
+        if (this.isAlreadyParsed(parsedUrl)) {
+            done();
+            return;
+        }
+        this.addToParsedUrls(parsedUrl);
         const gotRedirected = parsedUrl.toString() !== url.toString();
         // Store found page.
         const _parsedUrl = gotRedirected ? parsedUrl : null;
@@ -232,17 +242,17 @@ class WebAuditCrawler {
      * @param url
      * @private
      */
-    isAlreadyParsed(url) {
-        return typeof this.parsedUrls[this.normalizeURL(url)] !== 'undefined';
+    isAlreadyAddedToQueue(url) {
+        return typeof this.urlsToParse[this.normalizeURL(url)] !== 'undefined';
     }
     /**
      * Add Url to parsed URLS.
      * @param url
      * @private
      */
-    addToParsedUrl(url) {
-        if (!this.isAlreadyParsed(url)) {
-            this.parsedUrls[this.normalizeURL(url)] = url;
+    addToParseQueueUrl(url) {
+        if (!this.isAlreadyAddedToQueue(url)) {
+            this.urlsToParse[this.normalizeURL(url)] = url;
         }
     }
     /**
@@ -251,8 +261,8 @@ class WebAuditCrawler {
      * @param urls
      * @private
      */
-    addToParsedUrls(urls) {
-        urls.forEach((url) => this.addToParsedUrl(url));
+    addToParseQueueUrls(urls) {
+        urls.forEach((url) => this.addToParseQueueUrl(url));
     }
     /**
      * Return only crawl eligible urls.
@@ -262,15 +272,40 @@ class WebAuditCrawler {
      */
     getEligibleUrls(urls) {
         let eligibleUrls = urls.filter((url) => {
-            return (!this.isAlreadyParsed(url) &&
+            return (!this.isAlreadyAddedToQueue(url) &&
+                !this.isAlreadyParsed(url) &&
                 this.isDomainUrl(url) &&
                 this.isHtmlUrl(url) &&
                 this.isUserEligible(url));
         });
         if (eligibleUrls.length > 1) {
+            eligibleUrls = eligibleUrls
+                .map((url) => new URL(`${url.protocol}//${this.normalizeURL(url)}`))
+                .filter((url) => url);
             eligibleUrls = this.uniqueUrls(eligibleUrls);
         }
         return eligibleUrls;
+    }
+    /**
+     * Test if url is already parsed.
+     *
+     * @param {URL} url
+     * @returns {boolean}
+     * @private
+     */
+    isAlreadyParsed(url) {
+        return this.alreadyParsedUrls.indexOf(this.normalizeURL(url)) > -1;
+    }
+    /**
+     * Add url to already parsed.
+     *
+     * @param {URL} url
+     * @private
+     */
+    addToParsedUrls(url) {
+        if (!this.isAlreadyParsed(url)) {
+            this.alreadyParsedUrls.push(this.normalizeURL(url));
+        }
     }
     /**
      * Return true if url is eligible from user callback.

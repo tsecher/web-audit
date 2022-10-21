@@ -50,7 +50,9 @@ export class WebAuditCrawler {
 
   private options: WebAuditCrawlerType;
 
-  private parsedUrls: any = {};
+  private urlsToParse: any = {};
+
+  private alreadyParsedUrls: string[] = [];
 
   private crawler?: any;
 
@@ -96,7 +98,7 @@ export class WebAuditCrawler {
     Event.emit(WebAuditCrawlerEvents.beforeCrawl, {crawler: this});
     this.crawler.on('drain', () => {
       if (this.onDone) {
-        this.onDone(this.parsedUrls);
+        this.onDone(this.urlsToParse);
         Event.emit(WebAuditCrawlerEvents.afterCrawl, {crawler: this});
       }
     });
@@ -123,7 +125,7 @@ export class WebAuditCrawler {
 
     // Add new urls to queue
     if (eligibleUrls.length) {
-      this.addToParsedUrls(eligibleUrls);
+      this.addToParseQueueUrls(eligibleUrls);
 
       this.crawler.queue(
         eligibleUrls.map((url) => {
@@ -146,6 +148,11 @@ export class WebAuditCrawler {
    * @private
    */
   private onPageCrawled(error: any, res: any, done: Function, url: URL, origin?: URL) {
+    if (this.isAlreadyParsed(url)) {
+      done();
+      return;
+    }
+
     Context.current.setData('Page crawled').setUrl(url);
     const eventData: any = {error: error, res: res, url: url, origin: origin};
 
@@ -176,6 +183,11 @@ export class WebAuditCrawler {
     }
 
     const parsedUrl: URL = new URL(res.request.uri.href);
+    if (this.isAlreadyParsed(parsedUrl)) {
+      done();
+      return;
+    }
+    this.addToParsedUrls(parsedUrl);
     const gotRedirected: boolean = parsedUrl.toString() !== url.toString();
 
     // Store found page.
@@ -257,7 +269,6 @@ export class WebAuditCrawler {
     }
   }
 
-
   /**
    * Parse only domain url.
    *
@@ -288,8 +299,8 @@ export class WebAuditCrawler {
    * @param url
    * @private
    */
-  private isAlreadyParsed(url: URL) {
-    return typeof this.parsedUrls[this.normalizeURL(url)] !== 'undefined';
+  private isAlreadyAddedToQueue(url: URL) {
+    return typeof this.urlsToParse[this.normalizeURL(url)] !== 'undefined';
   }
 
   /**
@@ -297,9 +308,9 @@ export class WebAuditCrawler {
    * @param url
    * @private
    */
-  private addToParsedUrl(url: URL) {
-    if (!this.isAlreadyParsed(url)) {
-      this.parsedUrls[this.normalizeURL(url)] = url;
+  private addToParseQueueUrl(url: URL) {
+    if (!this.isAlreadyAddedToQueue(url)) {
+      this.urlsToParse[this.normalizeURL(url)] = url;
     }
   }
 
@@ -309,8 +320,8 @@ export class WebAuditCrawler {
    * @param urls
    * @private
    */
-  private addToParsedUrls(urls: URL[]) {
-    urls.forEach((url) => this.addToParsedUrl(url));
+  private addToParseQueueUrls(urls: URL[]) {
+    urls.forEach((url) => this.addToParseQueueUrl(url));
   }
 
   /**
@@ -320,8 +331,9 @@ export class WebAuditCrawler {
    * @private
    */
   private getEligibleUrls(urls: URL[]) {
-    let eligibleUrls = urls.filter((url) => {
+    let eligibleUrls: URL[] = urls.filter((url) => {
       return (
+        !this.isAlreadyAddedToQueue(url) &&
         !this.isAlreadyParsed(url) &&
         this.isDomainUrl(url) &&
         this.isHtmlUrl(url) &&
@@ -330,10 +342,36 @@ export class WebAuditCrawler {
     });
 
     if (eligibleUrls.length > 1) {
+      eligibleUrls = eligibleUrls
+        .map((url: URL) => new URL(`${url.protocol}//${this.normalizeURL(url)}`))
+        .filter((url: URL) => url);
       eligibleUrls = this.uniqueUrls(eligibleUrls);
     }
 
     return eligibleUrls;
+  }
+
+  /**
+   * Test if url is already parsed.
+   *
+   * @param {URL} url
+   * @returns {boolean}
+   * @private
+   */
+  private isAlreadyParsed(url: URL) {
+    return this.alreadyParsedUrls.indexOf(this.normalizeURL(url)) > -1;
+  }
+
+  /**
+   * Add url to already parsed.
+   *
+   * @param {URL} url
+   * @private
+   */
+  private addToParsedUrls(url: URL) {
+    if (!this.isAlreadyParsed(url)) {
+      this.alreadyParsedUrls.push(this.normalizeURL(url));
+    }
   }
 
   /**

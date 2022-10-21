@@ -1,6 +1,13 @@
 import {WebAuditConfigClass} from '../core/WebAuditConfig';
 import {WebAuditContextClass} from '../core/WebAuditContext';
 
+
+export const ModuleEvents = {
+  beforeAnalyse: 'beforeAnalyse',
+  afterAnalyse: 'afterAnalyse',
+  onAnalyseResult: 'onAnalyseResult',
+};
+
 export interface ModuleInterface {
 
   get name(): string;

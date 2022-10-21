@@ -3,6 +3,9 @@ import {ModuleInterface} from '../modules/ModuleInterface';
 import {EcoIndexModule} from '../modules/ecoindex/EcoIndexModule';
 import {LighthouseModule} from '../modules/lighthouse/LighthouseModule';
 
+const fs = require('fs');
+const path = require('path');
+
 const yargs = require('yargs/yargs');
 const {hideBin} = require('yargs/helpers');
 const prompts = require('prompts');
@@ -30,9 +33,9 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
   }
 
   // Manual
-  if (required && !selected.length) {
+  if (!selected.length) {
     let manual: any = {};
-    let value: string;
+    let value = '';
 
     do {
       manual = await prompts([{
@@ -52,7 +55,7 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
       }
 
     }
-    while (value.trim().length > 0);
+    while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
   }
 
   return {
@@ -60,7 +63,6 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
     shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
   };
 }
-
 
 /**
  * Return modules;
@@ -103,6 +105,81 @@ async function getModules(required: boolean, logger: LoggerInterface): Promise<a
   };
 }
 
+
+/**
+ * Return urls from args.
+ *
+ * @returns {URL[]}
+ */
+async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise<any> {
+  let urlsData: any = await getUrlsArgs(false, logger);
+
+  if (required && !urlsData.data?.length) {
+
+    let file = params.file || '';
+    let answer: any = {file: file};
+    while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
+      answer = await prompts([{
+        type: 'text',
+        name: 'file',
+        message: `File path (relative to ${process.cwd()})`,
+      }]);
+
+      file = path.resolve(process.cwd(), answer.file);
+    }
+
+    // read urls.
+    const urls: URL[] = fs.readFileSync(file, 'utf-8')
+      .split('\n')
+      .map((row: string) => {
+        const cell = row.split(',')[0].trim();
+        const value: string = cell[0] === '"' ? cell.slice(1, -1) : cell;
+
+        try {
+          return new URL(value);
+        } catch (error) {
+          return false;
+        }
+      })
+      .filter((url: URL) => url);
+
+    urlsData = {
+      data: urls,
+      shortcut: `--file=${answer.file}`,
+    };
+  }
+
+  return urlsData;
+}
+
+/**
+ * Version.
+ *
+ * @param {boolean} required
+ * @param {LoggerInterface} logger
+ * @returns {Promise<any>}
+ */
+async function getVersionArgs(required: boolean, logger: LoggerInterface): Promise<any> {
+  let version = params.v;
+
+  if (required && !params.v) {
+
+    const answer = await prompts([{
+      type: 'text',
+      name: 'version',
+      message: `Version ?`,
+    }]);
+
+    const date = new Date();
+    version = answer.version.length ? answer.version : `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
+  }
+
+  return {
+    data: version,
+    shortcut: `--v=${version}`,
+  };
+}
+
 /**
  * Return user args.
  *
@@ -110,10 +187,11 @@ async function getModules(required: boolean, logger: LoggerInterface): Promise<a
  */
 export async function getArgs(required: string[], logger: LoggerInterface) {
 
-  const args: any = {
-    urls: await getUrlsArgs(required.indexOf('urls') > -1, logger),
-    modules: await getModules(required.indexOf('modules') > -1, logger),
-  };
+  const args: any = {};
+
+  args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
+  args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
+  args.modules = await getModules(required.indexOf('modules') > -1, logger);
 
   logger.warning(`Shortcut: `);
   logger.warning(Object.values(args).map((value: any) => value.shortcut).join(' '));

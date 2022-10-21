@@ -6,7 +6,7 @@ import CSVStorage from '../storage/csv/CSVStorage';
 import {getArgs} from './args';
 
 function doCrawl(args: any) {
-  const {urls} = args;
+  const {urls, version} = args;
 
 
   /** ======================================================
@@ -27,27 +27,24 @@ function doCrawl(args: any) {
   /** ======================================================
    ||                  Context                      ||
    =======================================================*/
-// Context
-  const date = new Date();
-  const version = `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
+  // Context
   Context.current.setVersion(version);
 
 
   /** ======================================================
    ||                  Storage                      ||
    =======================================================*/
-// Storage.
+  // Storage.
   Config.setStorage(new CSVStorage(`./analyses/${urls[0].hostname}`));
 
 
   /** ======================================================
    ||                  Crawl                      ||
    =======================================================*/
-// const result = WebAudit.Core.crawlWebsite(new URL('https://www.google.com/'));
   const result = Core.crawlWebsite(urls[0], options);
 
 }
 
-getArgs(['urls'], Config.logger)
+getArgs(['urls', 'version'], Config.logger)
   .then((args: any) => doCrawl(args))
   .catch((error) => Config.logger.exit(error));

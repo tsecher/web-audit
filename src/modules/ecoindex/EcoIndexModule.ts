@@ -3,12 +3,12 @@ import path from 'path';
 
 import puppeteer from 'puppeteer';
 
-import {ModuleInterface} from '../ModuleInterface';
+import {ModuleEvents, ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
 
-import {analyseURL} from './Page';
+const analyseURL: any = require('./Page').analyseURL;
 
 export const EcoIndexModuleEvents: any = {
   createEcoIndexModule: 'ecoindex_module__createEcoIndexModule',
@@ -104,13 +104,15 @@ export class EcoIndexModule implements ModuleInterface {
    * {@inheritdoc}
    */
   async analyse(url: URL): Promise<any> {
-    Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this});
+    Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: url});
+    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: url});
 
     const browser = await this.getBrowser();
 
     const result: any = await this.getAnalysisResult(browser, url);
     result.url = url.toString();
     Event.emit(EcoIndexModuleEvents.onResult, {module: this, url: url, browser: this.browser, result: result});
+    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: url, result: result});
 
     this.storeResult(result);
 
@@ -121,6 +123,7 @@ export class EcoIndexModule implements ModuleInterface {
     }
 
     Event.emit(EcoIndexModuleEvents.afterAnalyse, {module: this, url: url, result: result});
+    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: url});
 
     return result?.success || false;
   }

@@ -6,7 +6,7 @@ import CSVStorage from '../storage/csv/CSVStorage';
 import {getArgs} from './args';
 
 function doAnalyse(args: any) {
-  const {urls, modules} = args;
+  const {urls, modules, version} = args;
 
   /** ======================================================
    ||                  OPTIONS                      ||
@@ -26,9 +26,7 @@ function doAnalyse(args: any) {
   /** ======================================================
    ||                  Context                      ||
    =======================================================*/
-// Context
-  const date = new Date();
-  const version = `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
+  // Context
   Context.current.setVersion(version);
 
 
@@ -51,6 +49,6 @@ function doAnalyse(args: any) {
 }
 
 // Get args.
-getArgs(['urls', 'modules'], Config.logger)
+getArgs(['urlsFiles', 'modules', 'version'], Config.logger)
   .then((args) => doAnalyse(args))
   .catch((error) => Config.logger.exit(error));

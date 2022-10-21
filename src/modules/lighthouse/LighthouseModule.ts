@@ -1,4 +1,4 @@
-import {ModuleInterface} from '../ModuleInterface';
+import {ModuleEvents, ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
@@ -70,7 +70,8 @@ export class LighthouseModule implements ModuleInterface {
    * {@inheritdoc}
    */
   async analyse(url: URL): Promise<any> {
-    Event.emit(LighthouseModuleEvents.beforeAnalyse, {module: this});
+    Event.emit(LighthouseModuleEvents.beforeAnalyse, {module: this, url: url});
+    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: url});
 
     const browser = await this.getBrowser();
 
@@ -97,6 +98,7 @@ export class LighthouseModule implements ModuleInterface {
     });
 
     Event.emit(LighthouseModuleEvents.onResult, {module: this, url: url, browser: browser, result: result});
+    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: url, result: result});
 
     if (report?.performance) {
       const logs = Object.keys(report)
@@ -112,6 +114,7 @@ export class LighthouseModule implements ModuleInterface {
     this.config?.storage?.add('lighthouse', this.context, report);
 
     Event.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: url});
+    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: url});
 
     return true;
   }

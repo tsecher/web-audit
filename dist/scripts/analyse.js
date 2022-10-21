@@ -9,7 +9,7 @@ const WebAuditConfig_1 = require("../core/WebAuditConfig");
 const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
 const args_1 = require("./args");
 function doAnalyse(args) {
-    const { urls, modules } = args;
+    const { urls, modules, version } = args;
     /** ======================================================
      ||                  OPTIONS                      ||
      =======================================================*/
@@ -27,8 +27,6 @@ function doAnalyse(args) {
      ||                  Context                      ||
      =======================================================*/
     // Context
-    const date = new Date();
-    const version = `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
     WebAuditContext_1.WebAuditContext.current.setVersion(version);
     /** ======================================================
      ||                  Storage                      ||
@@ -46,6 +44,6 @@ function doAnalyse(args) {
     index_1.Core.analyseUrls(urls, modules).then(success).catch(error);
 }
 // Get args.
-(0, args_1.getArgs)(['urls', 'modules'], WebAuditConfig_1.WebAuditConfig.logger)
+(0, args_1.getArgs)(['urlsFiles', 'modules', 'version'], WebAuditConfig_1.WebAuditConfig.logger)
     .then((args) => doAnalyse(args))
     .catch((error) => WebAuditConfig_1.WebAuditConfig.logger.exit(error));

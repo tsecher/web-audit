@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LighthouseModule = exports.LighthouseModuleEvents = void 0;
+const ModuleInterface_1 = require("../ModuleInterface");
 const WebAuditEvent_1 = require("../../core/WebAuditEvent");
 const ChromeLauncher = require('chrome-launcher');
 const lighthouse = require('lighthouse');
@@ -60,7 +61,8 @@ class LighthouseModule {
     analyse(url) {
         var _a, _b, _c, _d, _e;
         return __awaiter(this, void 0, void 0, function* () {
-            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.beforeAnalyse, { module: this });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.beforeAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: url });
             const browser = yield this.getBrowser();
             const options = {
                 output: 'json',
@@ -83,6 +85,7 @@ class LighthouseModule {
                 }
             });
             WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.onResult, { module: this, url: url, browser: browser, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: url, result: result });
             if (report === null || report === void 0 ? void 0 : report.performance) {
                 const logs = Object.keys(report)
                     .map((key) => `${key} : ${report[key]}`);
@@ -95,6 +98,7 @@ class LighthouseModule {
             report.url = url.toString();
             (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.storage) === null || _e === void 0 ? void 0 : _e.add('lighthouse', this.context, report);
             WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: url });
             return true;
         });
     }
