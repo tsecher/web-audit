@@ -1,8 +1,9 @@
-import {ModuleInterface} from '../modules/ModuleInterface';
+import {ModuleEvents, ModuleInterface} from '../modules/ModuleInterface';
 import {WebAuditCrawler} from '../crawlers/Crawler';
 
 import {WebAuditContext as Context} from './WebAuditContext';
 import {WebAuditConfig} from './WebAuditConfig';
+import {WebAuditEvent as Event} from "./WebAuditEvent";
 
 /**
  * Web Audit core main entry point for web audition.
@@ -46,11 +47,13 @@ export class WebAuditCoreClass {
 
     // Parse urls.
     for (const url of urls) {
+      Event.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
       // TODO : optimize async.
       for (const module of modules) {
         Context.current.setData(module?.name);
         await module.analyse(url);
       }
+      Event.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
     }
 
     // Close modules.

@@ -3,6 +3,8 @@ import {WebAuditContextClass} from '../core/WebAuditContext';
 
 
 export const ModuleEvents = {
+  beforeUrlProcess: 'beforeURLProcess',
+  afterUrlProcess: 'afterURLProcess',
   beforeAnalyse: 'beforeAnalyse',
   afterAnalyse: 'afterAnalyse',
   onAnalyseResult: 'onAnalyseResult',
