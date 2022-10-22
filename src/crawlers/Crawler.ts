@@ -1,6 +1,7 @@
 import {WebAuditConfig as Config} from '../core/WebAuditConfig';
 import {WebAuditContext as Context} from '../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../core/WebAuditEvent';
+import {UrlWrapper} from '../core/UrlWrapper';
 
 const Crawler = require('crawler');
 
@@ -37,6 +38,8 @@ export const WebAuditCrawlerEvents: any = {
  */
 export class WebAuditCrawler {
 
+  public baseUrlWrapper: UrlWrapper;
+
   protected defaultOptions: any = {
     crawlerOptions: {
       maxConnections: 10,
@@ -63,17 +66,19 @@ export class WebAuditCrawler {
    *
    * @param options
    */
-  constructor(options?: WebAuditCrawlerType) {
+  constructor(baseUrlWrapper: UrlWrapper, options?: WebAuditCrawlerType) {
     this.options = {
       ...this.defaultOptions,
       ...options,
     };
 
+    this.baseUrlWrapper = baseUrlWrapper;
+
     // Prepare options.
     this.cleanBaseUrl();
 
     // Emit.
-    Event.emit(WebAuditCrawlerEvents.createCrawl, {crawler: this});
+    Event.emit(WebAuditCrawlerEvents.createCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
 
     // Prepare storage.
     Config.storage?.installStore(
@@ -95,11 +100,11 @@ export class WebAuditCrawler {
   crawl() {
     // Define crawler.
     this.crawler = new Crawler(this.options.crawlerOptions);
-    Event.emit(WebAuditCrawlerEvents.beforeCrawl, {crawler: this});
+    Event.emit(WebAuditCrawlerEvents.beforeCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
     this.crawler.on('drain', () => {
       if (this.onDone) {
         this.onDone(this.urlsToParse);
-        Event.emit(WebAuditCrawlerEvents.afterCrawl, {crawler: this});
+        Event.emit(WebAuditCrawlerEvents.afterCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
       }
     });
 
@@ -121,7 +126,7 @@ export class WebAuditCrawler {
     // Filter eligible urls (html, domain and not already crawled).
     const eligibleUrls = this.getEligibleUrls(urls);
 
-    Event.emit(WebAuditCrawlerEvents.onCrawlUrls, {crawler: this, urlsList: urls});
+    Event.emit(WebAuditCrawlerEvents.onCrawlUrls, {crawler: this, urlsList: urls, baseUrl: this.baseUrlWrapper});
 
     // Add new urls to queue
     if (eligibleUrls.length) {
@@ -156,12 +161,12 @@ export class WebAuditCrawler {
     Context.current.setData('Page crawled').setUrl(url);
     const eventData: any = {error: error, res: res, url: url, origin: origin};
 
-    Event.emit(WebAuditCrawlerEvents.onPageCrawled, {crawler: this, data: eventData});
+    Event.emit(WebAuditCrawlerEvents.onPageCrawled, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
 
     // Error.
     if (error) {
       Config.logger.error(error);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledError, {crawler: this, data: eventData});
+      Event.emit(WebAuditCrawlerEvents.onPageCrawledError, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
       done();
       return;
     }
@@ -169,7 +174,7 @@ export class WebAuditCrawler {
     // Status.
     if (this.options.allowedStatus && this.options.allowedStatus?.indexOf(res.statusCode) < 0) {
       Config.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledBadStatus, {crawler: this, data: eventData});
+      Event.emit(WebAuditCrawlerEvents.onPageCrawledBadStatus, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
       done();
       return;
     }
@@ -177,7 +182,7 @@ export class WebAuditCrawler {
     // No returned uri.
     if (!res.request?.uri.href) {
       Config.logger.error(`No uri`);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledNoUri, {crawler: this, data: eventData});
+      Event.emit(WebAuditCrawlerEvents.onPageCrawledNoUri, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
       done();
       return;
     }
@@ -204,14 +209,14 @@ export class WebAuditCrawler {
     // Redirection
     if (gotRedirected) {
       Config.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, {crawler: this, data: eventData});
+      Event.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
     }
 
     // Parse content.
     try {
       Config.logger.message(`Parsing ${parsedUrl}`);
       eventData.res = res;
-      Event.emit(WebAuditCrawlerEvents.onPageContent, {crawler: this, data: eventData});
+      Event.emit(WebAuditCrawlerEvents.onPageContent, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
       this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
     } catch (error) {
       Config.logger.warning(error);
@@ -381,7 +386,7 @@ export class WebAuditCrawler {
    * @private
    */
   private isUserEligible(url: URL) {
-    return this.options.isEligibleUrl ? this.options.isEligibleUrl(url) : true;
+    return this.options.isEligibleUrl ? this.options.isEligibleUrl(url, this) : true;
   }
 
   /**

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../index");
 const WebAuditContext_1 = require("../core/WebAuditContext");
 const WebAuditConfig_1 = require("../core/WebAuditConfig");
+const UrlWrapper_1 = require("../core/UrlWrapper");
 const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
 const args_1 = require("./args");
 function doCrawl(args) {
@@ -15,7 +16,7 @@ function doCrawl(args) {
      =======================================================*/
     const options = {
         // 'followSearchParams': false,
-        isEligibleUrl: (url) => {
+        isEligibleUrl: (url, crawler) => {
             const paramsCount = Array.from(url.searchParams).length;
             if (paramsCount > 0) {
                 return paramsCount === 1 && url.searchParams.has('page');
@@ -36,7 +37,7 @@ function doCrawl(args) {
     /** ======================================================
      ||                  Crawl                      ||
      =======================================================*/
-    const result = index_1.Core.crawlWebsite(urls[0], options);
+    const result = index_1.Core.crawlWebsite(new UrlWrapper_1.UrlWrapper(urls[0]), options);
 }
 (0, args_1.getArgs)(['urls', 'version'], WebAuditConfig_1.WebAuditConfig.logger)
     .then((args) => doCrawl(args))

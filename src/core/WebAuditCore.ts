@@ -11,23 +11,19 @@ import {UrlWrapper} from './UrlWrapper';
  */
 export class WebAuditCoreClass {
 
-  events: any = {
-    beforeCrawlWebsite: 'core_beforeCrawlWebsite',
-  };
-
   /**
    * Craw website.
    *
    * @param baseUrl
    * @param options
    */
-  public crawlWebsite(baseUrl: URL, options: any = {}): Promise<any> {
+  public crawlWebsite(baseUrlWrapper: UrlWrapper, options: any = {}): Promise<any> {
     // Define context.
-    Context.current.setId('Crawl').setUrl(baseUrl);
+    Context.current.setId('Crawl').setUrl(baseUrlWrapper.url);
 
     // Crawl domain.
-    options.baseUrl = baseUrl;
-    const crawler = new WebAuditCrawler(options);
+    options.baseUrl = baseUrlWrapper.url;
+    const crawler = new WebAuditCrawler(baseUrlWrapper, options);
     return crawler.crawl();
   }
 

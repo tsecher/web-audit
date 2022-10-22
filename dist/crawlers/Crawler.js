@@ -31,7 +31,7 @@ class WebAuditCrawler {
      *
      * @param options
      */
-    constructor(options) {
+    constructor(baseUrlWrapper, options) {
         var _a;
         this.defaultOptions = {
             crawlerOptions: {
@@ -46,10 +46,11 @@ class WebAuditCrawler {
         this.urlsToParse = {};
         this.alreadyParsedUrls = [];
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
+        this.baseUrlWrapper = baseUrlWrapper;
         // Prepare options.
         this.cleanBaseUrl();
         // Emit.
-        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.createCrawl, { crawler: this });
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.createCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
         // Prepare storage.
         (_a = WebAuditConfig_1.WebAuditConfig.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', WebAuditContext_1.WebAuditContext.current, {
             url: 'Referenced url',
@@ -65,11 +66,11 @@ class WebAuditCrawler {
     crawl() {
         // Define crawler.
         this.crawler = new Crawler(this.options.crawlerOptions);
-        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.beforeCrawl, { crawler: this });
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.beforeCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
         this.crawler.on('drain', () => {
             if (this.onDone) {
                 this.onDone(this.urlsToParse);
-                WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.afterCrawl, { crawler: this });
+                WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.afterCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
             }
         });
         this.crawlUrls([this.options.baseUrl]);
@@ -87,7 +88,7 @@ class WebAuditCrawler {
     crawlUrls(urls, origin) {
         // Filter eligible urls (html, domain and not already crawled).
         const eligibleUrls = this.getEligibleUrls(urls);
-        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, { crawler: this, urlsList: urls });
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, { crawler: this, urlsList: urls, baseUrl: this.baseUrlWrapper });
         // Add new urls to queue
         if (eligibleUrls.length) {
             this.addToParseQueueUrls(eligibleUrls);
@@ -116,25 +117,25 @@ class WebAuditCrawler {
         }
         WebAuditContext_1.WebAuditContext.current.setData('Page crawled').setUrl(url);
         const eventData = { error: error, res: res, url: url, origin: origin };
-        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawled, { crawler: this, data: eventData });
+        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawled, { crawler: this, data: eventData, baseUrl: this.baseUrlWrapper });
         // Error.
         if (error) {
             WebAuditConfig_1.WebAuditConfig.logger.error(error);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledError, { crawler: this, data: eventData });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledError, { crawler: this, data: eventData, baseUrl: this.baseUrlWrapper });
             done();
             return;
         }
         // Status.
         if (this.options.allowedStatus && ((_a = this.options.allowedStatus) === null || _a === void 0 ? void 0 : _a.indexOf(res.statusCode)) < 0) {
             WebAuditConfig_1.WebAuditConfig.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledBadStatus, { crawler: this, data: eventData });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledBadStatus, { crawler: this, data: eventData, baseUrl: this.baseUrlWrapper });
             done();
             return;
         }
         // No returned uri.
         if (!((_b = res.request) === null || _b === void 0 ? void 0 : _b.uri.href)) {
             WebAuditConfig_1.WebAuditConfig.logger.error(`No uri`);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledNoUri, { crawler: this, data: eventData });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledNoUri, { crawler: this, data: eventData, baseUrl: this.baseUrlWrapper });
             done();
             return;
         }
@@ -157,13 +158,13 @@ class WebAuditCrawler {
         // Redirection
         if (gotRedirected) {
             WebAuditConfig_1.WebAuditConfig.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledRedirected, { crawler: this, data: eventData });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledRedirected, { crawler: this, data: eventData, baseUrl: this.baseUrlWrapper });
         }
         // Parse content.
         try {
             WebAuditConfig_1.WebAuditConfig.logger.message(`Parsing ${parsedUrl}`);
             eventData.res = res;
-            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageContent, { crawler: this, data: eventData });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageContent, { crawler: this, data: eventData, baseUrl: this.baseUrlWrapper });
             this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
         }
         catch (error) {
@@ -314,7 +315,7 @@ class WebAuditCrawler {
      * @private
      */
     isUserEligible(url) {
-        return this.options.isEligibleUrl ? this.options.isEligibleUrl(url) : true;
+        return this.options.isEligibleUrl ? this.options.isEligibleUrl(url, this) : true;
     }
     /**
      * To readable urls.
