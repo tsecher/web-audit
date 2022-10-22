@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModuleEvents = void 0;
 exports.ModuleEvents = {
+    beforeUrlProcess: 'beforeURLProcess',
+    afterUrlProcess: 'afterURLProcess',
     beforeAnalyse: 'beforeAnalyse',
     afterAnalyse: 'afterAnalyse',
     onAnalyseResult: 'onAnalyseResult',

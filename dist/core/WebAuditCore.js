@@ -10,9 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebAuditCoreClass = void 0;
+const ModuleInterface_1 = require("../modules/ModuleInterface");
 const Crawler_1 = require("../crawlers/Crawler");
 const WebAuditContext_1 = require("./WebAuditContext");
 const WebAuditConfig_1 = require("./WebAuditConfig");
+const WebAuditEvent_1 = require("./WebAuditEvent");
 /**
  * Web Audit core main entry point for web audition.
  */
@@ -52,11 +54,13 @@ class WebAuditCoreClass {
             }
             // Parse urls.
             for (const url of urls) {
+                WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeUrlProcess, { module: this, url: url });
                 // TODO : optimize async.
                 for (const module of modules) {
                     WebAuditContext_1.WebAuditContext.current.setData(module === null || module === void 0 ? void 0 : module.name);
                     yield module.analyse(url);
                 }
+                WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterUrlProcess, { module: this, url: url });
             }
             // Close modules.
             for (const module of modules) {
