@@ -2,6 +2,7 @@ import {ModuleEvents, ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
+import {UrlWrapper} from '../../core/UrlWrapper';
 
 const ChromeLauncher = require('chrome-launcher');
 const lighthouse = require('lighthouse');
@@ -69,9 +70,9 @@ export class LighthouseModule implements ModuleInterface {
   /**
    * {@inheritdoc}
    */
-  async analyse(url: URL): Promise<any> {
-    Event.emit(LighthouseModuleEvents.beforeAnalyse, {module: this, url: url});
-    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: url});
+  async analyse(urlWrapper: UrlWrapper): Promise<any> {
+    Event.emit(LighthouseModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
     const browser = await this.getBrowser();
 
@@ -81,7 +82,7 @@ export class LighthouseModule implements ModuleInterface {
       port: browser.port,
     };
 
-    const runnerResult = await lighthouse(url, options, {
+    const runnerResult = await lighthouse(urlWrapper.url, options, {
       extends: 'lighthouse:default',
     });
 
@@ -97,24 +98,24 @@ export class LighthouseModule implements ModuleInterface {
       }
     });
 
-    Event.emit(LighthouseModuleEvents.onResult, {module: this, url: url, browser: browser, result: result});
-    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: url, result: result});
+    Event.emit(LighthouseModuleEvents.onResult, {module: this, url: urlWrapper, browser: browser, result: result});
+    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
 
     if (report?.performance) {
       const logs = Object.keys(report)
         .map((key) => `${key} : ${report[key]}`);
-      this.config?.logger.success(`Lighthouse : ${logs.join(' | ')}`, url.toString());
+      this.config?.logger.success(`Lighthouse : ${logs.join(' | ')}`, urlWrapper.url.toString());
     } else {
       this.config?.logger.error(`Could not analyse page`);
       this.config?.logger.error(report);
 
     }
 
-    report.url = url.toString();
+    report.url = urlWrapper.url.toString();
     this.config?.storage?.add('lighthouse', this.context, report);
 
-    Event.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: url});
-    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: url});
+    Event.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
 
     return true;
   }

@@ -1,5 +1,6 @@
 import {WebAuditConfigClass} from '../core/WebAuditConfig';
 import {WebAuditContextClass} from '../core/WebAuditContext';
+import {UrlWrapper} from '../core/UrlWrapper';
 
 
 export const ModuleEvents = {
@@ -30,7 +31,7 @@ export interface ModuleInterface {
    * @param url
    * @param parser
    */
-  analyse(url: URL): void;
+  analyse(url: UrlWrapper): void;
 
   /**
    * Finish process.

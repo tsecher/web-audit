@@ -89,25 +89,25 @@ class EcoIndexModule {
     /**
      * {@inheritdoc}
      */
-    analyse(url) {
+    analyse(urlWrapper) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: url });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             const browser = yield this.getBrowser();
-            const result = yield this.getAnalysisResult(browser, url);
-            result.url = url.toString();
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: url, browser: this.browser, result: result });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: url, result: result });
+            const result = yield this.getAnalysisResult(browser, urlWrapper);
+            result.url = urlWrapper.url.toString();
+            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: urlWrapper, browser: this.browser, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper, result: result });
             this.storeResult(result);
             if (result === null || result === void 0 ? void 0 : result.success) {
-                (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, url.toString());
+                (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, urlWrapper.url.toString());
             }
             else {
                 (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.error(`Could not analyse page`);
             }
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.afterAnalyse, { module: this, url: url, result: result });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.afterAnalyse, { module: this, url: urlWrapper, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
             return (result === null || result === void 0 ? void 0 : result.success) || false;
         });
     }
@@ -152,18 +152,18 @@ class EcoIndexModule {
      * Get page.
      *
      * @param browser
-     * @param {URL} url
+     * @param {URL} urlWrapper
      * @returns {Promise<void>}
      * @private
      */
-    getAnalysisResult(browser, url) {
+    getAnalysisResult(browser, urlWrapper) {
         return __awaiter(this, void 0, void 0, function* () {
             // Init page configuration.
             const page = yield browser.newPage();
             yield page.setViewport(this.options.viewport);
             yield page.setCacheEnabled(false);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onNewPage, { module: this, browser: browser, page: page, url: url });
-            const result = yield analyseURL(page, url.toString(), this.options, this.compiledScriptPath);
+            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onNewPage, { module: this, browser: browser, page: page, url: urlWrapper });
+            const result = yield analyseURL(page, urlWrapper.url.toString(), this.options, this.compiledScriptPath);
             return result;
         });
     }

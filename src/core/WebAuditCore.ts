@@ -3,7 +3,8 @@ import {WebAuditCrawler} from '../crawlers/Crawler';
 
 import {WebAuditContext as Context} from './WebAuditContext';
 import {WebAuditConfig} from './WebAuditConfig';
-import {WebAuditEvent as Event} from "./WebAuditEvent";
+import {WebAuditEvent as Event} from './WebAuditEvent';
+import {UrlWrapper} from './UrlWrapper';
 
 /**
  * Web Audit core main entry point for web audition.
@@ -36,7 +37,7 @@ export class WebAuditCoreClass {
    * @param urls
    * @param modules
    */
-  public async analyseUrls(urls: URL[], modules: ModuleInterface[]) {
+  public async analyseUrls(urls: UrlWrapper[], modules: ModuleInterface[]) {
     // Define context.
     Context.current.setId('Analyse').setUrl().setData();
 

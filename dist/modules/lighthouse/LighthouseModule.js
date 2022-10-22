@@ -58,18 +58,18 @@ class LighthouseModule {
     /**
      * {@inheritdoc}
      */
-    analyse(url) {
+    analyse(urlWrapper) {
         var _a, _b, _c, _d, _e;
         return __awaiter(this, void 0, void 0, function* () {
-            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.beforeAnalyse, { module: this, url: url });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             const browser = yield this.getBrowser();
             const options = {
                 output: 'json',
                 onlyCategories: ['performance', 'seo', 'best-practices', 'accessibility'],
                 port: browser.port,
             };
-            const runnerResult = yield lighthouse(url, options, {
+            const runnerResult = yield lighthouse(urlWrapper.url, options, {
                 extends: 'lighthouse:default',
             });
             const result = JSON.parse(runnerResult.report);
@@ -84,21 +84,21 @@ class LighthouseModule {
                     (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.error(error);
                 }
             });
-            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.onResult, { module: this, url: url, browser: browser, result: result });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: url, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.onResult, { module: this, url: urlWrapper, browser: browser, result: result });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
             if (report === null || report === void 0 ? void 0 : report.performance) {
                 const logs = Object.keys(report)
                     .map((key) => `${key} : ${report[key]}`);
-                (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.success(`Lighthouse : ${logs.join(' | ')}`, url.toString());
+                (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.success(`Lighthouse : ${logs.join(' | ')}`, urlWrapper.url.toString());
             }
             else {
                 (_b = this.config) === null || _b === void 0 ? void 0 : _b.logger.error(`Could not analyse page`);
                 (_c = this.config) === null || _c === void 0 ? void 0 : _c.logger.error(report);
             }
-            report.url = url.toString();
+            report.url = urlWrapper.url.toString();
             (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.storage) === null || _e === void 0 ? void 0 : _e.add('lighthouse', this.context, report);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: url });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: url });
+            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
+            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
             return true;
         });
     }

@@ -7,6 +7,7 @@ import {ModuleEvents, ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
+import {UrlWrapper} from '../../core/UrlWrapper';
 
 const analyseURL: any = require('./Page').analyseURL;
 
@@ -103,27 +104,27 @@ export class EcoIndexModule implements ModuleInterface {
   /**
    * {@inheritdoc}
    */
-  async analyse(url: URL): Promise<any> {
-    Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: url});
-    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: url});
+  async analyse(urlWrapper: UrlWrapper): Promise<any> {
+    Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
     const browser = await this.getBrowser();
 
-    const result: any = await this.getAnalysisResult(browser, url);
-    result.url = url.toString();
-    Event.emit(EcoIndexModuleEvents.onResult, {module: this, url: url, browser: this.browser, result: result});
-    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: url, result: result});
+    const result: any = await this.getAnalysisResult(browser, urlWrapper);
+    result.url = urlWrapper.url.toString();
+    Event.emit(EcoIndexModuleEvents.onResult, {module: this, url: urlWrapper, browser: this.browser, result: result});
+    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper, result: result});
 
     this.storeResult(result);
 
     if (result?.success) {
-      this.config?.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, url.toString());
+      this.config?.logger.success(`Ecoindex : ${result.grade} (${result.ecoIndex}) `, urlWrapper.url.toString());
     } else {
       this.config?.logger.error(`Could not analyse page`);
     }
 
-    Event.emit(EcoIndexModuleEvents.afterAnalyse, {module: this, url: url, result: result});
-    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: url});
+    Event.emit(EcoIndexModuleEvents.afterAnalyse, {module: this, url: urlWrapper, result: result});
+    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
 
     return result?.success || false;
   }
@@ -170,19 +171,19 @@ export class EcoIndexModule implements ModuleInterface {
    * Get page.
    *
    * @param browser
-   * @param {URL} url
+   * @param {URL} urlWrapper
    * @returns {Promise<void>}
    * @private
    */
-  private async getAnalysisResult(browser: any, url: URL) {
+  private async getAnalysisResult(browser: any, urlWrapper: UrlWrapper) {
     // Init page configuration.
     const page = await browser.newPage();
     await page.setViewport(this.options.viewport);
     await page.setCacheEnabled(false);
 
-    Event.emit(EcoIndexModuleEvents.onNewPage, {module: this, browser: browser, page: page, url: url});
+    Event.emit(EcoIndexModuleEvents.onNewPage, {module: this, browser: browser, page: page, url: urlWrapper});
 
-    const result: any = await analyseURL(page, url.toString(), this.options, this.compiledScriptPath);
+    const result: any = await analyseURL(page, urlWrapper.url.toString(), this.options, this.compiledScriptPath);
     return result;
   }
 

@@ -2,26 +2,14 @@ import {Core} from '../index';
 import {WebAuditContext as Context} from '../core/WebAuditContext';
 import {WebAuditConfig as Config} from '../core/WebAuditConfig';
 import CSVStorage from '../storage/csv/CSVStorage';
+import {UrlWrapper} from '../core/UrlWrapper';
 
 import {getArgs} from './args';
 
 function doAnalyse(args: any) {
   const {urls, modules, version} = args;
 
-  /** ======================================================
-   ||                  OPTIONS                      ||
-   =======================================================*/
-  const options = {
-    // 'followSearchParams': false,
-    isEligibleUrl: (url: URL) => {
-      const paramsCount = Array.from(url.searchParams).length;
-      if (paramsCount > 0) {
-        return paramsCount === 1 && url.searchParams.has('page');
-      }
-      return true;
-    },
-  };
-
+  const urlsWrapper = urls.map((url: URL) => new UrlWrapper(url));
 
   /** ======================================================
    ||                  Context                      ||
@@ -45,7 +33,7 @@ function doAnalyse(args: any) {
     Config.logger.error(error);
   };
 
-  Core.analyseUrls(urls, modules).then(success).catch(error);
+  Core.analyseUrls(urlsWrapper, modules).then(success).catch(error);
 }
 
 // Get args.

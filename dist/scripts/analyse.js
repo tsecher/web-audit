@@ -7,22 +7,11 @@ const index_1 = require("../index");
 const WebAuditContext_1 = require("../core/WebAuditContext");
 const WebAuditConfig_1 = require("../core/WebAuditConfig");
 const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
+const UrlWrapper_1 = require("../core/UrlWrapper");
 const args_1 = require("./args");
 function doAnalyse(args) {
     const { urls, modules, version } = args;
-    /** ======================================================
-     ||                  OPTIONS                      ||
-     =======================================================*/
-    const options = {
-        // 'followSearchParams': false,
-        isEligibleUrl: (url) => {
-            const paramsCount = Array.from(url.searchParams).length;
-            if (paramsCount > 0) {
-                return paramsCount === 1 && url.searchParams.has('page');
-            }
-            return true;
-        },
-    };
+    const urlsWrapper = urls.map((url) => new UrlWrapper_1.UrlWrapper(url));
     /** ======================================================
      ||                  Context                      ||
      =======================================================*/
@@ -41,7 +30,7 @@ function doAnalyse(args) {
         WebAuditConfig_1.WebAuditConfig.logger.error(`Analyse error :`);
         WebAuditConfig_1.WebAuditConfig.logger.error(error);
     };
-    index_1.Core.analyseUrls(urls, modules).then(success).catch(error);
+    index_1.Core.analyseUrls(urlsWrapper, modules).then(success).catch(error);
 }
 // Get args.
 (0, args_1.getArgs)(['urlsFiles', 'modules', 'version'], WebAuditConfig_1.WebAuditConfig.logger)
