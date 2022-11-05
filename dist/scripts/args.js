@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArgs = void 0;
 const EcoIndexModule_1 = require("../modules/ecoindex/EcoIndexModule");
 const LighthouseModule_1 = require("../modules/lighthouse/LighthouseModule");
+const W3cValidatorModule_1 = require("../modules/w3c/W3cValidatorModule");
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs/yargs');
@@ -76,6 +77,7 @@ function getModules(required, logger) {
         const allModules = [
             new EcoIndexModule_1.EcoIndexModule(),
             new LighthouseModule_1.LighthouseModule(),
+            new W3cValidatorModule_1.W3cValidatorModule(),
         ];
         let selected = [];
         if (params.modules && typeof params.modules === 'string') {

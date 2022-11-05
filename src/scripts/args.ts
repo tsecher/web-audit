@@ -2,6 +2,7 @@ import {LoggerInterface} from '../loggers/Logger';
 import {ModuleInterface} from '../modules/ModuleInterface';
 import {EcoIndexModule} from '../modules/ecoindex/EcoIndexModule';
 import {LighthouseModule} from '../modules/lighthouse/LighthouseModule';
+import {W3cValidatorModule} from '../modules/w3c/W3cValidatorModule';
 
 const fs = require('fs');
 const path = require('path');
@@ -73,6 +74,7 @@ async function getModules(required: boolean, logger: LoggerInterface): Promise<a
   const allModules: ModuleInterface[] = [
     new EcoIndexModule(),
     new LighthouseModule(),
+    new W3cValidatorModule(),
   ];
 
   let selected: ModuleInterface[] = [];
