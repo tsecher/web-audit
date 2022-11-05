@@ -117,6 +117,9 @@ export class LighthouseModule implements ModuleInterface {
     Event.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
     Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
 
+    await this.browser?.kill();
+    Event.emit(LighthouseModuleEvents.onBrowserClose, {module: this, browser: this.browser});
+
     return true;
   }
 
@@ -126,9 +129,6 @@ export class LighthouseModule implements ModuleInterface {
    * @returns {Promise<any>}
    */
   async finish(): Promise<any> {
-    const browser = await this.getBrowser();
-    await browser?.kill();
-    Event.emit(LighthouseModuleEvents.onBrowserClose, {module: this, browser: this.browser});
   }
 
   /**
@@ -137,12 +137,8 @@ export class LighthouseModule implements ModuleInterface {
    * @returns {Promise<any>}
    */
   private async getBrowser(): Promise<any> {
-    if (this.browser) {
-      return new Promise((resolve) => resolve(this.browser));
-    }
-
     // Launch browser.
-    this.config?.logger.message('First, launch browser');
+    this.config?.logger.message('Launch new lighthouse browser');
 
     this.browser = await ChromeLauncher.launch({
       chromeFlags: ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],

@@ -59,7 +59,7 @@ class LighthouseModule {
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f;
         return __awaiter(this, void 0, void 0, function* () {
             WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
@@ -99,6 +99,8 @@ class LighthouseModule {
             (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.storage) === null || _e === void 0 ? void 0 : _e.add('lighthouse', this.context, report);
             WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
             WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
+            yield ((_f = this.browser) === null || _f === void 0 ? void 0 : _f.kill());
+            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.onBrowserClose, { module: this, browser: this.browser });
             return true;
         });
     }
@@ -109,9 +111,6 @@ class LighthouseModule {
      */
     finish() {
         return __awaiter(this, void 0, void 0, function* () {
-            const browser = yield this.getBrowser();
-            yield (browser === null || browser === void 0 ? void 0 : browser.kill());
-            WebAuditEvent_1.WebAuditEvent.emit(exports.LighthouseModuleEvents.onBrowserClose, { module: this, browser: this.browser });
         });
     }
     /**
@@ -122,11 +121,8 @@ class LighthouseModule {
     getBrowser() {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.browser) {
-                return new Promise((resolve) => resolve(this.browser));
-            }
             // Launch browser.
-            (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.message('First, launch browser');
+            (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.message('Launch new lighthouse browser');
             this.browser = yield ChromeLauncher.launch({
                 chromeFlags: ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
             });
