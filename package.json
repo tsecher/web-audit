@@ -27,6 +27,7 @@
     "events": "^3.3.0",
     "glob": "^8.0.3",
     "greenit-cli": "https://github.com/cnumr/GreenIT-Analysis-cli",
+    "html-validator": "^6.0.1",
     "lighthouse": "^9.6.7",
     "lighthouse-logger": "^1.3.0",
     "nodemon": "^2.0.20",
