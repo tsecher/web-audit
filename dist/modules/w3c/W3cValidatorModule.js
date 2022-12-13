@@ -61,7 +61,6 @@ class W3cValidatorModule {
             WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             const options = {
                 url: urlWrapper.url.toString(),
-                format: 'text',
                 data: yield this.fetchHtml(urlWrapper.url),
             };
             try {

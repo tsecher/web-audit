@@ -72,7 +72,6 @@ export class W3cValidatorModule implements ModuleInterface {
 
     const options = {
       url: urlWrapper.url.toString(),
-      format: 'text',
       data: await this.fetchHtml(urlWrapper.url),
     };
 
