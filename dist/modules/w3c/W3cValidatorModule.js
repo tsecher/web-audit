@@ -61,6 +61,8 @@ class W3cValidatorModule {
             WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             const options = {
                 url: urlWrapper.url.toString(),
+                format: 'text',
+                data: yield this.fetchHtml(urlWrapper.url),
             };
             try {
                 const result = yield validator(options);
@@ -86,6 +88,23 @@ class W3cValidatorModule {
                 return false;
             }
             return true;
+        });
+    }
+    /**
+     * Fetch html
+     * @param {URL} url
+     */
+    fetchHtml(url) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield fetch(url.toString());
+                const body = yield response.text();
+                return body;
+            }
+            catch (error) {
+                console.error(error);
+                return null;
+            }
         });
     }
     /**

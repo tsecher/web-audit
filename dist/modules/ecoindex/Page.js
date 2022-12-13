@@ -21,8 +21,16 @@ function analyseURL(page, url, options, scriptPath) {
             //get har file
             const pptrHar = new PuppeteerHar(page);
             yield pptrHar.start();
+            // disabling cache
+            yield page.setCacheEnabled(false);
             //go to url
             yield page.goto(url, { timeout: options.timeout });
+            try {
+                yield page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 3000 });
+            }
+            catch (e) {
+                console.error(`Wait to long...`);
+            }
             let harObj = yield pptrHar.stop();
             //get ressources
             const client = yield page.target().createCDPSession();

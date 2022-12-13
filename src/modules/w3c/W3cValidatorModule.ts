@@ -72,6 +72,8 @@ export class W3cValidatorModule implements ModuleInterface {
 
     const options = {
       url: urlWrapper.url.toString(),
+      format: 'text',
+      data: await this.fetchHtml(urlWrapper.url),
     };
 
     try {
@@ -102,6 +104,21 @@ export class W3cValidatorModule implements ModuleInterface {
   }
 
   /**
+   * Fetch html
+   * @param {URL} url
+   */
+  async fetchHtml(url: URL) {
+    try {
+      const response: Response = await fetch(url.toString());
+      const body: string = await response.text();
+      return body;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }
+
+  /**
    * Finish analyse process.
    *
    * @returns {Promise<any>}
@@ -111,3 +128,4 @@ export class W3cValidatorModule implements ModuleInterface {
 
 
 }
+

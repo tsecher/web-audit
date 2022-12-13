@@ -12,8 +12,21 @@ export async function analyseURL(page, url, options, scriptPath) {
     const pptrHar = new PuppeteerHar(page);
     await pptrHar.start();
 
+    // disabling cache
+    await page.setCacheEnabled(false);
+
     //go to url
     await page.goto(url, {timeout: options.timeout});
+
+    try{
+      await page.waitForNavigation({waitUntil: 'domcontentloaded', timeout: 3000});
+    }
+    catch(e){
+      console.error(`Wait to long...`);
+    }
+
+
+
 
 
     let harObj = await pptrHar.stop();
