@@ -53,6 +53,7 @@ export class EcoIndexModule implements ModuleInterface {
       isMobile: false,
     },
     timeout: 180000,
+    bestPracticesAnalyse: true,
   };
 
   constructor(
@@ -183,7 +184,8 @@ export class EcoIndexModule implements ModuleInterface {
 
     Event.emit(EcoIndexModuleEvents.onNewPage, {module: this, browser: browser, page: page, url: urlWrapper});
 
-    const result: any = await analyseURL(page, urlWrapper.url.toString(), this.options, this.compiledScriptPath);
+    const result: any = await analyseURL(page, urlWrapper.url.toString(), this.options, this.compiledScriptPath, this.config?.logger);
+
     return result;
   }
 

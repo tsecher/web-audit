@@ -1468,6 +1468,18 @@ ecc-jsbn@~0.1.1:
     jsbn "~0.1.0"
     safer-buffer "^2.1.0"
 
+ecoindex@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/ecoindex/-/ecoindex-1.0.3.tgz#388ef412082d4310ad9ea4711debcf09ab67dfdd"
+  integrity sha512-j3t+rF5afyDci+s1P+NcIIyz4djWgHwNehso+7gbaolBj3E00b0vQjhA/e5SI5kHwN7SEIAdBtmEMCVmhI6hoQ==
+  dependencies:
+    ecoindex_reference "^1"
+
+ecoindex_reference@^1:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/ecoindex_reference/-/ecoindex_reference-1.0.2.tgz#6a902841abce1498bc49ab7dbd71c65fc637092b"
+  integrity sha512-IKse3tu6IQfhrpGsVuxmC1K4xlc1FCZtaNYjLUj+Yxm5wthuVyS7C/miVPqSN7UZaNViUO2013ri+WJJhZfCUA==
+
 emoji-regex@^8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"
@@ -3532,6 +3544,11 @@ punycode@^2.1.0, punycode@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
+
+puppeteer-autoscroll-down@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/puppeteer-autoscroll-down/-/puppeteer-autoscroll-down-1.1.1.tgz#895062605143893c74117f69eefa63a237795c90"
+  integrity sha512-NT0/bO4QBCwMPUhTcTItGojP3W9SNQL/VaW57x8bC3HTraQ2qjicZzf0c4ysNvOHwZf/NMMZxscuTymXZ18sGA==
 
 puppeteer-core@18.2.1:
   version "18.2.1"

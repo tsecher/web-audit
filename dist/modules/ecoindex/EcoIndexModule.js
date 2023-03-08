@@ -42,6 +42,7 @@ class EcoIndexModule {
                 isMobile: false,
             },
             timeout: 180000,
+            bestPracticesAnalyse: true,
         };
         // Build dependencies.
         this.options = Object.assign(Object.assign({}, this.defaultOptions), userOptions);
@@ -157,13 +158,14 @@ class EcoIndexModule {
      * @private
      */
     getAnalysisResult(browser, urlWrapper) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             // Init page configuration.
             const page = yield browser.newPage();
             yield page.setViewport(this.options.viewport);
             yield page.setCacheEnabled(false);
             WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onNewPage, { module: this, browser: browser, page: page, url: urlWrapper });
-            const result = yield analyseURL(page, urlWrapper.url.toString(), this.options, this.compiledScriptPath);
+            const result = yield analyseURL(page, urlWrapper.url.toString(), this.options, this.compiledScriptPath, (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger);
             return result;
         });
     }
