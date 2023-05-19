@@ -15,6 +15,14 @@
     {
       "id": "W3cValidatorModule",
       "path": "./dist/modules/w3c/W3cValidatorModule.js"
+    },
+    {
+      "id": "EcoIndex2Module",
+      "path": "./dist/modules/ecoindex2/EcoIndex2Module.js"
+    },
+    {
+      "id": "W3C2Module",
+      "path": "./dist/modules/w3c2/W3C2Module.js"
     }
   ]
 }

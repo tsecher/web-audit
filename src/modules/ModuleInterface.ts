@@ -2,7 +2,6 @@ import {WebAuditConfigClass} from '../core/WebAuditConfig';
 import {WebAuditContextClass} from '../core/WebAuditContext';
 import {UrlWrapper} from '../core/UrlWrapper';
 
-
 export const ModuleEvents = {
   beforeUrlProcess: 'beforeURLProcess',
   afterUrlProcess: 'afterURLProcess',

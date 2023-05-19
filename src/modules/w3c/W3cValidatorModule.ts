@@ -51,7 +51,7 @@ export class W3cValidatorModule implements ModuleInterface {
     this.config = config;
     this.context = context;
 
-    // Install lighthouse store.
+    // Install w3c store.
     this.config.storage?.installStore('w3c_validator', this.context, {
       url: 'Url',
       type: 'Type',
