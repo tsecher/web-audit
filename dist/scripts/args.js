@@ -10,9 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArgs = void 0;
-const EcoIndexModule_1 = require("../modules/ecoindex/EcoIndexModule");
-const LighthouseModule_1 = require("../modules/lighthouse/LighthouseModule");
-const W3cValidatorModule_1 = require("../modules/w3c/W3cValidatorModule");
+const AppModuleFinder_1 = require("../app/utils/AppModuleFinder");
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs/yargs');
@@ -74,11 +72,7 @@ function getUrlsArgs(required, logger) {
  */
 function getModules(required, logger) {
     return __awaiter(this, void 0, void 0, function* () {
-        const allModules = [
-            new EcoIndexModule_1.EcoIndexModule(),
-            new LighthouseModule_1.LighthouseModule(),
-            new W3cValidatorModule_1.W3cValidatorModule(),
-        ];
+        const allModules = AppModuleFinder_1.ModuleFinder.getModules();
         let selected = [];
         if (params.modules && typeof params.modules === 'string') {
             const names = params.modules.split(',');

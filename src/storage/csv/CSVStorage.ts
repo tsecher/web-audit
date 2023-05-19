@@ -3,6 +3,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import {type} from 'os';
 
 import {StorageInterface} from '../Storage';
 import {WebAuditContextClass} from '../../core/WebAuditContext';
@@ -73,7 +74,7 @@ export default class CSVStorage implements StorageInterface {
    * @private
    */
   private getCSVLine(data: any, id?: string): string {
-    return `${this.getCSVValues(data, id).join(',')}\r\n`;
+    return `${this.getCSVValues(data, id).join(';')}\r\n`;
   }
 
   /**
@@ -116,12 +117,17 @@ export default class CSVStorage implements StorageInterface {
   private getStringifiedValues(data: any): any {
     const values: any = {};
     Object.keys(data).forEach((key: string) => {
-      const value = data[key];
-      if (value && typeof value !== 'undefined') {
-        values[key] = value.toString() || JSON.stringify(value);
-      } else {
-        values[key] = '';
+      let value = data[key];
+      switch (typeof value) {
+        case 'number':
+          value = value.toString();
+          break;
+        case 'undefined':
+          break;
+        default:
+          value = value.toString() || JSON.stringify(value);
       }
+      values[key] = value;
     });
 
     return values;

@@ -1,0 +1,20 @@
+{
+  "modules": [
+    {
+      "id": "CPUModule",
+      "path": "./dist/modules/cpu/CPUModule.js"
+    },
+    {
+      "id": "EcoIndexModule",
+      "path": "./dist/modules/ecoindex/EcoIndexModule.js"
+    },
+    {
+      "id": "LighthouseModule",
+      "path": "./dist/modules/lighthouse/LighthouseModule.js"
+    },
+    {
+      "id": "W3cValidatorModule",
+      "path": "./dist/modules/w3c/W3cValidatorModule.js"
+    }
+  ]
+}

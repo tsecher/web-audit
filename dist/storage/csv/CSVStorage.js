@@ -62,7 +62,7 @@ class CSVStorage {
      * @private
      */
     getCSVLine(data, id) {
-        return `${this.getCSVValues(data, id).join(',')}\r\n`;
+        return `${this.getCSVValues(data, id).join(';')}\r\n`;
     }
     /**
      * Get csv file path.
@@ -100,13 +100,17 @@ class CSVStorage {
     getStringifiedValues(data) {
         const values = {};
         Object.keys(data).forEach((key) => {
-            const value = data[key];
-            if (value && typeof value !== 'undefined') {
-                values[key] = value.toString() || JSON.stringify(value);
+            let value = data[key];
+            switch (typeof value) {
+                case 'number':
+                    value = value.toString();
+                    break;
+                case 'undefined':
+                    break;
+                default:
+                    value = value.toString() || JSON.stringify(value);
             }
-            else {
-                values[key] = '';
-            }
+            values[key] = value;
         });
         return values;
     }

@@ -1,11 +1,23 @@
+import path from 'path';
+
 import {Core} from '../index';
 import {WebAuditContext as Context} from '../core/WebAuditContext';
 import {WebAuditConfig as Config} from '../core/WebAuditConfig';
 import CSVStorage from '../storage/csv/CSVStorage';
 import {UrlWrapper} from '../core/UrlWrapper';
+import {AppConfig} from '../app/conf/AppConfig';
 
 import {getArgs} from './args';
 
+
+// Init config.
+AppConfig.setConfig(path.resolve(process.cwd(), 'config.json'));
+
+/**
+ * Launch analyse.
+ *
+ * @param args
+ */
 function doAnalyse(args: any) {
   const {urls, modules, version} = args;
 

@@ -1,8 +1,6 @@
 import {LoggerInterface} from '../loggers/Logger';
 import {ModuleInterface} from '../modules/ModuleInterface';
-import {EcoIndexModule} from '../modules/ecoindex/EcoIndexModule';
-import {LighthouseModule} from '../modules/lighthouse/LighthouseModule';
-import {W3cValidatorModule} from '../modules/w3c/W3cValidatorModule';
+import {ModuleFinder} from '../app/utils/AppModuleFinder';
 
 const fs = require('fs');
 const path = require('path');
@@ -71,11 +69,7 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
  * @returns {ModuleInterface}
  */
 async function getModules(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allModules: ModuleInterface[] = [
-    new EcoIndexModule(),
-    new LighthouseModule(),
-    new W3cValidatorModule(),
-  ];
+  const allModules: ModuleInterface[] = ModuleFinder.getModules();
 
   let selected: ModuleInterface[] = [];
   if (params.modules && typeof params.modules === 'string') {

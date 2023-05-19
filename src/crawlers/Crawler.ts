@@ -268,7 +268,6 @@ export class WebAuditCrawler {
       this.options.domain.hash = '';
       this.options.domain.pathname = '';
       this.options.domain.search = '';
-
     } catch (erro) {
       Config.logger.exit(`Base URL is not of type URL`);
     }
