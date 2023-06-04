@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.W3cValidatorModule = exports.W3cValidatorModuleEvents = void 0;
+exports.W3CModule = exports.W3cValidatorModuleEvents = void 0;
 const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppeteerJourneyModule");
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
 const WebAuditEvent_1 = require("../../core/WebAuditEvent");
@@ -27,7 +27,7 @@ exports.W3cValidatorModuleEvents = {
 /**
  * W3c Validator.
  */
-class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
+class W3CModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
     constructor() {
         super(...arguments);
         this.defaultOptions = {
@@ -63,7 +63,6 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             WebAuditEvent_1.WebAuditEvent.emit(exports.W3cValidatorModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
@@ -77,17 +76,21 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
                     });
                     WebAuditEvent_1.WebAuditEvent.emit(exports.W3cValidatorModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
                     WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
-                    const summary = {};
                     options.allowedTypes.forEach((type) => {
-                        summary[type] = result.messages.filter((item) => item.type === type).length;
+                        var _a;
+                        const count = result.messages.filter((item) => item.type === type);
+                        if (count.length) {
+                            (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.warning(`[W3C] ${count.length} ${type} found.`);
+                        }
                     });
-                    (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.result(`W3C`, summary, urlWrapper.url.toString());
+                    console.log(result.messages);
                     result.messages
                         .filter((item) => options.allowedTypes.includes(item.type))
                         .forEach((item) => {
-                        var _a, _b;
+                        var _a, _b, _c;
                         item.url = urlWrapper.url.toString();
                         (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.storage) === null || _b === void 0 ? void 0 : _b.add('w3c_validator', this.context, item);
+                        (_c = this.config) === null || _c === void 0 ? void 0 : _c.logger.result(`W3C`, item, urlWrapper.url.toString());
                     });
                     success = true;
                 }
@@ -121,7 +124,8 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () {
             const wrapper = data.wrapper;
             this.dom = yield wrapper.page.evaluate(() => { var _a; return (_a = document === null || document === void 0 ? void 0 : document.querySelector('html')) === null || _a === void 0 ? void 0 : _a.outerHTML; });
+            console.log('eriiieirt');
         }));
     }
 }
-exports.W3cValidatorModule = W3cValidatorModule;
+exports.W3CModule = W3CModule;

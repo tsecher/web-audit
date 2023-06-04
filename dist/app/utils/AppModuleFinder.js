@@ -7,10 +7,9 @@ exports.ModuleFinder = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const AppConfig_1 = require("../conf/AppConfig");
-const CPUModule_1 = require("../../modules/cpu/CPUModule");
-const EcoIndexModule_1 = require("../../modules/ecoindex/EcoIndexModule");
-const LighthouseModule_1 = require("../../modules/lighthouse/LighthouseModule");
-const W3cValidatorModule_1 = require("../../modules/w3c/W3cValidatorModule");
+/**
+ * Find module according to configuration file.
+ */
 class ModuleFinderClass {
     /**
      * Return the list of available modules.
@@ -30,12 +29,7 @@ class ModuleFinderClass {
      * @protected
      */
     getEmbedModules() {
-        return [
-            new EcoIndexModule_1.EcoIndexModule(),
-            new LighthouseModule_1.LighthouseModule(),
-            new W3cValidatorModule_1.W3cValidatorModule(),
-            new CPUModule_1.CPUModule(),
-        ];
+        return [];
     }
     /**
      * Init modules.

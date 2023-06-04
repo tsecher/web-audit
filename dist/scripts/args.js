@@ -8,9 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArgs = void 0;
 const AppModuleFinder_1 = require("../app/utils/AppModuleFinder");
+const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs/yargs');
@@ -26,7 +30,7 @@ function getUrlsArgs(required, logger) {
     return __awaiter(this, void 0, void 0, function* () {
         let selected = [];
         if (params.urls && typeof params.urls === 'string') {
-            const urls = params.urls.split(',');
+            const urls = params.urls.split(CSVStorage_1.default.SEPARATOR);
             selected = urls
                 .map((url) => {
                 try {
@@ -124,7 +128,7 @@ function getFilesArgs(required, logger) {
             const urls = fs.readFileSync(file, 'utf-8')
                 .split('\n')
                 .map((row) => {
-                const cell = row.split(',')[0].trim();
+                const cell = row.split(CSVStorage_1.default.SEPARATOR)[0].trim();
                 const value = cell[0] === '"' ? cell.slice(1, -1) : cell;
                 try {
                     return new URL(value);

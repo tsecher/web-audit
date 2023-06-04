@@ -7,7 +7,12 @@ import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
  * @type {{browserArgs: string[], viewport: {width: number, isMobile: boolean, height: number}, timeout: number}}
  */
 export const DEFAULT_OPTIONS = {
-  browserArgs: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process'],
+  browserArgs: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    // '--single-process',
+    '--show-paint-rects',
+  ],
   viewport: {
     width: 1920, height: 1080, isMobile: false,
   },
@@ -40,7 +45,7 @@ export class PageWrapper {
    * @type {any}
    * @private
    */
-  private page: any;
+  private _page: any;
 
   private step = 0;
 
@@ -96,8 +101,8 @@ export class PageWrapper {
   async newPage(): Promise<PageWrapper> {
     const browser = await this.getBrowser();
 
-    this.page = await browser.newPage();
-    await this.page.setViewport(this.options.viewport);
+    this._page = await browser.newPage();
+    await this._page.setViewport(this.options.viewport);
 
     return this;
   }
@@ -109,7 +114,7 @@ export class PageWrapper {
    * @returns {Promise<PageWrapper>}
    */
   async goto(url: string) {
-    await this.page.goto(url);
+    await this._page.goto(url);
     return this;
   }
 
@@ -120,7 +125,7 @@ export class PageWrapper {
    * @returns {Promise<PageWrapper>}
    */
   async snap(name: string) {
-    if (this.page) {
+    if (this._page) {
       this.step++;
       const steppedName = `${this.step}${name ? ` - ${name}` : ``}`;
 
@@ -158,14 +163,17 @@ export class PageWrapper {
    * @returns {Promise<void>}
    */
   async scrollToBottom() {
-    const bodyHeight = await this.page.evaluate(() => document.body.clientHeight);
-    const windowHeight = await this.page.evaluate(() => window.innerHeight);
+    const bodyHeight = await this._page.evaluate(() => document.body.clientHeight);
+    const windowHeight = await this._page.evaluate(() => window.innerHeight);
     for (let i = 0; i < Math.floor(bodyHeight / windowHeight) + 2; i++) {
-      await scrollPageToBottom(this.page, {
+      await scrollPageToBottom(this._page, {
         size: windowHeight,
         delay: 200,
       });
     }
   }
 
+  get page(): any {
+    return this._page;
+  }
 }

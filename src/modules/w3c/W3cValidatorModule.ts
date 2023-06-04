@@ -1,12 +1,18 @@
-import {ModuleEvents, ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
+import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJourneyModule';
+import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
+import {PageWrapper} from '../../journey/PageWrapper';
+import {ModuleEvents} from '../ModuleInterface';
 import {UrlWrapper} from '../../core/UrlWrapper';
 
 const validator = require('html-validator');
 
 
+/**
+ * W3c Validator Module events.
+ */
 export const W3cValidatorModuleEvents: any = {
   createW3cValidatorModule: 'w3c_validator_module__createW3cValidatorModule',
   beforeAnalyse: 'w3c_validator_module__beforeAnalyse',
@@ -14,35 +20,24 @@ export const W3cValidatorModuleEvents: any = {
   afterAnalyse: 'w3c_validator_module__afterAnalyse',
 };
 
-export class W3cValidatorModule implements ModuleInterface {
+/**
+ * W3c Validator.
+ */
+export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
 
   get name(): string {
-    return 'W3C validator';
+    return 'W3C';
   }
 
   get id(): string {
-    return `w3c_validator`;
+    return `w3c`;
   }
 
-  private options: any;
-
-  private config?: Config;
-
-  private context?: Context;
-
-  private defaultOptions = {
+  protected defaultOptions?: any = {
     allowedTypes: ['error', 'warning'],
   };
 
-  constructor(
-    userOptions: any = {},
-  ) {
-    // Build dependencies.
-    this.options = {
-      ...this.defaultOptions,
-      ...userOptions,
-    };
-  }
+  private dom?: string | null;
 
   /**
    * {@inheritdoc}
@@ -66,55 +61,46 @@ export class W3cValidatorModule implements ModuleInterface {
   /**
    * {@inheritdoc}
    */
-  async analyse(urlWrapper: UrlWrapper): Promise<any> {
+  async analyse(urlWrapper: UrlWrapper): Promise<boolean> {
     Event.emit(W3cValidatorModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
     Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
-    const options = {
-      url: urlWrapper.url.toString(),
-      data: await this.fetchHtml(urlWrapper.url),
-    };
+    let success = false;
 
-    try {
-      const result: any = await validator(options);
-      Event.emit(W3cValidatorModuleEvents.onResult, {module: this, url: urlWrapper, result: result});
-      Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
+    const options = this.getOptions();
 
-      this.options.allowedTypes.forEach((type: string) => {
-        const count = result.messages.filter((item: any) => item.type === type);
-        if (count.length) {
-          this.config?.logger.warning(`[W3C] ${count.length} ${type} found.`);
-        }
-      });
-
-      result.messages
-        .filter((item: any) => this.options.allowedTypes.includes(item.type))
-        .forEach((item: any) => {
-          item.url = urlWrapper.url.toString();
-          this.config?.storage?.add('w3c_validator', this.context, item);
+    if (this.dom) {
+      try {
+        const result: any = await validator({
+          url: urlWrapper.url.toString(),
+          data: this.dom,
         });
 
-      return true;
-    } catch (error) {
-      return false;
+        Event.emit(W3cValidatorModuleEvents.onResult, {module: this, url: urlWrapper, result: result});
+        Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
+
+        const summary: any = {};
+        options.allowedTypes.forEach((type: string) => {
+          summary[type] = result.messages.filter((item: any) => item.type === type).length;
+        });
+        this.config?.logger.result(`W3C`, summary, urlWrapper.url.toString());
+
+        result.messages
+          .filter((item: any) => options.allowedTypes.includes(item.type))
+          .forEach((item: any) => {
+            item.url = urlWrapper.url.toString();
+            this.config?.storage?.add('w3c_validator', this.context, item);
+          });
+
+        success = true;
+      } catch (error) {
+        success = false;
+      }
+    } else {
+      success = false;
     }
 
-    return true;
-  }
-
-  /**
-   * Fetch html
-   * @param {URL} url
-   */
-  async fetchHtml(url: URL) {
-    try {
-      const response: Response = await fetch(url.toString());
-      const body: string = await response.text();
-      return body;
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
+    return success;
   }
 
   /**
@@ -123,8 +109,21 @@ export class W3cValidatorModule implements ModuleInterface {
    * @returns {Promise<any>}
    */
   async finish(): Promise<any> {
+    this.dom = null;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  initEvents(journey: AbstractPuppeteerJourney) {
+    journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => {
+      this.dom = null;
+    });
+
+    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => {
+      const wrapper: PageWrapper = data.wrapper;
+      this.dom = await wrapper.page.evaluate(() => document?.querySelector('html')?.outerHTML);
+    });
+  }
 
 }
-

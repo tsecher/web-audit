@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LighthouseModule = exports.LighthouseModuleEvents = void 0;
+exports.Lighthouse2Module = exports.LighthouseModuleEvents = void 0;
 const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppeteerJourneyModule");
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
 const WebAuditEvent_1 = require("../../core/WebAuditEvent");
@@ -32,7 +32,7 @@ exports.LighthouseModuleEvents = {
 /**
  * W3c Validator.
  */
-class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
+class Lighthouse2Module extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
     constructor() {
         super(...arguments);
         this.defaultOptions = {
@@ -41,10 +41,10 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
         };
     }
     get name() {
-        return 'Google Lighthouse';
+        return 'Lighthouse 2';
     }
     get id() {
-        return `lighthouse`;
+        return `lighthouse2`;
     }
     /**
      * {@inheritdoc}
@@ -139,4 +139,4 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
         });
     }
 }
-exports.LighthouseModule = LighthouseModule;
+exports.Lighthouse2Module = Lighthouse2Module;

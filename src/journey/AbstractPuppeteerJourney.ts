@@ -12,6 +12,7 @@ import {AbstractEventsClass} from './AbstractEventsClass';
 export const PuppeteerJourneyEvents = {
   JOURNEY_START: 'Journey start',
   JOURNEY_END: 'Journey end',
+  JOURNEY_NEW_CONTEXT: 'Journey new context',
   JOURNEY_ERROR: 'Journey error',
   JOURNEY_CLOSE: 'Journey close',
   JOURNEY_BEFORE_STEP: 'Before step',
@@ -23,11 +24,17 @@ export const PuppeteerJourneyEvents = {
  */
 export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
 
+  abstract get name(): string;
+
+  abstract get id(): string;
+
   private stopJourney = false;
 
   private logger: LoggerInterface;
 
   private step = 0;
+
+  private eventData: any;
 
   /**
    * Constructor.
@@ -63,22 +70,21 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
    * @returns {Promise<void>}
    */
   async play(wrapper: PageWrapper, url: UrlWrapper) {
-    const eventData: any = {wrapper: wrapper, url: url, journey: this};
+    this.eventData = {wrapper: wrapper, url: url, journey: this};
 
     // Play specifics.
     try {
       await this.init(wrapper);
-      await this.trigger(PuppeteerJourneyEvents.JOURNEY_START, eventData);
+      await this.trigger(PuppeteerJourneyEvents.JOURNEY_START, this.eventData);
       await this.journey(wrapper, url);
-      await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, eventData);
+      await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
     } catch (err) {
       this.logger.error(err);
-      await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
+      await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
     }
 
     try {
-      await this.trigger(PuppeteerJourneyEvents.JOURNEY_CLOSE, eventData);
-      await wrapper.close();
+      await this.trigger(PuppeteerJourneyEvents.JOURNEY_CLOSE, this.eventData);
     } catch (err) {
       this.logger.error(err);
     }
@@ -92,7 +98,13 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
    */
   async addStep(name: string, cb: any) {
     this._checkStep();
-    const eventData: any = {step: this.step, journey: this, name: name};
+    const eventData: any = {
+      ...this.eventData,
+      ...{
+        step: this.step,
+        name: name,
+      },
+    };
     await this.trigger(PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, eventData);
     return new Promise((resolve) => {
       cb()
@@ -102,11 +114,29 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
           resolve(data);
         })
         .catch(async (err: any) => {
-          await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
           console.log(err);
+          process.exit();
+          await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
           this.stop();
         });
     });
+  }
+
+  /**
+   * Trigger new context.
+   *
+   * @param {string} name
+   * @returns {Promise<void>}
+   */
+  async triggerNewContext(name: string) {
+    const eventData: any = {
+      ...this.eventData,
+      ...{
+        step: this.step,
+        name: name,
+      },
+    };
+    await this.trigger(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, eventData);
   }
 
   /**

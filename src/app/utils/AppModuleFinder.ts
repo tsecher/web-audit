@@ -2,12 +2,11 @@ import fs from 'fs';
 import path from 'path';
 
 import {AppConfig} from '../conf/AppConfig';
-import {CPUModule} from '../../modules/cpu/CPUModule';
-import {EcoIndexModule} from '../../modules/ecoindex/EcoIndexModule';
-import {LighthouseModule} from '../../modules/lighthouse/LighthouseModule';
-import {W3cValidatorModule} from '../../modules/w3c/W3cValidatorModule';
 import {ModuleInterface} from '../../modules/ModuleInterface';
 
+/**
+ * Find module according to configuration file.
+ */
 class ModuleFinderClass {
 
   protected modules?: ModuleInterface[];
@@ -32,12 +31,7 @@ class ModuleFinderClass {
    * @protected
    */
   protected getEmbedModules(): ModuleInterface[] {
-    return [
-      new EcoIndexModule(),
-      new LighthouseModule(),
-      new W3cValidatorModule(),
-      new CPUModule(),
-    ];
+    return [];
   }
 
   /**

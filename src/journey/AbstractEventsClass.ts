@@ -20,8 +20,8 @@ export abstract class AbstractEventsClass {
    * @param {{}} data
    * @returns {Promise<void>}
    */
-  async trigger(id: string, data = {}) {
-    console.log(`Trigger: ${id}`);
+  async trigger(id: string, data: any = {}) {
+    console.log(`Trigger: ${id} url:${data?.url?.url?.toString()}  step: ${data.name} [${data.step}]`);
     for (const cb of this.callbacks[id] || []) {
       await cb(data);
     }

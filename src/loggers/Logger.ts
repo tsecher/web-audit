@@ -46,6 +46,15 @@ export interface LoggerInterface {
    * @param context
    */
   exit(data?: any, id?: string): void;
+
+  /**
+   * Log results.
+   *
+   * @param {string} name
+   * @param data
+   * @param {string} id
+   */
+  result(name: string, data: any, id?: string): void;
 }
 
 /**
@@ -79,6 +88,12 @@ export class LoggerClass implements LoggerInterface {
     process.exit();
   }
 
+  result(name: string, values: any, id?: string): void {
+    this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
+    console.table({values}, Object.keys(values)
+      .filter((item) => item !== 'url'));
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -100,6 +115,7 @@ export class LoggerClass implements LoggerInterface {
       console.log(...variables);
     }
   }
+
 }
 
 /**

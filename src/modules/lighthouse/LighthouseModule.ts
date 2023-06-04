@@ -1,11 +1,21 @@
-import {ModuleEvents, ModuleInterface} from '../ModuleInterface';
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
+import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJourneyModule';
+import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
+import {PageWrapper} from '../../journey/PageWrapper';
 import {UrlWrapper} from '../../core/UrlWrapper';
+import {ModuleEvents} from '../ModuleInterface';
 
-const ChromeLauncher = require('chrome-launcher');
+const fs = require('fs');
+
 const lighthouse = require('lighthouse');
+const ReportGenerator = require('lighthouse/report/generator/report-generator');
+
+
+/**
+ * Lighthouse Module events.
+ */
 
 export const LighthouseModuleEvents: any = {
   createLighthouseModule: 'lighthouse_module__createLighthouseModule',
@@ -17,7 +27,17 @@ export const LighthouseModuleEvents: any = {
   afterAnalyse: 'lighthouse_module__afterAnalyse',
 };
 
-export class LighthouseModule implements ModuleInterface {
+/**
+ * W3c Validator.
+ */
+export class LighthouseModule extends AbstractPuppeteerJourneyModule {
+
+  protected lighthouseReport: any;
+
+  protected defaultOptions?: any = {
+    output: 'json',
+    onlyCategories: ['performance', 'seo', 'best-practices', 'accessibility'],
+  };
 
   get name(): string {
     return 'Google Lighthouse';
@@ -25,26 +45,6 @@ export class LighthouseModule implements ModuleInterface {
 
   get id(): string {
     return `lighthouse`;
-  }
-
-  private options: any;
-
-  private browser: any;
-
-  private config?: Config;
-
-  private context?: Context;
-
-  private defaultOptions = {};
-
-  constructor(
-    userOptions: any = {},
-  ) {
-    // Build dependencies.
-    this.options = {
-      ...this.defaultOptions,
-      ...userOptions,
-    };
   }
 
   /**
@@ -70,45 +70,29 @@ export class LighthouseModule implements ModuleInterface {
   /**
    * {@inheritdoc}
    */
-  async analyse(urlWrapper: UrlWrapper): Promise<any> {
-    Event.emit(LighthouseModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
-    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
-
-    const browser = await this.getBrowser();
-
-    const options = {
-      output: 'json',
-      onlyCategories: ['performance', 'seo', 'best-practices', 'accessibility'],
-      port: browser.port,
-    };
-
-    const runnerResult = await lighthouse(urlWrapper.url, options, {
-      extends: 'lighthouse:default',
-    });
-
-    const result = JSON.parse(runnerResult.report);
+  async analyse(urlWrapper: UrlWrapper): Promise<boolean> {
 
     // Report
     const report: any = {};
-    options.onlyCategories.map((cat) => {
-      try {
-        report[cat] = result.categories[cat].score;
-      } catch (error) {
-        this.config?.logger.error(error);
-      }
-    });
+    this.getOptions()
+      ?.onlyCategories
+      ?.map((cat: any) => {
+        try {
+          report[cat] = this.lighthouseReport.report.categories[cat].score;
+        } catch (error) {
+          this.config?.logger.error(error);
+        }
+      });
 
-    Event.emit(LighthouseModuleEvents.onResult, {module: this, url: urlWrapper, browser: browser, result: result});
-    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
+
+    Event.emit(LighthouseModuleEvents.onResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
+    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
 
     if (report?.performance) {
-      const logs = Object.keys(report)
-        .map((key) => `${key} : ${report[key]}`);
-      this.config?.logger.success(`Lighthouse : ${logs.join(' | ')}`, urlWrapper.url.toString());
+      this.config?.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
     } else {
       this.config?.logger.error(`Could not analyse page`);
       this.config?.logger.error(report);
-
     }
 
     report.url = urlWrapper.url.toString();
@@ -116,9 +100,6 @@ export class LighthouseModule implements ModuleInterface {
 
     Event.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
     Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
-
-    await this.browser?.kill();
-    Event.emit(LighthouseModuleEvents.onBrowserClose, {module: this, browser: this.browser});
 
     return true;
   }
@@ -132,21 +113,39 @@ export class LighthouseModule implements ModuleInterface {
   }
 
   /**
-   * Return browser.
-   *
-   * @returns {Promise<any>}
+   * {@inheritdoc}
    */
-  private async getBrowser(): Promise<any> {
-    // Launch browser.
-    this.config?.logger.message('Launch new lighthouse browser');
-
-    this.browser = await ChromeLauncher.launch({
-      chromeFlags: ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
-    });
-
-    Event.emit(LighthouseModuleEvents.onBrowserLaunch, {module: this, browser: this.browser});
-
-    return this.browser;
+  initEvents(journey: AbstractPuppeteerJourney) {
+    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => this.launchLighthouse(data.wrapper));
   }
 
+  /**
+   * Laucnh lighthouse.
+   *
+   * @param {PageWrapper} wrapper
+   *   Page wrapper.
+   *
+   * @returns {Promise<undefined>}
+   *
+   * @private
+   */
+  protected async launchLighthouse(wrapper: PageWrapper): Promise<any> {
+    this.lighthouseReport = null;
+    const browser = await wrapper.getBrowser();
+    const endpoint = new URL(browser.wsEndpoint());
+
+    const options = this.getOptions();
+    options.port = endpoint.port;
+
+    const result = await lighthouse(
+      wrapper.page.url(),
+      options,
+      {extends: 'lighthouse:default'},
+    );
+
+    this.lighthouseReport = {
+      report: JSON.parse(ReportGenerator.generateReport(result.lhr, 'json')),
+      html: ReportGenerator.generateReport(result.lhr, 'html'),
+    };
+  }
 }

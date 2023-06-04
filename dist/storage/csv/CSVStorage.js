@@ -62,7 +62,7 @@ class CSVStorage {
      * @private
      */
     getCSVLine(data, id) {
-        return `${this.getCSVValues(data, id).join(';')}\r\n`;
+        return `${this.getCSVValues(data, id).join(CSVStorage.SEPARATOR)}\r\n`;
     }
     /**
      * Get csv file path.
@@ -108,7 +108,7 @@ class CSVStorage {
                 case 'undefined':
                     break;
                 default:
-                    value = value.toString() || JSON.stringify(value);
+                    value = (value === null || value === void 0 ? void 0 : value.toString()) || JSON.stringify(value);
             }
             values[key] = value;
         });
@@ -116,3 +116,4 @@ class CSVStorage {
     }
 }
 exports.default = CSVStorage;
+CSVStorage.SEPARATOR = ';';

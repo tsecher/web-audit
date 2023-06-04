@@ -3,6 +3,7 @@ import {WebAuditCrawler} from '../crawlers/Crawler';
 import {AbstractPuppeteerJourneyModule} from '../journey/AbstractPuppeteerJourneyModule';
 import {PageWrapper} from '../journey/PageWrapper';
 import {DefaultPuppeteerJourney} from '../journey/DefaultPuppeteerJourney';
+import {WebAuditLogger} from '../loggers/Logger';
 
 import {WebAuditContext as Context} from './WebAuditContext';
 import {WebAuditConfig} from './WebAuditConfig';
@@ -61,7 +62,13 @@ export class WebAuditCoreClass {
     await this.analyseDefaultModules(defaultModules, urls);
 
     // Analyse puppeteer modules.
-    await this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls);
+    try {
+      await this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls);
+    } catch (err) {
+      console.log(err);
+      process.exit();
+    }
+
 
     // Close modules.
     for (const module of modules) {
@@ -100,24 +107,37 @@ export class WebAuditCoreClass {
    */
   private async analysePuppeteerJourneyModules(modules: AbstractPuppeteerJourneyModule[], urls: UrlWrapper[]) {
     const pageWrapper = new PageWrapper();
-    pageWrapper.newPage();
 
     // Parse urls.
     for (const url of urls) {
+      WebAuditConfig.logger.success(`URL : ${url.url.toString()}`);
+      await pageWrapper.newPage();
+
       const journey = new DefaultPuppeteerJourney(WebAuditConfig.logger);
 
       Event.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
 
+      // Init journey.
       for (const module of modules) {
         Context.current.setData(module?.name);
-        module.initJourney(journey);
+        await module.initJourney(journey);
       }
 
-      journey.play(pageWrapper, url);
+      // Play journey.
+      Context.current.setData(journey.name);
+      await journey.play(pageWrapper, url);
 
+
+      // Analyse journey after collecting data in journey.
+      for (const module of modules) {
+        Context.current.setData(module?.name);
+        await module.analyse(url);
+      }
 
       Event.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
     }
+
+    await pageWrapper.close();
   }
 
 

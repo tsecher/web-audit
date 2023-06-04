@@ -32,8 +32,9 @@ class AbstractEventsClass {
      * @returns {Promise<void>}
      */
     trigger(id, data = {}) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(`Trigger: ${id}`);
+            console.log(`Trigger: ${id} url:${(_b = (_a = data === null || data === void 0 ? void 0 : data.url) === null || _a === void 0 ? void 0 : _a.url) === null || _b === void 0 ? void 0 : _b.toString()}  step: ${data.name} [${data.step}]`);
             for (const cb of this.callbacks[id] || []) {
                 yield cb(data);
             }

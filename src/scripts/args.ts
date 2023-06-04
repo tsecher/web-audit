@@ -1,6 +1,7 @@
 import {LoggerInterface} from '../loggers/Logger';
 import {ModuleInterface} from '../modules/ModuleInterface';
 import {ModuleFinder} from '../app/utils/AppModuleFinder';
+import CSVStorage from '../storage/csv/CSVStorage';
 
 const fs = require('fs');
 const path = require('path');
@@ -19,7 +20,7 @@ const params: any = yargs(hideBin(process.argv)).argv;
 async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<any> {
   let selected: URL[] = [];
   if (params.urls && typeof params.urls === 'string') {
-    const urls = params.urls.split(',');
+    const urls = params.urls.split(CSVStorage.SEPARATOR);
     selected = urls
       .map((url: any) => {
         try {
@@ -128,7 +129,7 @@ async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise
     const urls: URL[] = fs.readFileSync(file, 'utf-8')
       .split('\n')
       .map((row: string) => {
-        const cell = row.split(',')[0].trim();
+        const cell = row.split(CSVStorage.SEPARATOR)[0].trim();
         const value: string = cell[0] === '"' ? cell.slice(1, -1) : cell;
 
         try {

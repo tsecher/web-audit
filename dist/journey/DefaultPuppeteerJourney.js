@@ -11,7 +11,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultPuppeteerJourney = void 0;
 const AbstractPuppeteerJourney_1 = require("./AbstractPuppeteerJourney");
+/**
+ * Default journey.
+ *
+ *  1. Go to URL
+ *  2. Wait load
+ *  3. Scroll to bottom
+ *  4. Wait load
+ */
 class DefaultPuppeteerJourney extends AbstractPuppeteerJourney_1.AbstractPuppeteerJourney {
+    /**
+     * {@inheritdoc}
+     */
+    get id() {
+        return 'default_journey';
+    }
+    /**
+     * {@inheritdoc}
+     */
+    get name() {
+        return 'Default journey';
+    }
     /**
      * {@inheritdoc}
      */
@@ -25,21 +45,20 @@ class DefaultPuppeteerJourney extends AbstractPuppeteerJourney_1.AbstractPuppete
      */
     journey(wrapper, url) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.addStep('wait', () => __awaiter(this, void 0, void 0, function* () {
-                yield wrapper.wait(1000);
-            }));
+            const wait = 1000;
             yield this.addStep('goto', () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.goto(url.url.toString());
             }));
             yield this.addStep('wait', () => __awaiter(this, void 0, void 0, function* () {
-                yield wrapper.wait(1000);
+                yield wrapper.wait(Number(wait));
             }));
             yield this.addStep('scrollToBottom', () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.scrollToBottom();
             }));
             yield this.addStep('finally wait', () => __awaiter(this, void 0, void 0, function* () {
-                yield wrapper.wait(3000);
+                yield wrapper.wait(3 * wait);
             }));
+            yield this.triggerNewContext('finally wait');
         });
     }
 }

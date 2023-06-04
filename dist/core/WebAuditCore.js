@@ -64,7 +64,13 @@ class WebAuditCoreClass {
             // Analyser default module
             yield this.analyseDefaultModules(defaultModules, urls);
             // Analyse puppeteer modules.
-            yield this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls);
+            try {
+                yield this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls);
+            }
+            catch (err) {
+                console.log(err);
+                process.exit();
+            }
             // Close modules.
             for (const module of modules) {
                 yield module.finish();
@@ -103,18 +109,28 @@ class WebAuditCoreClass {
     analysePuppeteerJourneyModules(modules, urls) {
         return __awaiter(this, void 0, void 0, function* () {
             const pageWrapper = new PageWrapper_1.PageWrapper();
-            pageWrapper.newPage();
             // Parse urls.
             for (const url of urls) {
+                WebAuditConfig_1.WebAuditConfig.logger.success(`URL : ${url.url.toString()}`);
+                yield pageWrapper.newPage();
                 const journey = new DefaultPuppeteerJourney_1.DefaultPuppeteerJourney(WebAuditConfig_1.WebAuditConfig.logger);
                 WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeUrlProcess, { module: this, url: url });
+                // Init journey.
                 for (const module of modules) {
                     WebAuditContext_1.WebAuditContext.current.setData(module === null || module === void 0 ? void 0 : module.name);
-                    module.initJourney(journey);
+                    yield module.initJourney(journey);
                 }
-                journey.play(pageWrapper, url);
+                // Play journey.
+                WebAuditContext_1.WebAuditContext.current.setData(journey.name);
+                yield journey.play(pageWrapper, url);
+                // Analyse journey after collecting data in journey.
+                for (const module of modules) {
+                    WebAuditContext_1.WebAuditContext.current.setData(module === null || module === void 0 ? void 0 : module.name);
+                    yield module.analyse(url);
+                }
                 WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterUrlProcess, { module: this, url: url });
             }
+            yield pageWrapper.close();
         });
     }
 }

@@ -30,7 +30,7 @@ export interface ModuleInterface {
    * @param url
    * @param parser
    */
-  analyse(url: UrlWrapper): void;
+  analyse(url: UrlWrapper): Promise<boolean>;
 
   /**
    * Finish process.

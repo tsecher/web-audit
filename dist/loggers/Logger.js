@@ -26,6 +26,11 @@ class LoggerClass {
         this.error(data, id);
         process.exit();
     }
+    result(name, values, id) {
+        this.log(`${colors_1.default.bgGreen(`[${name}] : `)}`, id);
+        console.table({ values }, Object.keys(values)
+            .filter((item) => item !== 'url'));
+    }
     /**
      * {@inheritdoc}
      */

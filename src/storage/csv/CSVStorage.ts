@@ -13,6 +13,8 @@ import {WebAuditContextClass} from '../../core/WebAuditContext';
  */
 export default class CSVStorage implements StorageInterface {
 
+  static SEPARATOR = ';';
+
   private dirPath: string;
 
   private structures: any = {};
@@ -74,7 +76,7 @@ export default class CSVStorage implements StorageInterface {
    * @private
    */
   private getCSVLine(data: any, id?: string): string {
-    return `${this.getCSVValues(data, id).join(';')}\r\n`;
+    return `${this.getCSVValues(data, id).join(CSVStorage.SEPARATOR)}\r\n`;
   }
 
   /**
@@ -125,7 +127,7 @@ export default class CSVStorage implements StorageInterface {
         case 'undefined':
           break;
         default:
-          value = value.toString() || JSON.stringify(value);
+          value = value?.toString() || JSON.stringify(value);
       }
       values[key] = value;
     });

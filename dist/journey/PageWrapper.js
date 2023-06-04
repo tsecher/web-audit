@@ -21,7 +21,12 @@ const puppeteer_autoscroll_down_1 = require("puppeteer-autoscroll-down");
  * @type {{browserArgs: string[], viewport: {width: number, isMobile: boolean, height: number}, timeout: number}}
  */
 exports.DEFAULT_OPTIONS = {
-    browserArgs: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process'],
+    browserArgs: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        // '--single-process',
+        '--show-paint-rects',
+    ],
     viewport: {
         width: 1920, height: 1080, isMobile: false,
     },
@@ -87,8 +92,8 @@ class PageWrapper {
     newPage() {
         return __awaiter(this, void 0, void 0, function* () {
             const browser = yield this.getBrowser();
-            this.page = yield browser.newPage();
-            yield this.page.setViewport(this.options.viewport);
+            this._page = yield browser.newPage();
+            yield this._page.setViewport(this.options.viewport);
             return this;
         });
     }
@@ -100,7 +105,7 @@ class PageWrapper {
      */
     goto(url) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.page.goto(url);
+            yield this._page.goto(url);
             return this;
         });
     }
@@ -112,7 +117,7 @@ class PageWrapper {
      */
     snap(name) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.page) {
+            if (this._page) {
                 this.step++;
                 const steppedName = `${this.step}${name ? ` - ${name}` : ``}`;
                 /** *
@@ -151,15 +156,18 @@ class PageWrapper {
      */
     scrollToBottom() {
         return __awaiter(this, void 0, void 0, function* () {
-            const bodyHeight = yield this.page.evaluate(() => document.body.clientHeight);
-            const windowHeight = yield this.page.evaluate(() => window.innerHeight);
+            const bodyHeight = yield this._page.evaluate(() => document.body.clientHeight);
+            const windowHeight = yield this._page.evaluate(() => window.innerHeight);
             for (let i = 0; i < Math.floor(bodyHeight / windowHeight) + 2; i++) {
-                yield (0, puppeteer_autoscroll_down_1.scrollPageToBottom)(this.page, {
+                yield (0, puppeteer_autoscroll_down_1.scrollPageToBottom)(this._page, {
                     size: windowHeight,
                     delay: 200,
                 });
             }
         });
+    }
+    get page() {
+        return this._page;
     }
 }
 exports.PageWrapper = PageWrapper;

@@ -1,7 +1,7 @@
 import {ModuleInterface} from '../modules/ModuleInterface';
 import {UrlWrapper} from '../core/UrlWrapper';
-import {WebAuditConfigClass} from '../core/WebAuditConfig';
-import {WebAuditContextClass} from '../core/WebAuditContext';
+import {WebAuditConfigClass as Config, WebAuditConfigClass} from '../core/WebAuditConfig';
+import {WebAuditContextClass as Context, WebAuditContextClass} from '../core/WebAuditContext';
 
 import {AbstractJourneyModuleInterface} from './AbstractJourneyModuleInterface';
 import {AbstractPuppeteerJourney} from './AbstractPuppeteerJourney';
@@ -16,7 +16,21 @@ export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface,
 
   abstract initEvents(journey: AbstractPuppeteerJourney): void;
 
-  analyse(url: UrlWrapper): void {
+  protected defaultOptions?: any;
+
+  protected config?: Config;
+
+  protected context?: Context;
+
+  getOptions(inputOptions: any = {}): any {
+    return {
+      ...this.defaultOptions,
+      ...inputOptions,
+    };
+  }
+
+  analyse(url: UrlWrapper): Promise<boolean> {
+    return Promise.resolve(true);
   }
 
   finish(): void {
