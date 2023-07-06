@@ -59,6 +59,17 @@ export default class CSVStorage implements StorageInterface {
   }
 
   /**
+   * Store file.
+   *
+   * @param {string} path
+   */
+  file(input: string, context: WebAuditContextClass): void {
+    const output = path.join(this.dirPath, String(context?.version || 'undefined'), input);
+    fs.mkdirSync(path.dirname(output), {recursive: true});
+    fs.renameSync(input, output);
+  }
+
+  /**
    * Get csv values.
    *
    * @param data

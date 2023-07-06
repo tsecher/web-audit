@@ -14,7 +14,7 @@ import {getArgs} from './args';
 AppConfig.setConfig(path.resolve(process.cwd(), 'config.json'));
 
 function doCrawl(args: any) {
-  const {urls, version} = args;
+  const {urls, version, journey} = args;
 
 
   /** ======================================================
@@ -49,10 +49,10 @@ function doCrawl(args: any) {
   /** ======================================================
    ||                  Crawl                      ||
    =======================================================*/
-  const result = Core.crawlWebsite(new UrlWrapper(urls[0]), options);
+  const result = Core.crawlWebsite(new UrlWrapper(urls[0]), journey, options);
 
 }
 
-getArgs(['urls', 'version'], Config.logger)
+getArgs(['urls', 'version', 'journey'], Config.logger)
   .then((args: any) => doCrawl(args))
   .catch((error) => Config.logger.exit(error));

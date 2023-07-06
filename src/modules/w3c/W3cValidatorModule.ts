@@ -65,8 +65,8 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     Event.emit(W3cValidatorModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
     Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
-    let success = false;
 
+    let success: boolean;
     const options = this.getOptions();
 
     if (this.dom) {
@@ -122,7 +122,8 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
 
     journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => {
       const wrapper: PageWrapper = data.wrapper;
-      this.dom = await wrapper.page.evaluate(() => document?.querySelector('html')?.outerHTML);
+
+      this.dom = await wrapper.page.content();
     });
   }
 

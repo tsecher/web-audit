@@ -2,8 +2,7 @@ import {ModuleEvents, ModuleInterface} from '../modules/ModuleInterface';
 import {WebAuditCrawler} from '../crawlers/Crawler';
 import {AbstractPuppeteerJourneyModule} from '../journey/AbstractPuppeteerJourneyModule';
 import {PageWrapper} from '../journey/PageWrapper';
-import {DefaultPuppeteerJourney} from '../journey/DefaultPuppeteerJourney';
-import {WebAuditLogger} from '../loggers/Logger';
+import {JourneyInterface} from '../journey/JourneyInterface';
 
 import {WebAuditContext as Context} from './WebAuditContext';
 import {WebAuditConfig} from './WebAuditConfig';
@@ -21,7 +20,7 @@ export class WebAuditCoreClass {
    * @param baseUrl
    * @param options
    */
-  public crawlWebsite(baseUrlWrapper: UrlWrapper, options: any = {}): Promise<any> {
+  public crawlWebsite(baseUrlWrapper: UrlWrapper, journey: JourneyInterface, options: any = {}): Promise<any> {
     // Define context.
     Context.current.setId('Crawl')
       .setUrl(baseUrlWrapper.url);
@@ -29,7 +28,7 @@ export class WebAuditCoreClass {
     // Crawl domain.
     options.baseUrl = baseUrlWrapper.url;
     const crawler = new WebAuditCrawler(baseUrlWrapper, options);
-    return crawler.crawl();
+    return crawler.crawl(journey);
   }
 
   /**
@@ -38,7 +37,7 @@ export class WebAuditCoreClass {
    * @param urls
    * @param modules
    */
-  public async analyseUrls(urls: UrlWrapper[], modules: ModuleInterface[]) {
+  public async analyseUrls(urls: UrlWrapper[], modules: ModuleInterface[], journey: JourneyInterface) {
     // Define context.
     Context.current.setId('Analyse')
       .setUrl()
@@ -63,7 +62,7 @@ export class WebAuditCoreClass {
 
     // Analyse puppeteer modules.
     try {
-      await this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls);
+      await this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls, journey);
     } catch (err) {
       console.log(err);
       process.exit();
@@ -105,23 +104,25 @@ export class WebAuditCoreClass {
    * @returns {Promise<void>}
    * @private
    */
-  private async analysePuppeteerJourneyModules(modules: AbstractPuppeteerJourneyModule[], urls: UrlWrapper[]) {
+  private async analysePuppeteerJourneyModules(modules: AbstractPuppeteerJourneyModule[], urls: UrlWrapper[], journey: JourneyInterface) {
     const pageWrapper = new PageWrapper();
+
+    await journey.beforeAll(pageWrapper, urls);
+
+    // Init journey.
+    for (const module of modules) {
+      Context.current.setData(module?.name);
+      await module.initJourney(journey);
+    }
 
     // Parse urls.
     for (const url of urls) {
       WebAuditConfig.logger.success(`URL : ${url.url.toString()}`);
       await pageWrapper.newPage();
 
-      const journey = new DefaultPuppeteerJourney(WebAuditConfig.logger);
+      await journey.beforeEach(pageWrapper, url);
 
       Event.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
-
-      // Init journey.
-      for (const module of modules) {
-        Context.current.setData(module?.name);
-        await module.initJourney(journey);
-      }
 
       // Play journey.
       Context.current.setData(journey.name);

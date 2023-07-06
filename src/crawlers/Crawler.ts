@@ -1,9 +1,11 @@
+import {HTTPResponse} from 'puppeteer';
+
 import {WebAuditConfig as Config} from '../core/WebAuditConfig';
 import {WebAuditContext as Context} from '../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../core/WebAuditEvent';
 import {UrlWrapper} from '../core/UrlWrapper';
-
-const Crawler = require('crawler');
+import {PageWrapper} from '../journey/PageWrapper';
+import {JourneyInterface} from '../journey/JourneyInterface';
 
 export interface WebAuditCrawlerType {
   baseUrl: URL;
@@ -41,12 +43,6 @@ export class WebAuditCrawler {
   public baseUrlWrapper: UrlWrapper;
 
   protected defaultOptions: any = {
-    crawlerOptions: {
-      maxConnections: 10,
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
-      retries: 0,
-    },
-    allowedStatus: [200, 201, 202, 203, 204],
     followSearchParams: true,
     uniqueParams: ['page'],
   };
@@ -57,9 +53,7 @@ export class WebAuditCrawler {
 
   private alreadyParsedUrls: string[] = [];
 
-  private crawler?: any;
-
-  private onDone?: Function;
+  private pageWrapper: PageWrapper = new PageWrapper();
 
   /**
    * Constructor.
@@ -75,7 +69,7 @@ export class WebAuditCrawler {
     this.baseUrlWrapper = baseUrlWrapper;
 
     // Prepare options.
-    this.cleanBaseUrl();
+    this.initBaseUrl(baseUrlWrapper.url.toString());
 
     // Emit.
     Event.emit(WebAuditCrawlerEvents.createCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
@@ -88,8 +82,8 @@ export class WebAuditCrawler {
         url: 'Referenced url',
         status: `Status`,
         size: `Content length`,
-        parsedUrl: 'Final URL (if redirected)',
-        origin: `Orignal page (where url is referenced)`,
+        final: 'Final URL (if redirected)',
+        source: `Orignal page (where url is referenced)`,
       },
     );
   }
@@ -97,161 +91,162 @@ export class WebAuditCrawler {
   /**
    * Crawl url.
    */
-  crawl() {
-    // Define crawler.
-    this.crawler = new Crawler(this.options.crawlerOptions);
-    Event.emit(WebAuditCrawlerEvents.beforeCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
-    this.crawler.on('drain', () => {
-      if (this.onDone) {
-        this.onDone(this.urlsToParse);
-        Event.emit(WebAuditCrawlerEvents.afterCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
-      }
-    });
+  async crawl(journey: JourneyInterface): Promise<void> {
+    // Init puppeteer browser.
+    await this.pageWrapper.newPage();
 
-    this.crawlUrls([this.options.baseUrl]);
+    await journey.beforeAll(this.pageWrapper, [this.baseUrlWrapper]);
 
-    return new Promise((resolve) => {
-      this.onDone = resolve;
-    });
+    await this.crawlUrl(this.baseUrlWrapper.url, null, journey);
+
+    await this.pageWrapper.close();
   }
 
   /**
-   * Crawl a page.
+   * Crawl url.
    *
-   * @param urls
-   * @param origin
+   * @param {UrlWrapper} url
    * @private
    */
-  private crawlUrls(urls: URL[], origin?: URL) {
-    // Filter eligible urls (html, domain and not already crawled).
-    const eligibleUrls = this.getEligibleUrls(urls);
-
-    Event.emit(WebAuditCrawlerEvents.onCrawlUrls, {crawler: this, urlsList: urls, baseUrl: this.baseUrlWrapper});
-
-    // Add new urls to queue
-    if (eligibleUrls.length) {
-      this.addToParseQueueUrls(eligibleUrls);
-
-      this.crawler.queue(
-        eligibleUrls.map((url) => {
-          return {
-            uri: url.toString(),
-            callback: (error: any, res: any, done: Function) => this.onPageCrawled(error, res, done, url, origin),
-          };
-        }),
-      );
-    }
-  }
-
-  /**
-   * On page crawled.
-   *
-   * @param error
-   * @param res
-   * @param done
-   * @param origin
-   * @private
-   */
-  private onPageCrawled(error: any, res: any, done: Function, url: URL, origin?: URL) {
+  private async crawlUrl(url: URL, source: URL | null = null, journey: JourneyInterface): Promise<void> {
     if (this.isAlreadyParsed(url)) {
-      done();
-      return;
+      return Promise.resolve();
     }
 
     Context.current.setData('Page crawled').setUrl(url);
-    const eventData: any = {error: error, res: res, url: url, origin: origin};
 
-    Event.emit(WebAuditCrawlerEvents.onPageCrawled, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
+    // Get info.
+    const pageInfo = await this.getPageInfo(this.pageWrapper, url, source, journey);
+    const eventData = {crawler: this, data: pageInfo, baseUrl: this.baseUrlWrapper, pageWrapper: this.pageWrapper};
 
-    // Error.
-    if (error) {
-      Config.logger.error(error);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledError, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
-      done();
-      return;
+    // Add to parsed urls.
+    this.addToParsedUrls(pageInfo.url);
+    this.addToParsedUrls(pageInfo.final);
+    this.addToParsedUrls(pageInfo.source);
+
+    if (pageInfo.log) {
+      Event.emit(WebAuditCrawlerEvents.onPageCrawled, eventData);
+      Config.storage?.add('page_found', Context.current, pageInfo);
+
+      if (pageInfo.status >= 300 && pageInfo < 400) {
+        Event.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
+      }
+
+      if (pageInfo.crawl) {
+        await this.crawlSubPages(this.pageWrapper, pageInfo.final, journey);
+      }
     }
 
-    // Status.
-    if (this.options.allowedStatus && this.options.allowedStatus?.indexOf(res.statusCode) < 0) {
-      Config.logger.warning(`Url respond with status ${res.statusCode}. ${origin ? `Found in ${origin}` : ''}`);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledBadStatus, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
-      done();
-      return;
-    }
-
-    // No returned uri.
-    if (!res.request?.uri.href) {
-      Config.logger.error(`No uri`);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledNoUri, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
-      done();
-      return;
-    }
-
-    const parsedUrl: URL = new URL(res.request.uri.href);
-    if (this.isAlreadyParsed(parsedUrl)) {
-      done();
-      return;
-    }
-    this.addToParsedUrls(parsedUrl);
-    const gotRedirected: boolean = parsedUrl.toString() !== url.toString();
-
-    // Store found page.
-    const _parsedUrl = gotRedirected ? parsedUrl : null;
-
-    Config.storage?.add('page_found', Context.current, {
-      url,
-      _parsedUrl,
-      origin,
-      status: res.statusCode,
-      size: res.headers['content-length'],
-    });
-
-    // Redirection
-    if (gotRedirected) {
-      Config.logger.warning(`Got redirected from ${url.toString()} to ${parsedUrl.toString()}`);
-      Event.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
-    }
-
-    // Parse content.
-    try {
-      Config.logger.message(`Parsing ${parsedUrl}`);
-      eventData.res = res;
-      Event.emit(WebAuditCrawlerEvents.onPageContent, {crawler: this, data: eventData, baseUrl: this.baseUrlWrapper});
-      this.crawlUrls(this.getUrlsInBody(res.$, parsedUrl), parsedUrl);
-    } catch (error) {
-      Config.logger.warning(error);
-    }
-
-    done();
+    return Promise.resolve();
   }
 
   /**
-   * Return all eligible url available in the body.
+   * Return page info.
    *
-   * @param $
+   * @param {PageWrapper} pageWapper
+   * @param {UrlWrapper} inputUrl
+   * @param {UrlWrapper | null} source
+   * @returns {Promise<any>}
    * @private
    */
-  private getUrlsInBody($: any, origin: URL) {
-    const urls: URL[] = [];
+  private async getPageInfo(pageWapper: PageWrapper, inputUrl: URL, source: URL | null, journey: JourneyInterface): Promise<any> {
+    const infos: any = {
+      url: inputUrl.toString(),
+      source: source?.toString() || '',
+      status: '',
+      size: '',
+      final: '',
+      crawl: true,
+      log: true,
+    };
 
-    if (!$) {
-      return urls;
+    // Check eligibility.
+    const beforeCrawl = await journey.isEligible(pageWapper, new UrlWrapper(inputUrl));
+    if (!beforeCrawl) {
+      infos.crawl = false;
+      infos.log = false;
+      return infos;
     }
 
-    $('a[href], link[rel="alternate"]').each((i: any, link: any) => {
-      const href = $(link).attr('href');
+    Config.logger.message(`Parse : ${inputUrl.toString()}`);
 
+    // Listen data.
+    let status: number | string = '';
+    let size: number | string = '';
+    const onResponse = async (response: HTTPResponse) => {
+      if (status === '') {
+        // eslint-disable-next-line require-atomic-updates
+        status = await response.status();
+      }
+
+      if (size === '') {
+        try {
+          // eslint-disable-next-line require-atomic-updates
+          size = (await response.buffer()).length;
+        } catch (error) {
+          // Redirect has no size.
+        }
+      }
+    };
+    this.pageWrapper.page.on('response', onResponse);
+
+    // Navigate to page.
+    try {
+      await this.pageWrapper.goto(inputUrl.toString());
+    } catch (error) {
+      Config.logger.error(error);
+      return Promise.resolve(infos);
+    }
+
+    try {
+      await this.pageWrapper.page.waitForSelector('body');
+    } catch (err) {
+      Config.logger.error(`Load timeout`);
+    }
+
+    // Remove listeneer data.
+    this.pageWrapper.page.off('response', onResponse);
+
+
+    infos.status = status;
+    infos.size = size;
+    infos.final = await pageWapper.page.url() || '';
+    return infos;
+  }
+
+
+  /**
+   * Crawl inner href.
+   *
+   * @param {PageWrapper} pageWrapper
+   * @param {URL} source
+   * @param journey
+   * @returns {Promise<void>}
+   * @private
+   */
+  private async crawlSubPages(pageWrapper: PageWrapper, source: URL, journey: JourneyInterface) {
+    // Get
+    const hrefs: URL[] = [];
+    const links = await pageWrapper.page.$$('a[href], link[rel="alternate"]');
+
+    // Clean href links.
+    for (const link of links) {
       try {
-        const url = this.getCleanUrlFromHref(href, origin);
-        if (url) {
-          urls.push(url);
+        const href = await (await link.getProperty('href')).jsonValue();
+        const cleanURL = this.getCleanUrlFromHref(href, source);
+        if (cleanURL) {
+          hrefs.push(cleanURL);
         }
       } catch (error) {
-        Config.logger.warning(`Not a valid url ${href}`);
+        // Bad URL.
       }
-    });
+    }
 
-    return this.getEligibleUrls(urls);
+    const subUrls = this.getEligibleUrls(hrefs);
+    Event.emit(WebAuditCrawlerEvents.onCrawlUrls, {crawler: this, urlsList: subUrls, baseUrl: this.baseUrlWrapper});
+    for (const url of subUrls) {
+      await this.crawlUrl(url, source, journey);
+    }
   }
 
   /**
@@ -259,12 +254,12 @@ export class WebAuditCrawler {
    *
    * @private
    */
-  private cleanBaseUrl() {
+  private initBaseUrl(url: string) {
     try {
-      this.options.baseUrl = new URL(this.options.baseUrl);
+      this.options.baseUrl = new URL(url);
 
       // define domain
-      this.options.domain = new URL(this.options.baseUrl);
+      this.options.domain = new URL(url);
       this.options.domain.hash = '';
       this.options.domain.pathname = '';
       this.options.domain.search = '';
@@ -284,20 +279,6 @@ export class WebAuditCrawler {
   }
 
   /**
-   * Return true if url is eligible (may be HMTL extension)
-   *
-   * @param url
-   * @private
-   */
-  private isHtmlUrl(url: URL): boolean {
-    const ext = url.pathname.split('.');
-    if (ext.length > 1) {
-      return ['html', 'html'].indexOf(ext.slice(-1)[0]) > -1;
-    }
-    return true;
-  }
-
-  /**
    * Return true if url is already queued.
    *
    * @param url
@@ -305,27 +286,6 @@ export class WebAuditCrawler {
    */
   private isAlreadyAddedToQueue(url: URL) {
     return typeof this.urlsToParse[this.normalizeURL(url)] !== 'undefined';
-  }
-
-  /**
-   * Add Url to parsed URLS.
-   * @param url
-   * @private
-   */
-  private addToParseQueueUrl(url: URL) {
-    if (!this.isAlreadyAddedToQueue(url)) {
-      this.urlsToParse[this.normalizeURL(url)] = url;
-    }
-  }
-
-  /**
-   * Add urls to parsed urls.
-   *
-   * @param urls
-   * @private
-   */
-  private addToParseQueueUrls(urls: URL[]) {
-    urls.forEach((url) => this.addToParseQueueUrl(url));
   }
 
   /**
@@ -340,7 +300,7 @@ export class WebAuditCrawler {
         !this.isAlreadyAddedToQueue(url) &&
         !this.isAlreadyParsed(url) &&
         this.isDomainUrl(url) &&
-        this.isHtmlUrl(url) &&
+        // this.isHtmlUrl(url) &&
         this.isUserEligible(url)
       );
     });
@@ -372,8 +332,8 @@ export class WebAuditCrawler {
    * @param {URL} url
    * @private
    */
-  private addToParsedUrls(url: URL) {
-    if (!this.isAlreadyParsed(url)) {
+  private addToParsedUrls(url: URL | null) {
+    if (url && !this.isAlreadyParsed(url)) {
       this.alreadyParsedUrls.push(this.normalizeURL(url));
     }
   }
@@ -420,7 +380,7 @@ export class WebAuditCrawler {
    * @param origin
    * @private
    */
-  private getCleanUrlFromHref(href: string, origin: URL) {
+  private getCleanUrlFromHref(href: string, origin: URL | null) {
     let input = href;
 
     // Deal with anchor.
@@ -435,7 +395,7 @@ export class WebAuditCrawler {
 
     // Deal with parameters urls.
     if (this.options.followSearchParams && input.indexOf('?') === 0) {
-      if (input.length > 1) {
+      if (origin && input.length > 1) {
         const url = new URL(origin);
         url.search = input;
         input = url.toString();

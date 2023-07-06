@@ -7,6 +7,10 @@
   "repository": "git@bitbucket.org:thomasse/quality_audit.git",
   "author": "tsecher <me@thomas-secher.fr>",
   "license": "MIT",
+  "bin": {
+    "analyse": "bin/analyse",
+    "crawl": "bin/crawl"
+  },
   "scripts": {
     "dev": "nodemon",
     "build": "rimraf ./build && tsc",
@@ -27,6 +31,7 @@
     "concat-files": "^0.1.1",
     "crawler": "^1.3.0",
     "ecoindex": "^1.0.5",
+    "ecoindex_puppeteer": "^1.0.0-rc2",
     "eslint": "^8.25.0",
     "events": "^3.3.0",
     "glob": "^8.0.3",

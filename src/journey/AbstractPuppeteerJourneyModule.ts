@@ -4,7 +4,7 @@ import {WebAuditConfigClass as Config, WebAuditConfigClass} from '../core/WebAud
 import {WebAuditContextClass as Context, WebAuditContextClass} from '../core/WebAuditContext';
 
 import {AbstractJourneyModuleInterface} from './AbstractJourneyModuleInterface';
-import {AbstractPuppeteerJourney} from './AbstractPuppeteerJourney';
+import {JourneyInterface} from './JourneyInterface';
 
 export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface, AbstractJourneyModuleInterface {
 
@@ -14,7 +14,7 @@ export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface,
 
   abstract init(config: WebAuditConfigClass, context: WebAuditContextClass): void;
 
-  abstract initEvents(journey: AbstractPuppeteerJourney): void;
+  abstract initEvents(journey: JourneyInterface): void;
 
   protected defaultOptions?: any;
 
@@ -36,7 +36,7 @@ export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface,
   finish(): void {
   }
 
-  initJourney(journey: AbstractPuppeteerJourney): AbstractJourneyModuleInterface {
+  initJourney(journey: JourneyInterface): AbstractJourneyModuleInterface {
     this.initEvents(journey);
 
     return this;

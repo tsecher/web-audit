@@ -1,6 +1,8 @@
 /.idea
 /node_modules
 /data
+/dist
 /analyses
+/custom
+config.json
 yarn-error.log
-/dist/modules/ecoindex/scripts/ecoindex-core.js

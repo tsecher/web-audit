@@ -19,7 +19,7 @@ AppConfig.setConfig(path.resolve(process.cwd(), 'config.json'));
  * @param args
  */
 function doAnalyse(args: any) {
-  const {urls, modules, version} = args;
+  const {urls, modules, version, journey} = args;
 
   const urlsWrapper = urls.map((url: URL) => new UrlWrapper(url));
 
@@ -45,10 +45,10 @@ function doAnalyse(args: any) {
     Config.logger.error(error);
   };
 
-  Core.analyseUrls(urlsWrapper, modules).then(success).catch(error);
+  Core.analyseUrls(urlsWrapper, modules, journey).then(success).catch(error);
 }
 
 // Get args.
-getArgs(['urlsFiles', 'modules', 'version'], Config.logger)
+getArgs(['urlsFiles', 'modules', 'version', 'journey'], Config.logger)
   .then((args) => doAnalyse(args))
   .catch((error) => Config.logger.exit(error));

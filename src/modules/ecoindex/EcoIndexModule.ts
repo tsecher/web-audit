@@ -1,3 +1,5 @@
+import {EcoIndexStory, EcoIndexStoryStep} from 'ecoindex_puppeteer';
+
 import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
 import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
 import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
@@ -6,10 +8,7 @@ import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/Ab
 import {UrlWrapper} from '../../core/UrlWrapper';
 import {ModuleEvents} from '../ModuleInterface';
 
-import {EcoindexStory} from './utils/EcoindexStory';
-
 const ecoindex = require('ecoindex');
-
 
 export const EcoIndexModuleEvents: any = {
   createEcoIndexModule: 'ecoindex_module__createEcoIndexModule',
@@ -22,8 +21,8 @@ export const EcoIndexModuleEvents: any = {
 };
 
 export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
-
-  protected story: EcoindexStory | undefined;
+  // @ts-ignore
+  protected story: EcoIndexStory | undefined;
 
   get name(): string {
     return 'Eco Index';
@@ -58,15 +57,6 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
       nbBestPracticesToCorrect: 'Nb Best practices to correct',
     });
 
-    // Install eco index best_practices.
-    this.config.storage?.installStore('ecoindex_best_practices2', this.context, {
-      url: 'Url',
-      id: 'ID',
-      comment: 'Message',
-      complianceLevel: 'Compliance level',
-      detailComment: 'Detail',
-    });
-
     // Emit.
     Event.emit(EcoIndexModuleEvents.createEcoIndexModule, {module: this});
   }
@@ -79,7 +69,6 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
     const results: any[] = this.getCleanResults(urlWrapper);
-    const logs: any = [];
     results.forEach((result) => {
       this.config?.storage?.add('ecoindex', this.context, result);
       this.config?.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
@@ -95,12 +84,12 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
    * {@inheritdoc}
    */
   initEvents(journey: AbstractPuppeteerJourney): void {
-    this.story = new EcoindexStory();
+    this.story = new EcoIndexStory();
 
     // Init ecoindex data.
     journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => this.story?.start(data.wrapper.page));
     journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.story?.addStep(data.step));
-    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => this.story?.end(PuppeteerJourneyEvents.JOURNEY_END));
+    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async () => this.story?.stop(PuppeteerJourneyEvents.JOURNEY_END, false));
   }
 
   /**
@@ -111,23 +100,28 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
    * @private
    */
   private getCleanResults(urlWrapper: UrlWrapper): any[] {
-    const allValidSteps = this.story?.getData()
-      .filter((step) => step.hasData()) || [];
+    const allValidSteps = this.story?.getSteps()
+      .filter((step: any) => step.getMetrics()?.hasData()) || [];
 
-    return allValidSteps.map((step) => {
-      const ecoindexValue = ecoindex.computeEcoIndex(step.ecoindex?.dom, step.ecoindex?.request, (step.ecoindex?.size || 0) / 1000);
+    // @ts-ignore
+    return allValidSteps.map((step: EcoIndexStoryStep) => {
+      const metrics = step.getMetrics();
+      const ecoindexValue = ecoindex.computeEcoIndex(
+        metrics?.getDomElementsCount(),
+        metrics?.getRequestsCount(),
+        metrics?.getSize() || 0,
+      );
 
       return {
         url: urlWrapper.url,
         grade: ecoindex.getEcoIndexGrade(ecoindexValue),
         ecoIndex: ecoindexValue,
-        domSize: step.ecoindex?.dom,
-        nbRequest: step.ecoindex?.request,
-        responsesSize: step.ecoindex?.size,
+        domSize: metrics?.getDomElementsCount(),
+        nbRequest: metrics?.getRequestsCount(),
+        responsesSize: metrics?.getSize(),
         waterConsumption: ecoindex.computeGreenhouseGasesEmissionfromEcoIndex(ecoindexValue),
         greenhouseGasesEmission: ecoindex.computeWaterConsumptionfromEcoIndex(ecoindexValue),
       };
     });
-
   }
 }

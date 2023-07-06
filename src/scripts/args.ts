@@ -2,6 +2,8 @@ import {LoggerInterface} from '../loggers/Logger';
 import {ModuleInterface} from '../modules/ModuleInterface';
 import {ModuleFinder} from '../app/utils/AppModuleFinder';
 import CSVStorage from '../storage/csv/CSVStorage';
+import {JourneyInterface} from '../journey/JourneyInterface';
+import {JourneyFinder} from '../app/utils/AppJourneyFinder';
 
 const fs = require('fs');
 const path = require('path');
@@ -177,6 +179,45 @@ async function getVersionArgs(required: boolean, logger: LoggerInterface): Promi
   };
 }
 
+
+/**
+ * Return modules;
+ *
+ * @returns {ModuleInterface}
+ */
+async function getJourney(required: boolean, logger: LoggerInterface): Promise<any> {
+  const allJourneys: JourneyInterface[] = JourneyFinder.getJourneys();
+
+  let selected: JourneyInterface | null = null;
+  if (params.journey && typeof params.journey === 'string') {
+    selected = allJourneys.filter((journey) => params.journey === journey.id)[0];
+  }
+
+  // Manual
+  if (required && !selected) {
+    const manual = await prompts([{
+      type: 'select',
+      name: 'journey',
+      message: `Journey ?`,
+      choices: allJourneys.map((journey) => {
+        return {
+          title: journey.name,
+          value: journey,
+          selected: true,
+        };
+      }),
+    }]);
+
+    selected = manual.journey;
+  }
+
+  return {
+    data: selected,
+    shortcut: selected ? `--journey=${selected.id}` : '',
+  };
+}
+
+
 /**
  * Return user args.
  *
@@ -189,6 +230,7 @@ export async function getArgs(required: string[], logger: LoggerInterface) {
   args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
   args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
   args.modules = await getModules(required.indexOf('modules') > -1, logger);
+  args.journey = await getJourney(required.indexOf('journey') > -1, logger);
 
   logger.warning(`Shortcut: `);
   logger.warning(Object.values(args).map((value: any) => value.shortcut).join(' '));

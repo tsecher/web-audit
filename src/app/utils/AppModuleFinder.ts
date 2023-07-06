@@ -3,6 +3,10 @@ import path from 'path';
 
 import {AppConfig} from '../conf/AppConfig';
 import {ModuleInterface} from '../../modules/ModuleInterface';
+import {LighthouseModule} from '../../modules/lighthouse/LighthouseModule';
+import {EcoIndexModule} from '../../modules/ecoindex/EcoIndexModule';
+import {CPUModule} from '../../modules/cpu/CPUModule';
+import {W3cValidatorModule} from '../../modules/w3c/W3cValidatorModule';
 
 /**
  * Find module according to configuration file.
@@ -31,7 +35,12 @@ class ModuleFinderClass {
    * @protected
    */
   protected getEmbedModules(): ModuleInterface[] {
-    return [];
+    return [
+      new LighthouseModule(),
+      new EcoIndexModule(),
+      new W3cValidatorModule(),
+      new CPUModule(),
+    ];
   }
 
   /**
@@ -40,12 +49,15 @@ class ModuleFinderClass {
    * @protected
    */
   protected initModules() {
-    const moduleDataList = AppConfig.getConfig()?.modules;
-    if (moduleDataList && moduleDataList.length) {
-      this.modules = this.getModulesFromConfig(moduleDataList);
-    } else {
-      this.modules = this.getEmbedModules();
-    }
+
+    const modules: any = {};
+    this.getEmbedModules()
+      .concat(this.getModulesFromConfig())
+      .map((module: ModuleInterface) => {
+        modules[module.id] = module;
+      });
+
+    this.modules = Object.values(modules);
   }
 
   /**
@@ -55,16 +67,19 @@ class ModuleFinderClass {
    * @returns {ModuleInterface[]}
    * @protected
    */
-  protected getModulesFromConfig(moduleDataList: any[]): ModuleInterface[] {
+  protected getModulesFromConfig(): ModuleInterface[] {
+    const moduleDataList = AppConfig.getConfig()?.modules;
     const modulesList: ModuleInterface[] = [];
-    for (const moduleData of moduleDataList) {
-      const modulePath = path.resolve(process.cwd(), moduleData.path);
-      if (fs.existsSync(modulePath)) {
-        const ModuleClass = require(modulePath)[moduleData.id];
-        modulesList.push(new ModuleClass());
+    if (moduleDataList && moduleDataList.length) {
+      for (const moduleData of moduleDataList) {
+        const modulePath = path.resolve(process.cwd(), moduleData.path);
+        if (fs.existsSync(modulePath)) {
+          const ModuleClass = require(modulePath)[moduleData.id];
+          modulesList.push(new ModuleClass());
+        }
       }
-    }
 
+    }
     return modulesList;
   }
 }

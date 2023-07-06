@@ -22,4 +22,13 @@ export default class NoStorage implements StorageInterface {
   add(id: string, context: WebAuditContextClass, data: any): void {
   }
 
+  /**
+   * Add file.
+   *
+   * @param {string} input
+   * @param context
+   */
+  file(input: string, context: any): void {
+  }
+
 }

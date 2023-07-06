@@ -3,6 +3,7 @@ import {UrlWrapper} from '../core/UrlWrapper';
 
 import {PageWrapper} from './PageWrapper';
 import {AbstractEventsClass} from './AbstractEventsClass';
+import {JourneyInterface} from './JourneyInterface';
 
 /**
  * Journey events.
@@ -22,7 +23,7 @@ export const PuppeteerJourneyEvents = {
 /**
  * Base class defining puppeteer journey.
  */
-export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
+export abstract class AbstractPuppeteerJourney extends AbstractEventsClass implements JourneyInterface {
 
   abstract get name(): string;
 
@@ -47,15 +48,6 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
   }
 
   /**
-   * Method for journey initialisation, called before journey start.
-   *
-   * @param wrapper
-   * @param logger
-   * @returns {Promise<void>}
-   */
-  abstract init(wrapper: PageWrapper): Promise<void>;
-
-  /**
    * User journey description.
    *
    * @param wrapper
@@ -74,7 +66,6 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
 
     // Play specifics.
     try {
-      await this.init(wrapper);
       await this.trigger(PuppeteerJourneyEvents.JOURNEY_START, this.eventData);
       await this.journey(wrapper, url);
       await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
@@ -155,6 +146,27 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass {
    */
   stop() {
     this.stopJourney = true;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  beforeAll(wrapper: PageWrapper): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  beforeEach(wrapper: PageWrapper, urlWrapper: UrlWrapper): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  isEligible(wrapper: PageWrapper, urlWrapper: UrlWrapper): Promise<boolean> {
+    return Promise.resolve(true);
   }
 
 }

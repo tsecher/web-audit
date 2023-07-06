@@ -15,7 +15,7 @@ class AppConfigClass {
       if (fs.existsSync(input)) {
         this.config = JSON.parse(fs.readFileSync(input, 'utf-8'));
       } else {
-        this.checkConfig();
+        this.config = {};
       }
     } else {
       this.config = input;

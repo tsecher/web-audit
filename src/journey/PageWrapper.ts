@@ -1,5 +1,10 @@
+import fs from 'fs';
+
 import puppeteer from 'puppeteer';
 import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
+
+import {WebAuditConfig as Config} from '../core/WebAuditConfig';
+import {WebAuditContext as Context} from '../core/WebAuditContext';
 
 /**
  * Default Options for page wrapper.
@@ -9,9 +14,6 @@ import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
 export const DEFAULT_OPTIONS = {
   browserArgs: [
     '--no-sandbox',
-    '--disable-setuid-sandbox',
-    // '--single-process',
-    '--show-paint-rects',
   ],
   viewport: {
     width: 1920, height: 1080, isMobile: false,
@@ -124,22 +126,21 @@ export class PageWrapper {
    * @param name
    * @returns {Promise<PageWrapper>}
    */
-  async snap(name: string) {
+  async snap(name: string, screenPath = 'screenshots') {
     if (this._page) {
       this.step++;
       const steppedName = `${this.step}${name ? ` - ${name}` : ``}`;
 
-      /** *
-       fs.mkdirSync(screenPath, {recursive: true});
+      fs.mkdirSync(screenPath, {recursive: true});
 
-       // Create file.
-       const body = await this.page.evaluate(() => document.querySelector('html').outerHTML);
-       fs.writeFileSync(`${screenPath}/${steppedName}.html`, body, 'utf8');
+      // Create file.
+      const body = await this.page.evaluate(() => document?.querySelector('html')?.outerHTML);
+      fs.writeFileSync(`${screenPath}/${steppedName}.html`, body, 'utf8');
+      Config.storage?.file(`${screenPath}/${steppedName}.html`, Context.current);
 
-       // Snapshot.
-       await this.page.screenshot({path: `${screenPath}/${steppedName}.png`});
-
-       */
+      // Snapshot.
+      await this.page.screenshot({path: `${screenPath}/${steppedName}.png`});
+      Config.storage?.file(`${screenPath}/${steppedName}.png`, Context.current);
     }
     return Promise.resolve(this);
   }
