@@ -28,6 +28,7 @@ exports.EcoIndexModuleEvents = {
 class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
     constructor() {
         super(...arguments);
+        this.hasValue = false;
         this.defaultOptions = {
             bestPracticesAnalyse: true,
         };
@@ -68,6 +69,9 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
      */
     analyse(urlWrapper) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!this.hasValue) {
+                return Promise.resolve(false);
+            }
             WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             const results = this.getCleanResults(urlWrapper);
@@ -89,7 +93,16 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
         // Init ecoindex data.
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () { var _a; return (_a = this.story) === null || _a === void 0 ? void 0 : _a.start(data.wrapper.page); }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, (data) => __awaiter(this, void 0, void 0, function* () { var _b; return (_b = this.story) === null || _b === void 0 ? void 0 : _b.addStep(data.step); }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, () => __awaiter(this, void 0, void 0, function* () { var _c; return (_c = this.story) === null || _c === void 0 ? void 0 : _c.stop(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, false); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, () => __awaiter(this, void 0, void 0, function* () {
+            var _c;
+            this.hasValue = true;
+            (_c = this.story) === null || _c === void 0 ? void 0 : _c.stop(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, false);
+        }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_ERROR, () => __awaiter(this, void 0, void 0, function* () {
+            var _d;
+            this.hasValue = false;
+            (_d = this.story) === null || _d === void 0 ? void 0 : _d.stop(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_ERROR, false);
+        }));
     }
     /**
      * Return clean results.

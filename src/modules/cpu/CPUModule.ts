@@ -26,6 +26,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
 
   private currentStep = 0;
   private currentContext = 0;
+  private hasValue = false;
 
   get name(): string {
     return 'CPU';
@@ -70,13 +71,17 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => this.startTimer());
     journey.on(PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, async (data: any) => this.currentStep++);
     journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.currentContext++);
-    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => this.stopTimer());
+    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => this.stopTimer(true));
+    journey.on(PuppeteerJourneyEvents.JOURNEY_ERROR, async (data: any) => this.stopTimer(false));
   }
 
   /**
    * {@inheritdoc}
    */
   analyse(urlWrapper: UrlWrapper): Promise<boolean> {
+    if (!this.hasValue) {
+      return Promise.resolve(false);
+    }
     Event.emit(CPUModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
     Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
@@ -85,13 +90,14 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     Event.emit(CPUModuleEvents.afterAnalyse, {module: this, url: urlWrapper, result: result});
     Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
 
-    return result?.success || false;
+    return Promise.resolve(result?.success || false);
   }
 
   /**
    * Start timer
    */
   private startTimer() {
+    this.hasValue = false;
     const firstTime = new Date().getTime();
     this.currentStep = 0;
     this.currentContext = 0;
@@ -115,7 +121,8 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
   /**
    * Stop timer.
    */
-  private stopTimer() {
+  private stopTimer(hasValue: boolean) {
+    this.hasValue = hasValue;
     clearInterval(this.interval);
   }
 

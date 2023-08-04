@@ -39,10 +39,14 @@ function doAnalyse(args: any) {
   /** ======================================================
    ||                  Analyse                      ||
    =======================================================*/
-  const success = () => Config.logger.success(`Analyse success`);
+  const success = () => {
+    Config.logger.success(`Analyse success`);
+    process.exit();
+  };
   const error = (error: any) => {
     Config.logger.error(`Analyse error :`);
     Config.logger.error(error);
+    process.exit();
   };
 
   Core.analyseUrls(urlsWrapper, modules, journey).then(success).catch(error);

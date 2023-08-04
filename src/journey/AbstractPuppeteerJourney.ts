@@ -1,4 +1,4 @@
-import {LoggerInterface} from '../loggers/Logger';
+import {LoggerInterface, WebAuditLogger} from '../loggers/Logger';
 import {UrlWrapper} from '../core/UrlWrapper';
 
 import {PageWrapper} from './PageWrapper';
@@ -62,13 +62,18 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
    * @returns {Promise<void>}
    */
   async play(wrapper: PageWrapper, url: UrlWrapper) {
+    this.stopJourney = false;
     this.eventData = {wrapper: wrapper, url: url, journey: this};
 
     // Play specifics.
     try {
       await this.trigger(PuppeteerJourneyEvents.JOURNEY_START, this.eventData);
       await this.journey(wrapper, url);
-      await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
+      if (this.stopJourney) {
+        await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
+      } else {
+        await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
+      }
     } catch (err) {
       this.logger.error(err);
       await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
@@ -105,10 +110,9 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
           resolve(data);
         })
         .catch(async (err: any) => {
-          console.log(err);
-          process.exit();
           await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
           this.stop();
+          resolve(null);
         });
     });
   }
@@ -120,6 +124,7 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
    * @returns {Promise<void>}
    */
   async triggerNewContext(name: string) {
+    this._checkStep();
     const eventData: any = {
       ...this.eventData,
       ...{

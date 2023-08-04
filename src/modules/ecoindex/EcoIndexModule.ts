@@ -23,6 +23,7 @@ export const EcoIndexModuleEvents: any = {
 export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
   // @ts-ignore
   protected story: EcoIndexStory | undefined;
+  protected hasValue = false;
 
   get name(): string {
     return 'Eco Index';
@@ -65,6 +66,9 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
    * {@inheritdoc}
    */
   async analyse(urlWrapper: UrlWrapper): Promise<boolean> {
+    if (!this.hasValue) {
+      return Promise.resolve(false);
+    }
     Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
     Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
@@ -89,7 +93,14 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     // Init ecoindex data.
     journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => this.story?.start(data.wrapper.page));
     journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.story?.addStep(data.step));
-    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async () => this.story?.stop(PuppeteerJourneyEvents.JOURNEY_END, false));
+    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async () => {
+      this.hasValue = true;
+      this.story?.stop(PuppeteerJourneyEvents.JOURNEY_END, false);
+    });
+    journey.on(PuppeteerJourneyEvents.JOURNEY_ERROR, async () => {
+      this.hasValue = false;
+      this.story?.stop(PuppeteerJourneyEvents.JOURNEY_ERROR, false);
+    });
   }
 
   /**

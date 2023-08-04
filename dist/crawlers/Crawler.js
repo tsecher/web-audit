@@ -91,7 +91,13 @@ class WebAuditCrawler {
             }
             WebAuditContext_1.WebAuditContext.current.setData('Page crawled').setUrl(url);
             // Get info.
-            const pageInfo = yield this.getPageInfo(this.pageWrapper, url, source, journey);
+            let pageInfo;
+            try {
+                pageInfo = yield this.getPageInfo(this.pageWrapper, url, source, journey);
+            }
+            catch (error) {
+                return Promise.resolve();
+            }
             const eventData = { crawler: this, data: pageInfo, baseUrl: this.baseUrlWrapper, pageWrapper: this.pageWrapper };
             // Add to parsed urls.
             this.addToParsedUrls(pageInfo.url);
@@ -159,10 +165,11 @@ class WebAuditCrawler {
             this.pageWrapper.page.on('response', onResponse);
             // Navigate to page.
             try {
-                yield this.pageWrapper.goto(inputUrl.toString());
+                yield this.pageWrapper.goto(inputUrl.toString(), true);
             }
             catch (error) {
                 WebAuditConfig_1.WebAuditConfig.logger.error(error);
+                this.pageWrapper.page.off('response', onResponse);
                 return Promise.resolve(infos);
             }
             try {
