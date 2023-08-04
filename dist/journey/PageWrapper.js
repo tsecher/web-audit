@@ -103,9 +103,19 @@ class PageWrapper {
      * @param url
      * @returns {Promise<PageWrapper>}
      */
-    goto(url) {
+    goto(url, nextOnError = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._page.goto(url);
+            if (nextOnError) {
+                try {
+                    yield this._page.goto(url);
+                }
+                catch (err) {
+                    WebAuditConfig_1.WebAuditConfig.logger.error(err);
+                }
+            }
+            else {
+                yield this._page.goto(url);
+            }
             return this;
         });
     }

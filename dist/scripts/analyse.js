@@ -34,10 +34,14 @@ function doAnalyse(args) {
     /** ======================================================
      ||                  Analyse                      ||
      =======================================================*/
-    const success = () => WebAuditConfig_1.WebAuditConfig.logger.success(`Analyse success`);
+    const success = () => {
+        WebAuditConfig_1.WebAuditConfig.logger.success(`Analyse success`);
+        process.exit();
+    };
     const error = (error) => {
         WebAuditConfig_1.WebAuditConfig.logger.error(`Analyse error :`);
         WebAuditConfig_1.WebAuditConfig.logger.error(error);
+        process.exit();
     };
     index_1.Core.analyseUrls(urlsWrapper, modules, journey).then(success).catch(error);
 }

@@ -46,12 +46,18 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      */
     play(wrapper, url) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.stopJourney = false;
             this.eventData = { wrapper: wrapper, url: url, journey: this };
             // Play specifics.
             try {
                 yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_START, this.eventData);
                 yield this.journey(wrapper, url);
-                yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
+                if (this.stopJourney) {
+                    yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
+                }
+                else {
+                    yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
+                }
             }
             catch (err) {
                 this.logger.error(err);
@@ -87,10 +93,9 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
                     resolve(data);
                 }))
                     .catch((err) => __awaiter(this, void 0, void 0, function* () {
-                    console.log(err);
-                    process.exit();
                     yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
                     this.stop();
+                    resolve(null);
                 }));
             });
         });
@@ -103,6 +108,7 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      */
     triggerNewContext(name) {
         return __awaiter(this, void 0, void 0, function* () {
+            this._checkStep();
             const eventData = Object.assign(Object.assign({}, this.eventData), {
                 step: this.step,
                 name: name,

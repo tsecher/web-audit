@@ -14,7 +14,6 @@ const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppetee
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
 const WebAuditEvent_1 = require("../../core/WebAuditEvent");
 const ModuleInterface_1 = require("../ModuleInterface");
-const fs = require('fs');
 const lighthouse = require('lighthouse');
 const ReportGenerator = require('lighthouse/report/generator/report-generator');
 /**
@@ -72,6 +71,9 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
     analyse(urlWrapper) {
         var _a, _b, _c, _d, _e, _f, _g;
         return __awaiter(this, void 0, void 0, function* () {
+            if (!this.lighthouseReport) {
+                return false;
+            }
             // Report
             const report = {};
             (_b = (_a = this.getOptions()) === null || _a === void 0 ? void 0 : _a.onlyCategories) === null || _b === void 0 ? void 0 : _b.map((cat) => {

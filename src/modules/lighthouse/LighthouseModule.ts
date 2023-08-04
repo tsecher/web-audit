@@ -7,8 +7,6 @@ import {PageWrapper} from '../../journey/PageWrapper';
 import {UrlWrapper} from '../../core/UrlWrapper';
 import {ModuleEvents} from '../ModuleInterface';
 
-const fs = require('fs');
-
 const lighthouse = require('lighthouse');
 const ReportGenerator = require('lighthouse/report/generator/report-generator');
 
@@ -71,6 +69,9 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
    * {@inheritdoc}
    */
   async analyse(urlWrapper: UrlWrapper): Promise<boolean> {
+    if (!this.lighthouseReport) {
+      return false;
+    }
 
     // Report
     const report: any = {};

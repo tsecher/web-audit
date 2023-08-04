@@ -30,6 +30,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         this.stock = [];
         this.currentStep = 0;
         this.currentContext = 0;
+        this.hasValue = false;
     }
     get name() {
         return 'CPU';
@@ -69,24 +70,29 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () { return this.startTimer(); }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, (data) => __awaiter(this, void 0, void 0, function* () { return this.currentStep++; }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, (data) => __awaiter(this, void 0, void 0, function* () { return this.currentContext++; }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(true); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_ERROR, (data) => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(false); }));
     }
     /**
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
+        if (!this.hasValue) {
+            return Promise.resolve(false);
+        }
         WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
         WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
         const result = this.getResult(urlWrapper);
         WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
         WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.afterAnalyse, { module: this, url: urlWrapper, result: result });
         WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
-        return (result === null || result === void 0 ? void 0 : result.success) || false;
+        return Promise.resolve((result === null || result === void 0 ? void 0 : result.success) || false);
     }
     /**
      * Start timer
      */
     startTimer() {
+        this.hasValue = false;
         const firstTime = new Date().getTime();
         this.currentStep = 0;
         this.currentContext = 0;
@@ -106,7 +112,8 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
     /**
      * Stop timer.
      */
-    stopTimer() {
+    stopTimer(hasValue) {
+        this.hasValue = hasValue;
         clearInterval(this.interval);
     }
     /**

@@ -3,7 +3,7 @@ import fs from 'fs';
 import puppeteer from 'puppeteer';
 import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
 
-import {WebAuditConfig as Config} from '../core/WebAuditConfig';
+import {WebAuditConfig, WebAuditConfig as Config} from '../core/WebAuditConfig';
 import {WebAuditContext as Context} from '../core/WebAuditContext';
 
 /**
@@ -115,8 +115,17 @@ export class PageWrapper {
    * @param url
    * @returns {Promise<PageWrapper>}
    */
-  async goto(url: string) {
-    await this._page.goto(url);
+  async goto(url: string, nextOnError = false) {
+    if (nextOnError) {
+      try {
+        await this._page.goto(url);
+      } catch (err) {
+        WebAuditConfig.logger.error(err);
+      }
+    } else {
+      await this._page.goto(url);
+    }
+
     return this;
   }
 
