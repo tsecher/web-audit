@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CPUModule = exports.CPUModuleEvents = void 0;
-const WebAuditEvent_1 = require("../../core/WebAuditEvent");
 const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppeteerJourneyModule");
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
 const ModuleInterface_1 = require("../ModuleInterface");
@@ -41,18 +40,17 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
     /**
      * {@inheritdoc}
      */
-    init(config, context) {
-        var _a, _b;
-        this.config = config;
+    init(context) {
+        var _a, _b, _c, _d, _e;
         this.context = context;
         // Install eco index store.
-        (_a = this.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('cpu', this.context, {
+        (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('cpu', this.context, {
             url: 'Url',
             time: 'Time',
             cpu: 'CPU use average (%)',
         });
         // Install eco index best_practices.
-        (_b = this.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('cpu_history', this.context, {
+        (_d = (_c = this.context) === null || _c === void 0 ? void 0 : _c.config.storage) === null || _d === void 0 ? void 0 : _d.installStore('cpu_history', this.context, {
             url: 'Url',
             time: 'Time',
             step: 'Step',
@@ -60,32 +58,33 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
             cpu: 'CPU usage (%)',
         });
         // Emit.
-        WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.createCPUModule, { module: this });
+        (_e = this.context) === null || _e === void 0 ? void 0 : _e.eventBus.emit(exports.CPUModuleEvents.createCPUModule, { module: this });
     }
     /**
      * {@inheritdoc}
      */
     initEvents(journey) {
         // Init ecoindex data.
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () { return this.startTimer(); }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, (data) => __awaiter(this, void 0, void 0, function* () { return this.currentStep++; }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, (data) => __awaiter(this, void 0, void 0, function* () { return this.currentContext++; }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(true); }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_ERROR, (data) => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(false); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, () => __awaiter(this, void 0, void 0, function* () { return this.startTimer(); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, () => __awaiter(this, void 0, void 0, function* () { return this.currentStep++; }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, () => __awaiter(this, void 0, void 0, function* () { return this.currentContext++; }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, () => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(true); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_ERROR, () => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(false); }));
     }
     /**
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
+        var _a, _b, _c, _d, _e;
         if (!this.hasValue) {
             return Promise.resolve(false);
         }
-        WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
-        WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+        (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(exports.CPUModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+        (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
         const result = this.getResult(urlWrapper);
-        WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
-        WebAuditEvent_1.WebAuditEvent.emit(exports.CPUModuleEvents.afterAnalyse, { module: this, url: urlWrapper, result: result });
-        WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
+        (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.CPUModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
+        (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(exports.CPUModuleEvents.afterAnalyse, { module: this, url: urlWrapper, result: result });
+        (_e = this.context) === null || _e === void 0 ? void 0 : _e.eventBus.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
         return Promise.resolve((result === null || result === void 0 ? void 0 : result.success) || false);
     }
     /**
@@ -103,8 +102,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
                 context: this.currentContext,
             };
             os.cpuUsage((value) => {
-                const cpu = value * 100;
-                usage.cpu = cpu;
+                usage.cpu = value * 100;
             });
             this.stock.push(usage);
         }, 100);
@@ -124,10 +122,10 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      * @private
      */
     getResult(urlWrapper) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d, _e;
         this.stock.forEach((item) => {
-            var _a, _b;
-            (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.storage) === null || _b === void 0 ? void 0 : _b.add('cpu_history', this.context, Object.assign(Object.assign({}, item), {
+            var _a, _b, _c;
+            (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu_history', this.context, Object.assign(Object.assign({}, item), {
                 url: urlWrapper.url,
             }));
         });
@@ -135,8 +133,8 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         const averageData = Object.assign(Object.assign({}, this.getAverageData()), {
             url: urlWrapper.url,
         });
-        (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.storage) === null || _b === void 0 ? void 0 : _b.add('cpu', this.context, averageData);
-        (_c = this.config) === null || _c === void 0 ? void 0 : _c.logger.result('CPU', averageData, urlWrapper.url.toString());
+        (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu', this.context, averageData);
+        (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result('CPU', averageData, urlWrapper.url.toString());
         return averageData;
     }
     /**

@@ -3,8 +3,7 @@ import fs from 'fs';
 import puppeteer from 'puppeteer';
 import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
 
-import {WebAuditConfig, WebAuditConfig as Config} from '../core/WebAuditConfig';
-import {WebAuditContext as Context} from '../core/WebAuditContext';
+import {WebAuditContextClass} from '../core/WebAuditContext';
 
 /**
  * Default Options for page wrapper.
@@ -54,9 +53,13 @@ export class PageWrapper {
   /**
    * Constructor
    *
-   * @param name
+   * @param context
+   * @param options
    */
-  constructor(options = {}) {
+  constructor(
+    protected context: WebAuditContextClass,
+    options = {},
+  ) {
     // Build dependencies.
     this.options = {
       ...DEFAULT_OPTIONS,
@@ -97,7 +100,6 @@ export class PageWrapper {
   /**
    * Create new page context.
    *
-   * @param context
    * @returns {Promise<PageWrapper>}
    */
   async newPage(): Promise<PageWrapper> {
@@ -113,6 +115,7 @@ export class PageWrapper {
    * Go To url.
    *
    * @param url
+   * @param nextOnError
    * @returns {Promise<PageWrapper>}
    */
   async goto(url: string, nextOnError = false) {
@@ -120,7 +123,7 @@ export class PageWrapper {
       try {
         await this._page.goto(url);
       } catch (err) {
-        WebAuditConfig.logger.error(err);
+        this.context.config.logger.error(err);
       }
     } else {
       await this._page.goto(url);
@@ -133,6 +136,7 @@ export class PageWrapper {
    * Snap a session (image and html file).
    *
    * @param name
+   * @param screenPath
    * @returns {Promise<PageWrapper>}
    */
   async snap(name: string, screenPath = 'screenshots') {
@@ -145,11 +149,11 @@ export class PageWrapper {
       // Create file.
       const body = await this.page.evaluate(() => document?.querySelector('html')?.outerHTML);
       fs.writeFileSync(`${screenPath}/${steppedName}.html`, body, 'utf8');
-      Config.storage?.file(`${screenPath}/${steppedName}.html`, Context.current);
+      this.context.config.storage?.file(`${screenPath}/${steppedName}.html`, this.context);
 
       // Snapshot.
       await this.page.screenshot({path: `${screenPath}/${steppedName}.png`});
-      Config.storage?.file(`${screenPath}/${steppedName}.png`, Context.current);
+      this.context.config.storage?.file(`${screenPath}/${steppedName}.png`, this.context);
     }
     return Promise.resolve(this);
   }
@@ -169,15 +173,23 @@ export class PageWrapper {
   /**
    * Scroll to bottom of the page.
    *
-   * @param page
    * @returns {Promise<void>}
    */
   async scrollToBottom() {
     const bodyHeight = await this._page.evaluate(() => document.body.clientHeight);
     const windowHeight = await this._page.evaluate(() => window.innerHeight);
-    for (let i = 0; i < Math.floor(bodyHeight / windowHeight) + 2; i++) {
+
+    let steps = Math.floor(bodyHeight / windowHeight);
+    let size = windowHeight;
+
+    if (steps > 10) {
+      steps = 10;
+      size = bodyHeight / 10;
+    }
+
+    for (let i = 0; i < steps + 2; i++) {
       await scrollPageToBottom(this._page, {
-        size: windowHeight,
+        size: size,
         delay: 200,
       });
     }

@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.W3cValidatorModule = exports.W3cValidatorModuleEvents = void 0;
 const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppeteerJourneyModule");
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
-const WebAuditEvent_1 = require("../../core/WebAuditEvent");
 const ModuleInterface_1 = require("../ModuleInterface");
 const validator = require('html-validator');
 /**
@@ -43,30 +42,29 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
     /**
      * {@inheritdoc}
      */
-    init(config, context) {
+    init(context) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            this.config = config;
             this.context = context;
             // Install w3c store.
-            (_a = this.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('w3c_validator', this.context, {
+            (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('w3c_validator', this.context, {
                 url: 'Url',
                 type: 'Type',
                 message: 'Message',
                 extract: 'Extract',
             });
             // Emit.
-            WebAuditEvent_1.WebAuditEvent.emit(exports.W3cValidatorModuleEvents.createW3cValidatorModule, { module: this });
+            this.context.eventBus.emit(exports.W3cValidatorModuleEvents.createW3cValidatorModule, { module: this });
         });
     }
     /**
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
-        var _a;
+        var _a, _b, _c, _d, _e, _f;
         return __awaiter(this, void 0, void 0, function* () {
-            WebAuditEvent_1.WebAuditEvent.emit(exports.W3cValidatorModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(exports.W3cValidatorModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             let success;
             const options = this.getOptions();
             if (this.dom) {
@@ -75,19 +73,19 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
                         url: urlWrapper.url.toString(),
                         data: this.dom,
                     });
-                    WebAuditEvent_1.WebAuditEvent.emit(exports.W3cValidatorModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
-                    WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
+                    (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.W3cValidatorModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
+                    (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
                     const summary = {};
                     options.allowedTypes.forEach((type) => {
                         summary[type] = result.messages.filter((item) => item.type === type).length;
                     });
-                    (_a = this.config) === null || _a === void 0 ? void 0 : _a.logger.result(`W3C`, summary, urlWrapper.url.toString());
+                    (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`W3C`, summary, urlWrapper.url.toString());
                     result.messages
                         .filter((item) => options.allowedTypes.includes(item.type))
                         .forEach((item) => {
-                        var _a, _b;
+                        var _a, _b, _c;
                         item.url = urlWrapper.url.toString();
-                        (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.storage) === null || _b === void 0 ? void 0 : _b.add('w3c_validator', this.context, item);
+                        (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('w3c_validator', this.context, item);
                     });
                     success = true;
                 }
@@ -115,7 +113,7 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
      * {@inheritdoc}
      */
     initEvents(journey) {
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () {
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, () => __awaiter(this, void 0, void 0, function* () {
             this.dom = null;
         }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () {

@@ -33,7 +33,6 @@ class AbstractEventsClass {
      */
     trigger(id, data = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            // console.log(`Trigger: ${id} url:${data?.url?.url?.toString()}  step: ${data.name} [${data.step}]`);
             for (const cb of this.callbacks[id] || []) {
                 yield cb(data);
             }

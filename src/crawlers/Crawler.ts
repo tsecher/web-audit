@@ -1,11 +1,9 @@
 import {HTTPResponse} from 'puppeteer';
 
-import {WebAuditConfig as Config} from '../core/WebAuditConfig';
-import {WebAuditContext as Context} from '../core/WebAuditContext';
-import {WebAuditEvent as Event} from '../core/WebAuditEvent';
 import {UrlWrapper} from '../core/UrlWrapper';
 import {PageWrapper} from '../journey/PageWrapper';
 import {JourneyInterface} from '../journey/JourneyInterface';
+import {WebAuditContextClass} from '../core/WebAuditContext';
 
 export interface WebAuditCrawlerType {
   baseUrl: URL;
@@ -33,14 +31,13 @@ export const WebAuditCrawlerEvents: any = {
   onPageCrawledNoUri: 'crawler__onPageCrawledNoUri',
   onPageCrawledRedirected: 'crawler__onPageCrawledRedirected',
   onPageContent: 'crawler__onPageContent',
+  onCrawlUrlsEnd: 'crawler__onCrawlUrlsEnd',
 };
 
 /**
  * Website crawler.
  */
 export class WebAuditCrawler {
-
-  public baseUrlWrapper: UrlWrapper;
 
   protected defaultOptions: any = {
     followSearchParams: true,
@@ -53,31 +50,36 @@ export class WebAuditCrawler {
 
   private alreadyParsedUrls: string[] = [];
 
-  private pageWrapper: PageWrapper = new PageWrapper();
+  private pageWrapper: PageWrapper;
 
   /**
    * Constructor.
    *
+   * @param eventEmitter
+   * @param baseUrlWrapper
    * @param options
    */
-  constructor(baseUrlWrapper: UrlWrapper, options?: WebAuditCrawlerType) {
+  constructor(
+    protected context: WebAuditContextClass,
+    public baseUrlWrapper: UrlWrapper,
+    options?: WebAuditCrawlerType,
+  ) {
     this.options = {
       ...this.defaultOptions,
       ...options,
     };
-
-    this.baseUrlWrapper = baseUrlWrapper;
+    this.pageWrapper = new PageWrapper(this.context);
 
     // Prepare options.
     this.initBaseUrl(baseUrlWrapper.url.toString());
 
     // Emit.
-    Event.emit(WebAuditCrawlerEvents.createCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
+    this.context.eventBus.emit(WebAuditCrawlerEvents.createCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
 
     // Prepare storage.
-    Config.storage?.installStore(
+    this.context.config.storage?.installStore(
       'page_found',
-      Context.current,
+      this.context,
       {
         url: 'Referenced url',
         status: `Status`,
@@ -113,7 +115,7 @@ export class WebAuditCrawler {
       return Promise.resolve();
     }
 
-    Context.current.setData('Page crawled').setUrl(url);
+    this.context.setData('Page crawled').setUrl(url);
 
     // Get info.
     let pageInfo: any;
@@ -131,11 +133,11 @@ export class WebAuditCrawler {
     this.addToParsedUrls(pageInfo.source);
 
     if (pageInfo.log) {
-      Event.emit(WebAuditCrawlerEvents.onPageCrawled, eventData);
-      Config.storage?.add('page_found', Context.current, pageInfo);
+      this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawled, eventData);
+      this.context.config.storage?.add('page_found', this.context, pageInfo);
 
       if (pageInfo.status >= 300 && pageInfo < 400) {
-        Event.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
+        this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
       }
 
       if (pageInfo.crawl) {
@@ -174,7 +176,7 @@ export class WebAuditCrawler {
       return infos;
     }
 
-    Config.logger.message(`Parse : ${inputUrl.toString()}`);
+    this.context.config.logger.message(`Parse : ${inputUrl.toString()}`);
 
     // Listen data.
     let status: number | string = '';
@@ -201,7 +203,7 @@ export class WebAuditCrawler {
     try {
       await this.pageWrapper.goto(inputUrl.toString(), true);
     } catch (error) {
-      Config.logger.error(error);
+      this.context.config.logger.error(error);
       this.pageWrapper.page.off('response', onResponse);
       return Promise.resolve(infos);
     }
@@ -209,7 +211,7 @@ export class WebAuditCrawler {
     try {
       await this.pageWrapper.page.waitForSelector('body');
     } catch (err) {
-      Config.logger.error(`Load timeout`);
+      this.context.config.logger.error(`Load timeout`);
     }
 
     // Remove listeneer data.
@@ -251,7 +253,11 @@ export class WebAuditCrawler {
     }
 
     const subUrls = this.getEligibleUrls(hrefs);
-    Event.emit(WebAuditCrawlerEvents.onCrawlUrls, {crawler: this, urlsList: subUrls, baseUrl: this.baseUrlWrapper});
+    this.context.eventBus.emit(WebAuditCrawlerEvents.onCrawlUrls, {
+      crawler: this,
+      urlsList: subUrls,
+      baseUrl: this.baseUrlWrapper,
+    });
     for (const url of subUrls) {
       await this.crawlUrl(url, source, journey);
     }
@@ -272,7 +278,7 @@ export class WebAuditCrawler {
       this.options.domain.pathname = '';
       this.options.domain.search = '';
     } catch (erro) {
-      Config.logger.exit(`Base URL is not of type URL`);
+      this.context.config.logger.exit(`Base URL is not of type URL`);
     }
   }
 

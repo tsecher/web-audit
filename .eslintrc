@@ -22,6 +22,7 @@
     "no-warning-comments": 0,
     "prefer-rest-params": 0,
     "object-shorthand": 0,
-    "@typescript-eslint/ban-ts-comment": 0
+    "@typescript-eslint/ban-ts-comment": 0,
+    "import/no-cycle": 0
   }
 }

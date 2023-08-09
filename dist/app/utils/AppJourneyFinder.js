@@ -8,7 +8,6 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const AppConfig_1 = require("../conf/AppConfig");
 const DefaultPuppeteerJourney_1 = require("../../journey/DefaultPuppeteerJourney");
-const index_1 = require("../../index");
 /**
  * Find journey according to configuration file.
  */
@@ -18,8 +17,8 @@ class JourneyFinderClass {
      *
      * @returns {JourneyInterface[]}
      */
-    getJourneys() {
-        if (!this.journeys) {
+    getJourneys(force = false) {
+        if (force || !this.journeys) {
             this.initJourneys();
         }
         return this.journeys || [];
@@ -32,7 +31,7 @@ class JourneyFinderClass {
      */
     getEmbedJourneys() {
         return [
-            new DefaultPuppeteerJourney_1.DefaultPuppeteerJourney(index_1.Config.logger),
+            new DefaultPuppeteerJourney_1.DefaultPuppeteerJourney(),
         ];
     }
     /**
@@ -65,7 +64,7 @@ class JourneyFinderClass {
                 const journeyPath = path_1.default.resolve(process.cwd(), journeyData.path);
                 if (fs_1.default.existsSync(journeyPath)) {
                     const JourneyClass = require(journeyPath)[journeyData.id];
-                    journeysList.push(new JourneyClass(index_1.Config.logger));
+                    journeysList.push(new JourneyClass());
                 }
             }
         }

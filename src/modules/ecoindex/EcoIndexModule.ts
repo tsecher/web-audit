@@ -1,8 +1,6 @@
 import {EcoIndexStory, EcoIndexStoryStep} from 'ecoindex_puppeteer';
 
-import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
-import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
-import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
+import {WebAuditContextClass} from '../../core/WebAuditContext';
 import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJourneyModule';
 import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
 import {UrlWrapper} from '../../core/UrlWrapper';
@@ -40,12 +38,11 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
   /**
    * {@inheritdoc}
    */
-  async init(config: Config, context: Context): Promise<any> {
-    this.config = config;
+  async init(context: WebAuditContextClass): Promise<any> {
     this.context = context;
 
     // Install eco index store.
-    this.config.storage?.installStore('ecoindex', this.context, {
+    this.context?.config.storage?.installStore('ecoindex', this.context, {
       url: 'Url',
       grade: 'Grade',
       ecoIndex: 'Ecoindex',
@@ -59,7 +56,7 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     });
 
     // Emit.
-    Event.emit(EcoIndexModuleEvents.createEcoIndexModule, {module: this});
+    this.context?.eventBus.emit(EcoIndexModuleEvents.createEcoIndexModule, {module: this});
   }
 
   /**
@@ -69,17 +66,17 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     if (!this.hasValue) {
       return Promise.resolve(false);
     }
-    Event.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
-    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
     const results: any[] = this.getCleanResults(urlWrapper);
     results.forEach((result) => {
-      this.config?.storage?.add('ecoindex', this.context, result);
-      this.config?.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
+      this.context?.config?.storage?.add('ecoindex', this.context, result);
+      this.context?.config?.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
     });
 
-    Event.emit(EcoIndexModuleEvents.onResult, {module: this, url: urlWrapper, result: results});
-    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: results});
+    this.context?.eventBus.emit(EcoIndexModuleEvents.onResult, {module: this, url: urlWrapper, result: results});
+    this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: results});
 
     return results.length > 0;
   }

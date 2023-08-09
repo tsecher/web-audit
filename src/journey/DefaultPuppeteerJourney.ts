@@ -40,6 +40,7 @@ export class DefaultPuppeteerJourney extends AbstractPuppeteerJourney {
   async journey(wrapper: PageWrapper, url: UrlWrapper): Promise<void> {
     const wait = 1000;
 
+    let i: any;
     await this.addStep('goto', async () => {
       await wrapper.goto(url.url.toString());
     });

@@ -11,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EcoIndexModule = exports.EcoIndexModuleEvents = void 0;
 const ecoindex_puppeteer_1 = require("ecoindex_puppeteer");
-const WebAuditEvent_1 = require("../../core/WebAuditEvent");
 const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppeteerJourneyModule");
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
 const ModuleInterface_1 = require("../ModuleInterface");
@@ -42,13 +41,12 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
     /**
      * {@inheritdoc}
      */
-    init(config, context) {
-        var _a;
+    init(context) {
+        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
-            this.config = config;
             this.context = context;
             // Install eco index store.
-            (_a = this.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('ecoindex', this.context, {
+            (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('ecoindex', this.context, {
                 url: 'Url',
                 grade: 'Grade',
                 ecoIndex: 'Ecoindex',
@@ -61,27 +59,28 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
                 nbBestPracticesToCorrect: 'Nb Best practices to correct',
             });
             // Emit.
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.createEcoIndexModule, { module: this });
+            (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.EcoIndexModuleEvents.createEcoIndexModule, { module: this });
         });
     }
     /**
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
+        var _a, _b, _c, _d;
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.hasValue) {
                 return Promise.resolve(false);
             }
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             const results = this.getCleanResults(urlWrapper);
             results.forEach((result) => {
-                var _a, _b, _c;
-                (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.storage) === null || _b === void 0 ? void 0 : _b.add('ecoindex', this.context, result);
-                (_c = this.config) === null || _c === void 0 ? void 0 : _c.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
+                var _a, _b, _c, _d, _e;
+                (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('ecoindex', this.context, result);
+                (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
             });
-            WebAuditEvent_1.WebAuditEvent.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: urlWrapper, result: results });
-            WebAuditEvent_1.WebAuditEvent.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: results });
+            (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: urlWrapper, result: results });
+            (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: results });
             return results.length > 0;
         });
     }

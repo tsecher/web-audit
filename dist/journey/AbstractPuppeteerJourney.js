@@ -32,12 +32,17 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
     /**
      * Constructor.
      */
-    constructor(logger) {
+    constructor() {
         super();
         this.stopJourney = false;
         this.step = 0;
-        this.logger = logger;
         this.stopJourney = false;
+    }
+    set context(context) {
+        this._context = context;
+    }
+    get context() {
+        return this._context;
     }
     /**
      * Play the user journey.
@@ -45,6 +50,7 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      * @returns {Promise<void>}
      */
     play(wrapper, url) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             this.stopJourney = false;
             this.eventData = { wrapper: wrapper, url: url, journey: this };
@@ -60,14 +66,14 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
                 }
             }
             catch (err) {
-                this.logger.error(err);
+                (_a = this.context) === null || _a === void 0 ? void 0 : _a.config.logger.error(err);
                 yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
             }
             try {
                 yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_CLOSE, this.eventData);
             }
             catch (err) {
-                this.logger.error(err);
+                (_b = this.context) === null || _b === void 0 ? void 0 : _b.config.logger.error(err);
             }
         });
     }

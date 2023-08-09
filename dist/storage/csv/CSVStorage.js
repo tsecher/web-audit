@@ -15,8 +15,7 @@ class CSVStorage {
     /**
      * Constructor.
      *
-     * @param string dir
-     *   Path of stored csv.
+     * @param dir Path of stored csv.
      */
     constructor(dir) {
         this.structures = {};
@@ -48,7 +47,8 @@ class CSVStorage {
     /**
      * Store file.
      *
-     * @param {string} path
+     * @param input
+     * @param context
      */
     file(input, context) {
         const output = path_1.default.join(this.dirPath, String((context === null || context === void 0 ? void 0 : context.version) || 'undefined'), input);
@@ -59,6 +59,7 @@ class CSVStorage {
      * Get csv values.
      *
      * @param data
+     * @param id
      * @private
      */
     getCSVValues(data, id) {
@@ -69,6 +70,7 @@ class CSVStorage {
      * Return csv line.
      *
      * @param data
+     * @param id
      * @private
      */
     getCSVLine(data, id) {

@@ -1,4 +1,4 @@
-import {LoggerInterface, WebAuditLogger} from '../loggers/Logger';
+import {WebAuditContextClass} from '../core/WebAuditContext';
 import {UrlWrapper} from '../core/UrlWrapper';
 
 import {PageWrapper} from './PageWrapper';
@@ -31,27 +31,34 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
 
   private stopJourney = false;
 
-  private logger: LoggerInterface;
-
   private step = 0;
 
   private eventData: any;
 
+  private _context: WebAuditContextClass | undefined;
+
   /**
    * Constructor.
    */
-  constructor(logger: LoggerInterface) {
+  constructor() {
     super();
 
-    this.logger = logger;
     this.stopJourney = false;
+  }
+
+  set context(context: WebAuditContextClass | undefined) {
+    this._context = context;
+  }
+
+  get context(): WebAuditContextClass | undefined {
+    return this._context;
   }
 
   /**
    * User journey description.
    *
    * @param wrapper
-   * @param logger
+   * @param url
    * @returns {Promise<void>}
    */
   abstract journey(wrapper: PageWrapper, url: UrlWrapper): Promise<void>;
@@ -75,14 +82,14 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
         await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
       }
     } catch (err) {
-      this.logger.error(err);
+      this.context?.config.logger.error(err);
       await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
     }
 
     try {
       await this.trigger(PuppeteerJourneyEvents.JOURNEY_CLOSE, this.eventData);
     } catch (err) {
-      this.logger.error(err);
+      this.context?.config.logger.error(err);
     }
   }
 

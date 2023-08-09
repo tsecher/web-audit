@@ -4,7 +4,6 @@ import path from 'path';
 import {AppConfig} from '../conf/AppConfig';
 import {JourneyInterface} from '../../journey/JourneyInterface';
 import {DefaultPuppeteerJourney} from '../../journey/DefaultPuppeteerJourney';
-import {Config} from '../../index';
 
 /**
  * Find journey according to configuration file.
@@ -18,8 +17,8 @@ class JourneyFinderClass {
    *
    * @returns {JourneyInterface[]}
    */
-  public getJourneys(): JourneyInterface[] {
-    if (!this.journeys) {
+  public getJourneys(force = false): JourneyInterface[] {
+    if (force || !this.journeys) {
       this.initJourneys();
     }
 
@@ -34,7 +33,7 @@ class JourneyFinderClass {
    */
   protected getEmbedJourneys(): JourneyInterface[] {
     return [
-      new DefaultPuppeteerJourney(Config.logger),
+      new DefaultPuppeteerJourney(),
     ];
   }
 
@@ -70,7 +69,7 @@ class JourneyFinderClass {
         const journeyPath = path.resolve(process.cwd(), journeyData.path);
         if (fs.existsSync(journeyPath)) {
           const JourneyClass = require(journeyPath)[journeyData.id];
-          journeysList.push(new JourneyClass(Config.logger));
+          journeysList.push(new JourneyClass());
         }
       }
 

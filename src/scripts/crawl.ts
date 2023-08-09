@@ -1,19 +1,18 @@
 import path from 'path';
 
-import {Core} from '../index';
-import {WebAuditContext as Context} from '../core/WebAuditContext';
-import {WebAuditConfig as Config} from '../core/WebAuditConfig';
+import {Config, Context, Core, Event} from '../index';
 import {UrlWrapper} from '../core/UrlWrapper';
 import CSVStorage from '../storage/csv/CSVStorage';
 import {WebAuditCrawler} from '../crawlers/Crawler';
 import {AppConfig} from '../app/conf/AppConfig';
+import {WebAuditLogger} from '../loggers/Logger';
 
 import {getArgs} from './args';
 
 // Init config.
 AppConfig.setConfig(path.resolve(process.cwd(), 'config.json'));
 
-function doCrawl(args: any) {
+async function doCrawl(args: any) {
   const {urls, version, journey} = args;
 
 
@@ -35,24 +34,24 @@ function doCrawl(args: any) {
   /** ======================================================
    ||                  Context                      ||
    =======================================================*/
-  // Context
-  Context.current.setVersion(version);
+    // Context
+  const config = new Config(
+      WebAuditLogger,
+      new CSVStorage(`./analyses/${urls[0].hostname}`),
+    );
 
+  const eventBus = new Event();
 
-  /** ======================================================
-   ||                  Storage                      ||
-   =======================================================*/
-  // Storage.
-  Config.setStorage(new CSVStorage(`./analyses/${urls[0].hostname}`));
-
+  const context = new Context(config, eventBus);
+  context.setVersion(version);
 
   /** ======================================================
    ||                  Crawl                      ||
    =======================================================*/
-  const result = Core.crawlWebsite(new UrlWrapper(urls[0]), journey, options);
-
+  const core = new Core(context);
+  return core.crawlWebsite(new UrlWrapper(urls[0]), journey, options);
 }
 
-getArgs(['urls', 'version', 'journey'], Config.logger)
+getArgs(['urls', 'version', 'journey'], WebAuditLogger)
   .then((args: any) => doCrawl(args))
-  .catch((error) => Config.logger.exit(error));
+  .catch((error) => WebAuditLogger.exit(error));

@@ -1,10 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditContext = exports.WebAuditContextClass = void 0;
+exports.WebAuditContextClass = void 0;
 /**
  * Context.
  */
 class WebAuditContextClass {
+    constructor(config, eventBus) {
+        this.config = config;
+        this.eventBus = eventBus;
+    }
     setId(id) {
         this._id = id;
         return this;
@@ -56,9 +60,3 @@ class WebAuditContextClass {
     }
 }
 exports.WebAuditContextClass = WebAuditContextClass;
-/**
- * Context manager.
- */
-exports.WebAuditContext = {
-    current: new WebAuditContextClass(),
-};

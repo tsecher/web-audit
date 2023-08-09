@@ -1,4 +1,3 @@
-import {WebAuditConfigClass} from '../core/WebAuditConfig';
 import {WebAuditContextClass} from '../core/WebAuditContext';
 import {UrlWrapper} from '../core/UrlWrapper';
 
@@ -19,10 +18,9 @@ export interface ModuleInterface {
   /**
    * Init before configuration.
    *
-   * @param {WebAuditConfigClass} config
    * @param {WebAuditContextClass} context
    */
-  init(config: WebAuditConfigClass, context: WebAuditContextClass): void;
+  init(context: WebAuditContextClass): void;
 
   /**
    * Analyse urls.

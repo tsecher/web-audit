@@ -1,13 +1,22 @@
 import events from 'events';
 
-import {WebAuditContext as Context} from './WebAuditContext';
-import {WebAuditConfig as Config} from './WebAuditConfig';
+import {WebAuditContextClass} from './WebAuditContext';
 
-class WebAuditEventClass {
+export class WebAuditEventClass {
+
+  private _context: WebAuditContextClass | undefined;
 
   constructor(
     protected event = new events.EventEmitter(),
   ) {
+  }
+
+  get context(): WebAuditContextClass | undefined {
+    return this._context;
+  }
+
+  set context(value: WebAuditContextClass | undefined) {
+    this._context = value;
   }
 
   /**
@@ -20,8 +29,8 @@ class WebAuditEventClass {
     this.event.emit(
       eventName,
       {
-        context: Context,
-        config: Config,
+        context: this._context || {},
+        config: this._context?.config,
         data: args,
       },
     );
@@ -42,5 +51,3 @@ class WebAuditEventClass {
     return this;
   }
 }
-
-export const WebAuditEvent = new WebAuditEventClass();

@@ -1,8 +1,6 @@
-import {WebAuditConfigClass as Config} from '../../core/WebAuditConfig';
-import {WebAuditContextClass as Context} from '../../core/WebAuditContext';
+import {WebAuditContextClass} from '../../core/WebAuditContext';
 import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJourneyModule';
 import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
-import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
 import {PageWrapper} from '../../journey/PageWrapper';
 import {UrlWrapper} from '../../core/UrlWrapper';
 import {ModuleEvents} from '../ModuleInterface';
@@ -48,12 +46,11 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
   /**
    * {@inheritdoc}
    */
-  async init(config: Config, context: Context): Promise<any> {
-    this.config = config;
+  async init(context: WebAuditContextClass): Promise<any> {
     this.context = context;
 
     // Install lighthouse store.
-    this.config.storage?.installStore('lighthouse', this.context, {
+    this.context?.config.storage?.installStore('lighthouse', this.context, {
       url: 'Url',
       performance: 'Performance',
       seo: 'SEO',
@@ -62,7 +59,7 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
     });
 
     // Emit.
-    Event.emit(LighthouseModuleEvents.createLighthouseModule, {module: this});
+    this.context?.eventBus.emit(LighthouseModuleEvents.createLighthouseModule, {module: this});
   }
 
   /**
@@ -81,26 +78,26 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
         try {
           report[cat] = this.lighthouseReport.report.categories[cat].score;
         } catch (error) {
-          this.config?.logger.error(error);
+          this.context?.config?.logger.error(error);
         }
       });
 
 
-    Event.emit(LighthouseModuleEvents.onResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
-    Event.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
+    this.context?.eventBus.emit(LighthouseModuleEvents.onResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
+    this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
 
     if (report?.performance) {
-      this.config?.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
+      this.context?.config?.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
     } else {
-      this.config?.logger.error(`Could not analyse page`);
-      this.config?.logger.error(report);
+      this.context?.config?.logger.error(`Could not analyse page`);
+      this.context?.config?.logger.error(report);
     }
 
     report.url = urlWrapper.url.toString();
-    this.config?.storage?.add('lighthouse', this.context, report);
+    this.context?.config?.storage?.add('lighthouse', this.context, report);
 
-    Event.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
-    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
 
     return true;
   }

@@ -1,6 +1,4 @@
-import {WebAuditConfigClass} from '../../core/WebAuditConfig';
 import {WebAuditContextClass} from '../../core/WebAuditContext';
-import {WebAuditEvent as Event} from '../../core/WebAuditEvent';
 import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJourneyModule';
 import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
 import {UrlWrapper} from '../../core/UrlWrapper';
@@ -39,19 +37,18 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
   /**
    * {@inheritdoc}
    */
-  init(config: WebAuditConfigClass, context: WebAuditContextClass): void {
-    this.config = config;
+  init(context: WebAuditContextClass): void {
     this.context = context;
 
     // Install eco index store.
-    this.config.storage?.installStore('cpu', this.context, {
+    this.context?.config.storage?.installStore('cpu', this.context, {
       url: 'Url',
       time: 'Time',
       cpu: 'CPU use average (%)',
     });
 
     // Install eco index best_practices.
-    this.config.storage?.installStore('cpu_history', this.context, {
+    this.context?.config.storage?.installStore('cpu_history', this.context, {
       url: 'Url',
       time: 'Time',
       step: 'Step',
@@ -60,7 +57,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     });
 
     // Emit.
-    Event.emit(CPUModuleEvents.createCPUModule, {module: this});
+    this.context?.eventBus.emit(CPUModuleEvents.createCPUModule, {module: this});
   }
 
   /**
@@ -68,11 +65,11 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    */
   initEvents(journey: AbstractPuppeteerJourney): void {
     // Init ecoindex data.
-    journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => this.startTimer());
-    journey.on(PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, async (data: any) => this.currentStep++);
-    journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.currentContext++);
-    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => this.stopTimer(true));
-    journey.on(PuppeteerJourneyEvents.JOURNEY_ERROR, async (data: any) => this.stopTimer(false));
+    journey.on(PuppeteerJourneyEvents.JOURNEY_START, async () => this.startTimer());
+    journey.on(PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, async () => this.currentStep++);
+    journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async () => this.currentContext++);
+    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async () => this.stopTimer(true));
+    journey.on(PuppeteerJourneyEvents.JOURNEY_ERROR, async () => this.stopTimer(false));
   }
 
   /**
@@ -82,13 +79,13 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     if (!this.hasValue) {
       return Promise.resolve(false);
     }
-    Event.emit(CPUModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
-    Event.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(CPUModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
     const result: any = this.getResult(urlWrapper);
-    Event.emit(CPUModuleEvents.onResult, {module: this, url: urlWrapper, result: result});
-    Event.emit(CPUModuleEvents.afterAnalyse, {module: this, url: urlWrapper, result: result});
-    Event.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(CPUModuleEvents.onResult, {module: this, url: urlWrapper, result: result});
+    this.context?.eventBus.emit(CPUModuleEvents.afterAnalyse, {module: this, url: urlWrapper, result: result});
+    this.context?.eventBus.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
 
     return Promise.resolve(result?.success || false);
   }
@@ -110,8 +107,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
       };
 
       os.cpuUsage((value: any) => {
-        const cpu = value * 100;
-        usage.cpu = cpu;
+        usage.cpu = value * 100;
       });
 
       this.stock.push(usage);
@@ -136,7 +132,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
   private getResult(urlWrapper: UrlWrapper): any {
     this.stock.forEach((item: any) => {
 
-      this.config?.storage?.add('cpu_history', this.context, {
+      this.context?.config?.storage?.add('cpu_history', this.context, {
         ...item,
         ...{
           url: urlWrapper.url,
@@ -151,8 +147,8 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
         url: urlWrapper.url,
       },
     };
-    this.config?.storage?.add('cpu', this.context, averageData);
-    this.config?.logger.result('CPU', averageData, urlWrapper.url.toString());
+    this.context?.config?.storage?.add('cpu', this.context, averageData);
+    this.context?.config?.logger.result('CPU', averageData, urlWrapper.url.toString());
     return averageData;
   }
 

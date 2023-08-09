@@ -1,7 +1,5 @@
 import colors from 'colors';
 
-import {WebAuditContextClass as ContextClass, WebAuditContext as Context} from '../core/WebAuditContext';
-
 /**
  * Logger Interface.
  */
@@ -11,7 +9,7 @@ export interface LoggerInterface {
    * Log a message.
    *
    * @param data
-   * @param context
+   * @param id
    */
   message(data?: any, id?: string): void;
 
@@ -19,7 +17,7 @@ export interface LoggerInterface {
    * Log a success message.
    *
    * @param data
-   * @param context
+   * @param id
    */
   success(data?: any, id?: string): void;
 
@@ -27,7 +25,7 @@ export interface LoggerInterface {
    * Log a warning message.
    *
    * @param data
-   * @param context
+   * @param id
    */
   warning(data?: any, id?: string): void;
 
@@ -35,7 +33,7 @@ export interface LoggerInterface {
    * Log an error message.
    *
    * @param data
-   * @param context
+   * @param id
    */
   error(data?: any, id?: string): void;
 
@@ -43,7 +41,7 @@ export interface LoggerInterface {
    * Log an error message and exit process.
    *
    * @param data
-   * @param context
+   * @param id
    */
   exit(data?: any, id?: string): void;
 
@@ -61,11 +59,6 @@ export interface LoggerInterface {
  * Logger class.
  */
 export class LoggerClass implements LoggerInterface {
-
-  /**
-   * Log cache
-   */
-  previousContext?: ContextClass;
 
   error(data: any, id?: string): void {
     this.log(data, id, colors.red);
@@ -98,11 +91,6 @@ export class LoggerClass implements LoggerInterface {
    * {@inheritdoc}
    */
   private log(data: any, id?: string, color?: Function): void {
-    if (!Context.current?.isSame(this.previousContext)) {
-      console.log(`======== ${Context.current?.toString()}`);
-      this.previousContext = Context.current;
-    }
-
     const variables = [];
     if (id) {
       variables.push(`[${id}] `);

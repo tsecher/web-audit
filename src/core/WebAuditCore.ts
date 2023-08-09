@@ -1,34 +1,39 @@
 import {ModuleEvents, ModuleInterface} from '../modules/ModuleInterface';
-import {WebAuditCrawler} from '../crawlers/Crawler';
+import {WebAuditCrawler, WebAuditCrawlerEvents} from '../crawlers/Crawler';
 import {AbstractPuppeteerJourneyModule} from '../journey/AbstractPuppeteerJourneyModule';
 import {PageWrapper} from '../journey/PageWrapper';
 import {JourneyInterface} from '../journey/JourneyInterface';
 
-import {WebAuditContext as Context} from './WebAuditContext';
-import {WebAuditConfig} from './WebAuditConfig';
-import {WebAuditEvent as Event} from './WebAuditEvent';
 import {UrlWrapper} from './UrlWrapper';
+import {WebAuditContextClass} from './WebAuditContext';
 
 /**
  * Web Audit core main entry point for web audition.
  */
 export class WebAuditCoreClass {
 
+  constructor(
+    public context: WebAuditContextClass,
+  ) {
+  }
+
   /**
    * Craw website.
    *
-   * @param baseUrl
+   * @param baseUrlWrapper
+   * @param journey
    * @param options
    */
-  public crawlWebsite(baseUrlWrapper: UrlWrapper, journey: JourneyInterface, options: any = {}): Promise<any> {
+  public async crawlWebsite(baseUrlWrapper: UrlWrapper, journey: JourneyInterface, options: any = {}): Promise<void> {
     // Define context.
-    Context.current.setId('Crawl')
+    this.context.setId('Crawl')
       .setUrl(baseUrlWrapper.url);
 
     // Crawl domain.
     options.baseUrl = baseUrlWrapper.url;
-    const crawler = new WebAuditCrawler(baseUrlWrapper, options);
-    return crawler.crawl(journey);
+    const crawler = new WebAuditCrawler(this.context, baseUrlWrapper, options);
+    await crawler.crawl(journey);
+    this.context.eventBus.emit(WebAuditCrawlerEvents.onCrawlUrlsEnd, {crawler: crawler, core: this});
   }
 
   /**
@@ -36,10 +41,11 @@ export class WebAuditCoreClass {
    *
    * @param urls
    * @param modules
+   * @param journey
    */
   public async analyseUrls(urls: UrlWrapper[], modules: ModuleInterface[], journey: JourneyInterface) {
     // Define context.
-    Context.current.setId('Analyse')
+    this.context.setId('Analyse')
       .setUrl()
       .setData();
 
@@ -54,7 +60,7 @@ export class WebAuditCoreClass {
       } else {
         defaultModules.push(module);
       }
-      await module.init(WebAuditConfig, Context.current);
+      await module.init(this.context);
     }
 
     // Analyser default module
@@ -65,9 +71,7 @@ export class WebAuditCoreClass {
       await this.analysePuppeteerJourneyModules(puppeteerJourneyModules, urls, journey);
     } catch (err) {
       console.log(err);
-      process.exit();
     }
-
 
     // Close modules.
     for (const module of modules) {
@@ -78,7 +82,7 @@ export class WebAuditCoreClass {
   /**
    * Analyse default modules.
    *
-   * @param {ModuleInterface[]} defaultModules
+   * @param modules
    * @param {UrlWrapper[]} urls
    * @returns {Promise<void>}
    * @private
@@ -86,60 +90,61 @@ export class WebAuditCoreClass {
   private async analyseDefaultModules(modules: ModuleInterface[], urls: UrlWrapper[]) {
     // Parse urls.
     for (const url of urls) {
-      Event.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
+      this.context.eventBus.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
 
       for (const module of modules) {
-        Context.current.setData(module?.name);
+        this.context.setData(module?.name);
         await module.analyse(url);
       }
-      Event.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
+      this.context.eventBus.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
     }
   }
 
   /**
    * Analyse default modules.
    *
-   * @param {ModuleInterface[]} defaultModules
+   * @param modules
    * @param {UrlWrapper[]} urls
+   * @param journey
    * @returns {Promise<void>}
    * @private
    */
   private async analysePuppeteerJourneyModules(modules: AbstractPuppeteerJourneyModule[], urls: UrlWrapper[], journey: JourneyInterface) {
-    const pageWrapper = new PageWrapper();
+    const pageWrapper = new PageWrapper(this.context);
 
+    journey.context = this.context;
     await journey.beforeAll(pageWrapper, urls);
 
     // Init journey.
     for (const module of modules) {
-      Context.current.setData(module?.name);
+      this.context.setData(module?.name);
       await module.initJourney(journey);
     }
 
     // Parse urls.
     for (const url of urls) {
-      WebAuditConfig.logger.success(`URL : ${url.url.toString()}`);
+      this.context.config.logger.success(`URL : ${url.url.toString()}`);
       await pageWrapper.newPage();
 
       await journey.beforeEach(pageWrapper, url);
 
-      Event.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
+      this.context.eventBus.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
 
       // Play journey.
-      Context.current.setData(journey.name);
+      this.context.setData(journey.name);
 
       await journey.play(pageWrapper, url);
 
       // Analyse journey after collecting data in journey.
       for (const module of modules) {
-        Context.current.setData(module?.name);
+        this.context.setData(module?.name);
         await module.analyse(url);
       }
 
-      Event.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
+      this.context.eventBus.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
     }
 
     await pageWrapper.close();
   }
-
 
 }

@@ -3,7 +3,6 @@
  */
 import fs from 'fs';
 import path from 'path';
-import {type} from 'os';
 
 import {StorageInterface} from '../Storage';
 import {WebAuditContextClass} from '../../core/WebAuditContext';
@@ -15,15 +14,14 @@ export default class CSVStorage implements StorageInterface {
 
   static SEPARATOR = ';';
 
-  private dirPath: string;
+  private readonly dirPath: string;
 
   private structures: any = {};
 
   /**
    * Constructor.
    *
-   * @param string dir
-   *   Path of stored csv.
+   * @param dir Path of stored csv.
    */
   constructor(
     dir: string,
@@ -61,7 +59,8 @@ export default class CSVStorage implements StorageInterface {
   /**
    * Store file.
    *
-   * @param {string} path
+   * @param input
+   * @param context
    */
   file(input: string, context: WebAuditContextClass): void {
     const output = path.join(this.dirPath, String(context?.version || 'undefined'), input);
@@ -73,6 +72,7 @@ export default class CSVStorage implements StorageInterface {
    * Get csv values.
    *
    * @param data
+   * @param id
    * @private
    */
   private getCSVValues(data: Object, id?: string): any {
@@ -84,6 +84,7 @@ export default class CSVStorage implements StorageInterface {
    * Return csv line.
    *
    * @param data
+   * @param id
    * @private
    */
   private getCSVLine(data: any, id?: string): string {

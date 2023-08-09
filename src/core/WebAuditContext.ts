@@ -1,3 +1,6 @@
+import {WebAuditConfigClass} from './WebAuditConfig';
+import {WebAuditEventClass} from './WebAuditEvent';
+
 /**
  * Context.
  */
@@ -7,6 +10,12 @@ export class WebAuditContextClass {
   private _url?: URL;
   private _data?: any;
   private _version?: string;
+
+  constructor(
+    public config: WebAuditConfigClass,
+    public eventBus: WebAuditEventClass,
+  ) {
+  }
 
   setId(id?: string): WebAuditContextClass {
     this._id = id;
@@ -67,10 +76,3 @@ export class WebAuditContextClass {
     return `${tid} ${tdata} ${turl}`;
   }
 }
-
-/**
- * Context manager.
- */
-export const WebAuditContext = {
-  current: new WebAuditContextClass(),
-};

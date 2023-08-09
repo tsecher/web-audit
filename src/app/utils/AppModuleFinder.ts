@@ -20,8 +20,8 @@ class ModuleFinderClass {
    *
    * @returns {ModuleInterface[]}
    */
-  public getModules(): ModuleInterface[] {
-    if (!this.modules) {
+  public getModules(force = false): ModuleInterface[] {
+    if (force || !this.modules) {
       this.initModules();
     }
 

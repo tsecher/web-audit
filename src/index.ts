@@ -1,9 +1,9 @@
-import {WebAuditConfig} from './core/WebAuditConfig';
+import {WebAuditConfigClass} from './core/WebAuditConfig';
 import {WebAuditCoreClass} from './core/WebAuditCore';
-import {WebAuditContext} from './core/WebAuditContext';
-import {WebAuditEvent} from './core/WebAuditEvent';
+import {WebAuditContextClass} from './core/WebAuditContext';
+import {WebAuditEventClass} from './core/WebAuditEvent';
 
-export const Config = WebAuditConfig;
-export const Context = WebAuditContext;
-export const Core = new WebAuditCoreClass();
-export const Event = WebAuditEvent;
+export const Config = WebAuditConfigClass;
+export const Context = WebAuditContextClass;
+export const Core = WebAuditCoreClass;
+export const Event = WebAuditEventClass;

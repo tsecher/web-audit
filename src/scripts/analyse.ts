@@ -1,11 +1,10 @@
 import path from 'path';
 
-import {Core} from '../index';
-import {WebAuditContext as Context} from '../core/WebAuditContext';
-import {WebAuditConfig as Config} from '../core/WebAuditConfig';
+import {Config, Context, Core, Event} from '../index';
 import CSVStorage from '../storage/csv/CSVStorage';
 import {UrlWrapper} from '../core/UrlWrapper';
 import {AppConfig} from '../app/conf/AppConfig';
+import {WebAuditLogger} from '../loggers/Logger';
 
 import {getArgs} from './args';
 
@@ -26,33 +25,36 @@ function doAnalyse(args: any) {
   /** ======================================================
    ||                  Context                      ||
    =======================================================*/
-  // Context
-  Context.current.setVersion(version);
+  const config = new Config(
+    WebAuditLogger,
+    new CSVStorage(`./analyses/${urls[0].hostname}`),
+  );
 
+  const eventBus = new Event();
 
-  /** ======================================================
-   ||                  Storage                      ||
-   =======================================================*/
-// Storage.
-  Config.setStorage(new CSVStorage(`./analyses/${urls[0].hostname}`));
+  const context = new Context(config, eventBus);
+  context.setVersion(version);
+
 
   /** ======================================================
    ||                  Analyse                      ||
    =======================================================*/
   const success = () => {
-    Config.logger.success(`Analyse success`);
-    process.exit();
+    WebAuditLogger.success(`Analyse success`);
   };
   const error = (error: any) => {
-    Config.logger.error(`Analyse error :`);
-    Config.logger.error(error);
-    process.exit();
+    WebAuditLogger.error(`Analyse error :`);
+    WebAuditLogger.error(error);
   };
 
-  Core.analyseUrls(urlsWrapper, modules, journey).then(success).catch(error);
+  // Const
+  const core = new Core(context);
+  core.analyseUrls(urlsWrapper, modules, journey)
+    .then(success)
+    .catch(error);
 }
 
 // Get args.
-getArgs(['urlsFiles', 'modules', 'version', 'journey'], Config.logger)
+getArgs(['urlsFiles', 'modules', 'version', 'journey'], WebAuditLogger)
   .then((args) => doAnalyse(args))
-  .catch((error) => Config.logger.exit(error));
+  .catch((error) => WebAuditLogger.exit(error));

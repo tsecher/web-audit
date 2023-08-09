@@ -20,8 +20,8 @@ class ModuleFinderClass {
      *
      * @returns {ModuleInterface[]}
      */
-    getModules() {
-        if (!this.modules) {
+    getModules(force = false) {
+        if (force || !this.modules) {
             this.initModules();
         }
         return this.modules || [];

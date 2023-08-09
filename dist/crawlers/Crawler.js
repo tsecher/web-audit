@@ -10,9 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebAuditCrawler = exports.WebAuditCrawlerEvents = void 0;
-const WebAuditConfig_1 = require("../core/WebAuditConfig");
-const WebAuditContext_1 = require("../core/WebAuditContext");
-const WebAuditEvent_1 = require("../core/WebAuditEvent");
 const UrlWrapper_1 = require("../core/UrlWrapper");
 const PageWrapper_1 = require("../journey/PageWrapper");
 /**
@@ -31,6 +28,7 @@ exports.WebAuditCrawlerEvents = {
     onPageCrawledNoUri: 'crawler__onPageCrawledNoUri',
     onPageCrawledRedirected: 'crawler__onPageCrawledRedirected',
     onPageContent: 'crawler__onPageContent',
+    onCrawlUrlsEnd: 'crawler__onCrawlUrlsEnd',
 };
 /**
  * Website crawler.
@@ -39,25 +37,28 @@ class WebAuditCrawler {
     /**
      * Constructor.
      *
+     * @param eventEmitter
+     * @param baseUrlWrapper
      * @param options
      */
-    constructor(baseUrlWrapper, options) {
+    constructor(context, baseUrlWrapper, options) {
         var _a;
+        this.context = context;
+        this.baseUrlWrapper = baseUrlWrapper;
         this.defaultOptions = {
             followSearchParams: true,
             uniqueParams: ['page'],
         };
         this.urlsToParse = {};
         this.alreadyParsedUrls = [];
-        this.pageWrapper = new PageWrapper_1.PageWrapper();
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
-        this.baseUrlWrapper = baseUrlWrapper;
+        this.pageWrapper = new PageWrapper_1.PageWrapper(this.context);
         // Prepare options.
         this.initBaseUrl(baseUrlWrapper.url.toString());
         // Emit.
-        WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.createCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
+        this.context.eventBus.emit(exports.WebAuditCrawlerEvents.createCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
         // Prepare storage.
-        (_a = WebAuditConfig_1.WebAuditConfig.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', WebAuditContext_1.WebAuditContext.current, {
+        (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', this.context, {
             url: 'Referenced url',
             status: `Status`,
             size: `Content length`,
@@ -89,7 +90,7 @@ class WebAuditCrawler {
             if (this.isAlreadyParsed(url)) {
                 return Promise.resolve();
             }
-            WebAuditContext_1.WebAuditContext.current.setData('Page crawled').setUrl(url);
+            this.context.setData('Page crawled').setUrl(url);
             // Get info.
             let pageInfo;
             try {
@@ -104,10 +105,10 @@ class WebAuditCrawler {
             this.addToParsedUrls(pageInfo.final);
             this.addToParsedUrls(pageInfo.source);
             if (pageInfo.log) {
-                WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawled, eventData);
-                (_a = WebAuditConfig_1.WebAuditConfig.storage) === null || _a === void 0 ? void 0 : _a.add('page_found', WebAuditContext_1.WebAuditContext.current, pageInfo);
+                this.context.eventBus.emit(exports.WebAuditCrawlerEvents.onPageCrawled, eventData);
+                (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.add('page_found', this.context, pageInfo);
                 if (pageInfo.status >= 300 && pageInfo < 400) {
-                    WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
+                    this.context.eventBus.emit(exports.WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
                 }
                 if (pageInfo.crawl) {
                     yield this.crawlSubPages(this.pageWrapper, pageInfo.final, journey);
@@ -143,7 +144,7 @@ class WebAuditCrawler {
                 infos.log = false;
                 return infos;
             }
-            WebAuditConfig_1.WebAuditConfig.logger.message(`Parse : ${inputUrl.toString()}`);
+            this.context.config.logger.message(`Parse : ${inputUrl.toString()}`);
             // Listen data.
             let status = '';
             let size = '';
@@ -168,7 +169,7 @@ class WebAuditCrawler {
                 yield this.pageWrapper.goto(inputUrl.toString(), true);
             }
             catch (error) {
-                WebAuditConfig_1.WebAuditConfig.logger.error(error);
+                this.context.config.logger.error(error);
                 this.pageWrapper.page.off('response', onResponse);
                 return Promise.resolve(infos);
             }
@@ -176,7 +177,7 @@ class WebAuditCrawler {
                 yield this.pageWrapper.page.waitForSelector('body');
             }
             catch (err) {
-                WebAuditConfig_1.WebAuditConfig.logger.error(`Load timeout`);
+                this.context.config.logger.error(`Load timeout`);
             }
             // Remove listeneer data.
             this.pageWrapper.page.off('response', onResponse);
@@ -214,7 +215,11 @@ class WebAuditCrawler {
                 }
             }
             const subUrls = this.getEligibleUrls(hrefs);
-            WebAuditEvent_1.WebAuditEvent.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, { crawler: this, urlsList: subUrls, baseUrl: this.baseUrlWrapper });
+            this.context.eventBus.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, {
+                crawler: this,
+                urlsList: subUrls,
+                baseUrl: this.baseUrlWrapper,
+            });
             for (const url of subUrls) {
                 yield this.crawlUrl(url, source, journey);
             }
@@ -235,7 +240,7 @@ class WebAuditCrawler {
             this.options.domain.search = '';
         }
         catch (erro) {
-            WebAuditConfig_1.WebAuditConfig.logger.exit(`Base URL is not of type URL`);
+            this.context.config.logger.exit(`Base URL is not of type URL`);
         }
     }
     /**

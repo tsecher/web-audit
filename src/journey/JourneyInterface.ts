@@ -1,4 +1,5 @@
 import {UrlWrapper} from '../core/UrlWrapper';
+import {WebAuditContextClass} from '../core/WebAuditContext';
 
 import {PageWrapper} from './PageWrapper';
 
@@ -17,6 +18,20 @@ export interface JourneyInterface {
    * @returns {string}
    */
   get id(): string;
+
+  /**
+   * Set the context
+   *
+   * @returns {JourneyInterface}
+   */
+  set context(context: WebAuditContextClass | undefined);
+
+  /**
+   * The context.
+   *
+   * @returns {WebAuditContextClass}
+   */
+  get context(): WebAuditContextClass | undefined;
 
   /**
    * Action before all process.

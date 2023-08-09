@@ -46,6 +46,7 @@ class DefaultPuppeteerJourney extends AbstractPuppeteerJourney_1.AbstractPuppete
     journey(wrapper, url) {
         return __awaiter(this, void 0, void 0, function* () {
             const wait = 1000;
+            let i;
             yield this.addStep('goto', () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.goto(url.url.toString());
             }));
