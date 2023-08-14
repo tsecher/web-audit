@@ -43,11 +43,17 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
      * {@inheritdoc}
      */
     init(context) {
-        var _a;
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             this.context = context;
             // Install w3c store.
-            (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('w3c_validator', this.context, {
+            (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('w3c', this.context, {
+                url: 'Url',
+                error: 'Errors',
+                warning: 'Warnings',
+                info: 'Infos',
+            });
+            (_b = this.context.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('w3c_details', this.context, {
                 url: 'Url',
                 type: 'Type',
                 message: 'Message',
@@ -61,7 +67,7 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         return __awaiter(this, void 0, void 0, function* () {
             (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(exports.W3cValidatorModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
@@ -80,12 +86,14 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
                         summary[type] = result.messages.filter((item) => item.type === type).length;
                     });
                     (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`W3C`, summary, urlWrapper.url.toString());
+                    summary.url = urlWrapper.url.toString();
+                    (_j = (_h = (_g = this.context) === null || _g === void 0 ? void 0 : _g.config) === null || _h === void 0 ? void 0 : _h.storage) === null || _j === void 0 ? void 0 : _j.add('w3c', this.context, summary);
                     result.messages
                         .filter((item) => options.allowedTypes.includes(item.type))
                         .forEach((item) => {
                         var _a, _b, _c;
                         item.url = urlWrapper.url.toString();
-                        (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('w3c_validator', this.context, item);
+                        (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('w3c_details', this.context, item);
                     });
                     success = true;
                 }
