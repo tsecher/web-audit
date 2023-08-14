@@ -44,7 +44,14 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     this.context = context;
 
     // Install w3c store.
-    this.context.config.storage?.installStore('w3c_validator', this.context, {
+    this.context.config.storage?.installStore('w3c', this.context, {
+      url: 'Url',
+      error: 'Errors',
+      warning: 'Warnings',
+      info: 'Infos',
+    });
+
+    this.context.config.storage?.installStore('w3c_details', this.context, {
       url: 'Url',
       type: 'Type',
       message: 'Message',
@@ -81,12 +88,14 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
           summary[type] = result.messages.filter((item: any) => item.type === type).length;
         });
         this.context?.config?.logger.result(`W3C`, summary, urlWrapper.url.toString());
+        summary.url = urlWrapper.url.toString();
+        this.context?.config?.storage?.add('w3c', this.context, summary);
 
         result.messages
           .filter((item: any) => options.allowedTypes.includes(item.type))
           .forEach((item: any) => {
             item.url = urlWrapper.url.toString();
-            this.context?.config?.storage?.add('w3c_validator', this.context, item);
+            this.context?.config?.storage?.add('w3c_details', this.context, item);
           });
 
         success = true;
