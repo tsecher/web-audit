@@ -41,23 +41,23 @@ export class DefaultPuppeteerJourney extends AbstractPuppeteerJourney {
     const wait = 1000;
 
     let i: any;
-    await this.addStep('goto', async () => {
+    await this.addStep(`Go to ${url.url.toString()}`, async () => {
       await wrapper.goto(url.url.toString());
     });
 
-    await this.addStep('wait', async () => {
+    await this.addStep(`Wait 1s`, async () => {
       await wrapper.wait(Number(wait));
     });
 
-    await this.addStep('scrollToBottom', async () => {
+    await this.addStep('Scroll to bottom', async () => {
       await wrapper.scrollToBottom();
     });
 
-    await this.addStep('finally wait', async () => {
+    await this.addStep('Finally wait 3s', async () => {
       await wrapper.wait(3 * wait);
     });
 
-    await this.triggerNewContext('finally wait');
+    await this.triggerNewContext('Visit and scroll');
   }
 
 }

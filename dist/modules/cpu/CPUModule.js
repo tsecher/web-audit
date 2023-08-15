@@ -46,6 +46,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         // Install eco index store.
         (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('cpu', this.context, {
             url: 'Url',
+            context: 'context',
             time: 'Time',
             cpu: 'CPU use average (%)',
         });
@@ -95,6 +96,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         const firstTime = new Date().getTime();
         this.currentStep = 0;
         this.currentContext = 0;
+        this.stock = [];
         this.interval = setInterval(() => {
             const usage = {
                 time: (new Date().getTime() - firstTime) / 1000,
@@ -122,20 +124,24 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      * @private
      */
     getResult(urlWrapper) {
-        var _a, _b, _c, _d, _e;
-        this.stock.forEach((item) => {
+        this.stock
+            .filter((item) => {
+            return item.context < this.journeyContexts.length
+                && item.step < this.journeySteps.length;
+        })
+            .forEach((item) => {
             var _a, _b, _c;
-            (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu_history', this.context, Object.assign(Object.assign({}, item), {
-                url: urlWrapper.url,
-            }));
+            item.context = this.journeyContexts[item.context].name;
+            item.step = this.journeySteps[item.step].name;
+            item.url = urlWrapper.url;
+            (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu_history', this.context, item);
         });
-        // Average.
-        const averageData = Object.assign(Object.assign({}, this.getAverageData()), {
-            url: urlWrapper.url,
+        this.getAverageData(urlWrapper.url).forEach(average => {
+            var _a, _b, _c, _d, _e;
+            (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu', this.context, average);
+            (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result('CPU', average, urlWrapper.url.toString());
         });
-        (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu', this.context, averageData);
-        (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result('CPU', averageData, urlWrapper.url.toString());
-        return averageData;
+        return true;
     }
     /**
      * Return average data.
@@ -143,16 +149,23 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      * @returns {{cpu: number, time: any}}
      * @private
      */
-    getAverageData() {
-        return {
-            time: this.stock.at(-1).time,
-            cpu: this.stock.reduce((sum, currentValue) => {
-                if (currentValue === null || currentValue === void 0 ? void 0 : currentValue.cpu) {
-                    return sum + currentValue.cpu;
-                }
-                return sum;
-            }, 0) / this.stock.length,
-        };
+    getAverageData(url) {
+        const averages = [];
+        this.journeyContexts.forEach((context) => {
+            const contextStocks = this.stock.filter((item) => item.context === context.name);
+            averages.push({
+                cpu: contextStocks.reduce((sum, currentValue) => {
+                    if (currentValue === null || currentValue === void 0 ? void 0 : currentValue.cpu) {
+                        return sum + currentValue.cpu;
+                    }
+                    return sum;
+                }, 0) / contextStocks.length,
+                time: contextStocks[contextStocks.length - 1].time - contextStocks[0].time,
+                context: context.name,
+                url: url,
+            });
+        });
+        return averages;
     }
 }
 exports.CPUModule = CPUModule;

@@ -28,7 +28,7 @@ export const LighthouseModuleEvents: any = {
  */
 export class LighthouseModule extends AbstractPuppeteerJourneyModule {
 
-  protected lighthouseReport: any;
+  protected reports: any[] = [];
 
   protected defaultOptions?: any = {
     output: 'json',
@@ -52,6 +52,7 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
     // Install lighthouse store.
     this.context?.config.storage?.installStore('lighthouse', this.context, {
       url: 'Url',
+      context: 'Context',
       performance: 'Performance',
       seo: 'SEO',
       'best-practices': 'Best Practices', // eslint-disable-line @typescript-eslint/naming-convention
@@ -66,55 +67,61 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
    * {@inheritdoc}
    */
   async analyse(urlWrapper: UrlWrapper): Promise<boolean> {
-    if (!this.lighthouseReport) {
-      return false;
-    }
+    this.reports.forEach((contextReport: any, index: number) => {
+      if (!contextReport) {
+        return;
+      }
 
-    // Report
-    const report: any = {};
-    this.getOptions()
-      ?.onlyCategories
-      ?.map((cat: any) => {
-        try {
-          report[cat] = this.lighthouseReport.report.categories[cat].score;
-        } catch (error) {
-          this.context?.config?.logger.error(error);
-        }
+      // Report
+      const report: any = {};
+      report.context = this.journeyContexts[index].name;
+
+      this.getOptions()
+        ?.onlyCategories
+        ?.map((cat: any) => {
+          try {
+            report[cat] = contextReport.report.categories[cat].score;
+          } catch (error) {
+            this.context?.config?.logger.error(error);
+          }
+        });
+
+      this.context?.eventBus.emit(LighthouseModuleEvents.onResult, {
+        module: this,
+        url: urlWrapper,
+        result: contextReport
+      });
+      this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {
+        module: this,
+        url: urlWrapper,
+        result: contextReport
       });
 
+      if (report?.performance) {
+        this.context?.config?.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
+      } else {
+        this.context?.config?.logger.error(`Could not analyse page`);
+        this.context?.config?.logger.error(report);
+      }
 
-    this.context?.eventBus.emit(LighthouseModuleEvents.onResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
-    this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: this.lighthouseReport});
+      report.url = urlWrapper.url.toString();
+      this.context?.config?.storage?.add('lighthouse', this.context, report);
 
-    if (report?.performance) {
-      this.context?.config?.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
-    } else {
-      this.context?.config?.logger.error(`Could not analyse page`);
-      this.context?.config?.logger.error(report);
-    }
-
-    report.url = urlWrapper.url.toString();
-    this.context?.config?.storage?.add('lighthouse', this.context, report);
-
-    this.context?.eventBus.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
-    this.context?.eventBus.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+      this.context?.eventBus.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+      this.context?.eventBus.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+    });
 
     return true;
-  }
-
-  /**
-   * Finish analyse process.
-   *
-   * @returns {Promise<any>}
-   */
-  async finish(): Promise<any> {
   }
 
   /**
    * {@inheritdoc}
    */
   initEvents(journey: AbstractPuppeteerJourney) {
-    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => this.launchLighthouse(data.wrapper));
+    journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => {
+      this.reports = [];
+    });
+    journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.launchLighthouse(data.wrapper));
   }
 
   /**
@@ -128,7 +135,6 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
    * @private
    */
   protected async launchLighthouse(wrapper: PageWrapper): Promise<any> {
-    this.lighthouseReport = null;
     const browser = await wrapper.getBrowser();
     const endpoint = new URL(browser.wsEndpoint());
 
@@ -141,9 +147,9 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
       {extends: 'lighthouse:default'},
     );
 
-    this.lighthouseReport = {
+    this.reports.push({
       report: JSON.parse(ReportGenerator.generateReport(result.lhr, 'json')),
       html: ReportGenerator.generateReport(result.lhr, 'html'),
-    };
+    });
   }
 }

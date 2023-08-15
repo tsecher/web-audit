@@ -44,6 +44,7 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     // Install eco index store.
     this.context?.config.storage?.installStore('ecoindex', this.context, {
       url: 'Url',
+      context: 'Context',
       grade: 'Grade',
       ecoIndex: 'Ecoindex',
       domSize: 'Dom Size',
@@ -70,7 +71,8 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
     const results: any[] = this.getCleanResults(urlWrapper);
-    results.forEach((result) => {
+    results.forEach((result, index) => {
+      result.context = this.journeyContexts[index].name;
       this.context?.config?.storage?.add('ecoindex', this.context, result);
       this.context?.config?.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
     });

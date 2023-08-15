@@ -33,6 +33,7 @@ exports.LighthouseModuleEvents = {
 class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
     constructor() {
         super(...arguments);
+        this.reports = [];
         this.defaultOptions = {
             output: 'json',
             onlyCategories: ['performance', 'seo', 'best-practices', 'accessibility'],
@@ -54,6 +55,7 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
             // Install lighthouse store.
             (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('lighthouse', this.context, {
                 url: 'Url',
+                context: 'Context',
                 performance: 'Performance',
                 seo: 'SEO',
                 'best-practices': 'Best Practices',
@@ -67,52 +69,57 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.lighthouseReport) {
-                return false;
-            }
-            // Report
-            const report = {};
-            (_b = (_a = this.getOptions()) === null || _a === void 0 ? void 0 : _a.onlyCategories) === null || _b === void 0 ? void 0 : _b.map((cat) => {
-                var _a, _b;
-                try {
-                    report[cat] = this.lighthouseReport.report.categories[cat].score;
+            this.reports.forEach((contextReport, index) => {
+                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+                if (!contextReport) {
+                    return;
                 }
-                catch (error) {
-                    (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.logger.error(error);
+                // Report
+                const report = {};
+                report.context = this.journeyContexts[index].name;
+                (_b = (_a = this.getOptions()) === null || _a === void 0 ? void 0 : _a.onlyCategories) === null || _b === void 0 ? void 0 : _b.map((cat) => {
+                    var _a, _b;
+                    try {
+                        report[cat] = contextReport.report.categories[cat].score;
+                    }
+                    catch (error) {
+                        (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.logger.error(error);
+                    }
+                });
+                (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.LighthouseModuleEvents.onResult, {
+                    module: this,
+                    url: urlWrapper,
+                    result: contextReport
+                });
+                (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, {
+                    module: this,
+                    url: urlWrapper,
+                    result: contextReport
+                });
+                if (report === null || report === void 0 ? void 0 : report.performance) {
+                    (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
                 }
+                else {
+                    (_h = (_g = this.context) === null || _g === void 0 ? void 0 : _g.config) === null || _h === void 0 ? void 0 : _h.logger.error(`Could not analyse page`);
+                    (_k = (_j = this.context) === null || _j === void 0 ? void 0 : _j.config) === null || _k === void 0 ? void 0 : _k.logger.error(report);
+                }
+                report.url = urlWrapper.url.toString();
+                (_o = (_m = (_l = this.context) === null || _l === void 0 ? void 0 : _l.config) === null || _m === void 0 ? void 0 : _m.storage) === null || _o === void 0 ? void 0 : _o.add('lighthouse', this.context, report);
+                (_p = this.context) === null || _p === void 0 ? void 0 : _p.eventBus.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
+                (_q = this.context) === null || _q === void 0 ? void 0 : _q.eventBus.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
             });
-            (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.LighthouseModuleEvents.onResult, { module: this, url: urlWrapper, result: this.lighthouseReport });
-            (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: this.lighthouseReport });
-            if (report === null || report === void 0 ? void 0 : report.performance) {
-                (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
-            }
-            else {
-                (_h = (_g = this.context) === null || _g === void 0 ? void 0 : _g.config) === null || _h === void 0 ? void 0 : _h.logger.error(`Could not analyse page`);
-                (_k = (_j = this.context) === null || _j === void 0 ? void 0 : _j.config) === null || _k === void 0 ? void 0 : _k.logger.error(report);
-            }
-            report.url = urlWrapper.url.toString();
-            (_o = (_m = (_l = this.context) === null || _l === void 0 ? void 0 : _l.config) === null || _m === void 0 ? void 0 : _m.storage) === null || _o === void 0 ? void 0 : _o.add('lighthouse', this.context, report);
-            (_p = this.context) === null || _p === void 0 ? void 0 : _p.eventBus.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
-            (_q = this.context) === null || _q === void 0 ? void 0 : _q.eventBus.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
             return true;
-        });
-    }
-    /**
-     * Finish analyse process.
-     *
-     * @returns {Promise<any>}
-     */
-    finish() {
-        return __awaiter(this, void 0, void 0, function* () {
         });
     }
     /**
      * {@inheritdoc}
      */
     initEvents(journey) {
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () { return this.launchLighthouse(data.wrapper); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () {
+            this.reports = [];
+        }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, (data) => __awaiter(this, void 0, void 0, function* () { return this.launchLighthouse(data.wrapper); }));
     }
     /**
      * Laucnh lighthouse.
@@ -126,16 +133,15 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
      */
     launchLighthouse(wrapper) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.lighthouseReport = null;
             const browser = yield wrapper.getBrowser();
             const endpoint = new URL(browser.wsEndpoint());
             const options = this.getOptions();
             options.port = endpoint.port;
             const result = yield lighthouse(wrapper.page.url(), options, { extends: 'lighthouse:default' });
-            this.lighthouseReport = {
+            this.reports.push({
                 report: JSON.parse(ReportGenerator.generateReport(result.lhr, 'json')),
                 html: ReportGenerator.generateReport(result.lhr, 'html'),
-            };
+            });
         });
     }
 }

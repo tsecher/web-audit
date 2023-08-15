@@ -132,7 +132,6 @@ export class WebAuditCoreClass {
 
       // Play journey.
       this.context.setData(journey.name);
-
       await journey.play(pageWrapper, url);
 
       // Analyse journey after collecting data in journey.

@@ -32,6 +32,7 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
         this.defaultOptions = {
             allowedTypes: ['error', 'warning'],
         };
+        this.doms = [];
     }
     get name() {
         return 'W3C';
@@ -49,12 +50,14 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
             // Install w3c store.
             (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('w3c', this.context, {
                 url: 'Url',
+                context: 'Context',
                 error: 'Errors',
                 warning: 'Warnings',
                 info: 'Infos',
             });
             (_b = this.context.config.storage) === null || _b === void 0 ? void 0 : _b.installStore('w3c_details', this.context, {
                 url: 'Url',
+                context: 'Context',
                 type: 'Type',
                 message: 'Message',
                 extract: 'Extract',
@@ -71,50 +74,46 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
         return __awaiter(this, void 0, void 0, function* () {
             (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(exports.W3cValidatorModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
-            let success;
+            let success = false;
             const options = this.getOptions();
-            if (this.dom) {
-                try {
-                    const result = yield validator({
-                        url: urlWrapper.url.toString(),
-                        data: this.dom,
-                    });
-                    (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.W3cValidatorModuleEvents.onResult, { module: this, url: urlWrapper, result: result });
-                    (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
-                    const summary = {};
-                    options.allowedTypes.forEach((type) => {
-                        summary[type] = result.messages.filter((item) => item.type === type).length;
-                    });
-                    (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`W3C`, summary, urlWrapper.url.toString());
-                    summary.url = urlWrapper.url.toString();
-                    (_j = (_h = (_g = this.context) === null || _g === void 0 ? void 0 : _g.config) === null || _h === void 0 ? void 0 : _h.storage) === null || _j === void 0 ? void 0 : _j.add('w3c', this.context, summary);
-                    result.messages
-                        .filter((item) => options.allowedTypes.includes(item.type))
-                        .forEach((item) => {
-                        var _a, _b, _c;
-                        item.url = urlWrapper.url.toString();
-                        (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('w3c_details', this.context, item);
-                    });
-                    success = true;
+            this.doms = this.doms || [];
+            for (const index in this.doms) {
+                const dom = this.doms[index];
+                if (dom) {
+                    try {
+                        const result = yield validator({
+                            url: urlWrapper.url.toString(),
+                            data: dom,
+                        });
+                        (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.W3cValidatorModuleEvents.onResult, {
+                            module: this,
+                            url: urlWrapper,
+                            result: result
+                        });
+                        (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
+                        const summary = { context: this.journeyContexts[index].name };
+                        options.allowedTypes.forEach((type) => {
+                            summary[type] = result.messages.filter((item) => item.type === type).length;
+                        });
+                        (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`W3C`, summary, urlWrapper.url.toString());
+                        summary.url = urlWrapper.url.toString();
+                        (_j = (_h = (_g = this.context) === null || _g === void 0 ? void 0 : _g.config) === null || _h === void 0 ? void 0 : _h.storage) === null || _j === void 0 ? void 0 : _j.add('w3c', this.context, summary);
+                        result.messages
+                            .filter((item) => options.allowedTypes.includes(item.type))
+                            .forEach((item) => {
+                            var _a, _b, _c;
+                            item.url = urlWrapper.url.toString();
+                            item.context = this.journeyContexts[index].name;
+                            (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('w3c_details', this.context, item);
+                        });
+                        success = true;
+                    }
+                    catch (error) {
+                        success = false;
+                    }
                 }
-                catch (error) {
-                    success = false;
-                }
-            }
-            else {
-                success = false;
             }
             return success;
-        });
-    }
-    /**
-     * Finish analyse process.
-     *
-     * @returns {Promise<any>}
-     */
-    finish() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.dom = null;
         });
     }
     /**
@@ -122,11 +121,12 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
      */
     initEvents(journey) {
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, () => __awaiter(this, void 0, void 0, function* () {
-            this.dom = null;
+            this.doms = [];
         }));
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, (data) => __awaiter(this, void 0, void 0, function* () {
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, (data) => __awaiter(this, void 0, void 0, function* () {
             const wrapper = data.wrapper;
-            this.dom = yield wrapper.page.content();
+            this.doms = this.doms || [];
+            this.doms.push(yield wrapper.page.content());
         }));
     }
 }

@@ -4,6 +4,7 @@ import {WebAuditContextClass} from '../core/WebAuditContext';
 
 import {AbstractJourneyModuleInterface} from './AbstractJourneyModuleInterface';
 import {JourneyInterface} from './JourneyInterface';
+import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from "./AbstractPuppeteerJourney";
 
 export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface, AbstractJourneyModuleInterface {
 
@@ -19,6 +20,12 @@ export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface,
 
   protected context?: WebAuditContextClass;
 
+  protected journeyContexts: any = [];
+  protected journeySteps: any = [];
+
+  /**
+   * {@inheritdoc}
+   */
   getOptions(inputOptions: any = {}): any {
     return {
       ...this.defaultOptions,
@@ -26,17 +33,36 @@ export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface,
     };
   }
 
+  /**
+   * {@inheritdoc}
+   */
   analyse(url: UrlWrapper): Promise<boolean> {
     return Promise.resolve(true);
   }
 
-  finish(): void {
-  }
-
+  /**
+   * {@inheritdoc}
+   */
   initJourney(journey: JourneyInterface): AbstractJourneyModuleInterface {
     this.initEvents(journey);
-
+    if (journey instanceof AbstractPuppeteerJourney) {
+      journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => {
+        this.journeyContexts = [];
+        this.journeySteps = [];
+      });
+      journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.journeyContexts.push(data));
+      journey.on(PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, async (data: any) => this.journeySteps.push(data));
+    }
     return this;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  finish(): void {
+    this.journeyContexts = [];
+    this.journeySteps = [];
+  }
+
 
 }

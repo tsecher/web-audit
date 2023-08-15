@@ -47,19 +47,19 @@ class DefaultPuppeteerJourney extends AbstractPuppeteerJourney_1.AbstractPuppete
         return __awaiter(this, void 0, void 0, function* () {
             const wait = 1000;
             let i;
-            yield this.addStep('goto', () => __awaiter(this, void 0, void 0, function* () {
+            yield this.addStep(`Go to ${url.url.toString()}`, () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.goto(url.url.toString());
             }));
-            yield this.addStep('wait', () => __awaiter(this, void 0, void 0, function* () {
+            yield this.addStep(`Wait 1s`, () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.wait(Number(wait));
             }));
-            yield this.addStep('scrollToBottom', () => __awaiter(this, void 0, void 0, function* () {
+            yield this.addStep('Scroll to bottom', () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.scrollToBottom();
             }));
-            yield this.addStep('finally wait', () => __awaiter(this, void 0, void 0, function* () {
+            yield this.addStep('Finally wait 3s', () => __awaiter(this, void 0, void 0, function* () {
                 yield wrapper.wait(3 * wait);
             }));
-            yield this.triggerNewContext('finally wait');
+            yield this.triggerNewContext('Visit and scroll');
         });
     }
 }

@@ -3,6 +3,7 @@ import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJou
 import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
 import {UrlWrapper} from '../../core/UrlWrapper';
 import {ModuleEvents} from '../ModuleInterface';
+import {AbstractJourneyModuleInterface} from "../../journey/AbstractJourneyModuleInterface";
 
 const os = require('os-utils');
 
@@ -43,6 +44,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     // Install eco index store.
     this.context?.config.storage?.installStore('cpu', this.context, {
       url: 'Url',
+      context: 'context',
       time: 'Time',
       cpu: 'CPU use average (%)',
     });
@@ -98,6 +100,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     const firstTime = new Date().getTime();
     this.currentStep = 0;
     this.currentContext = 0;
+    this.stock = [];
 
     this.interval = setInterval(() => {
       const usage: any = {
@@ -130,26 +133,24 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    * @private
    */
   private getResult(urlWrapper: UrlWrapper): any {
-    this.stock.forEach((item: any) => {
-
-      this.context?.config?.storage?.add('cpu_history', this.context, {
-        ...item,
-        ...{
-          url: urlWrapper.url,
-        },
+    this.stock
+      .filter((item: any) => {
+        return item.context < this.journeyContexts.length
+          && item.step < this.journeySteps.length
+      })
+      .forEach((item: any) => {
+        item.context = this.journeyContexts[item.context].name;
+        item.step = this.journeySteps[item.step].name;
+        item.url = urlWrapper.url;
+        this.context?.config?.storage?.add('cpu_history', this.context, item);
       });
-    });
 
-    // Average.
-    const averageData = {
-      ...this.getAverageData(),
-      ...{
-        url: urlWrapper.url,
-      },
-    };
-    this.context?.config?.storage?.add('cpu', this.context, averageData);
-    this.context?.config?.logger.result('CPU', averageData, urlWrapper.url.toString());
-    return averageData;
+    this.getAverageData(urlWrapper.url).forEach(average => {
+      this.context?.config?.storage?.add('cpu', this.context, average);
+      this.context?.config?.logger.result('CPU', average, urlWrapper.url.toString());
+    })
+
+    return true;
   }
 
   /**
@@ -158,15 +159,23 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    * @returns {{cpu: number, time: any}}
    * @private
    */
-  private getAverageData() {
-    return {
-      time: this.stock.at(-1).time,
-      cpu: this.stock.reduce((sum: number, currentValue: any) => {
-        if (currentValue?.cpu) {
-          return sum + currentValue.cpu;
-        }
-        return sum;
-      }, 0) / this.stock.length,
-    };
+  private getAverageData(url: URL) {
+    const averages: Array<any> = [];
+    this.journeyContexts.forEach((context: any) => {
+      const contextStocks = this.stock.filter((item: any) => item.context === context.name);
+      averages.push({
+        cpu: contextStocks.reduce((sum: number, currentValue: any) => {
+          if (currentValue?.cpu) {
+            return sum + currentValue.cpu;
+          }
+          return sum;
+        }, 0) / contextStocks.length,
+        time: contextStocks[contextStocks.length - 1].time - contextStocks[0].time,
+        context: context.name,
+        url: url,
+      });
+    });
+
+    return averages;
   }
 }

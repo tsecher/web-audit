@@ -35,7 +35,7 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     allowedTypes: ['error', 'warning'],
   };
 
-  private dom?: string | null;
+  protected doms?: Array<string | null> = [];
 
   /**
    * {@inheritdoc}
@@ -46,6 +46,7 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     // Install w3c store.
     this.context.config.storage?.installStore('w3c', this.context, {
       url: 'Url',
+      context: 'Context',
       error: 'Errors',
       warning: 'Warnings',
       info: 'Infos',
@@ -53,6 +54,7 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
 
     this.context.config.storage?.installStore('w3c_details', this.context, {
       url: 'Url',
+      context: 'Context',
       type: 'Type',
       message: 'Message',
       extract: 'Extract',
@@ -70,52 +72,50 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
 
-    let success: boolean;
+    let success: boolean = false;
     const options = this.getOptions();
 
-    if (this.dom) {
-      try {
-        const result: any = await validator({
-          url: urlWrapper.url.toString(),
-          data: this.dom,
-        });
-
-        this.context?.eventBus.emit(W3cValidatorModuleEvents.onResult, {module: this, url: urlWrapper, result: result});
-        this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
-
-        const summary: any = {};
-        options.allowedTypes.forEach((type: string) => {
-          summary[type] = result.messages.filter((item: any) => item.type === type).length;
-        });
-        this.context?.config?.logger.result(`W3C`, summary, urlWrapper.url.toString());
-        summary.url = urlWrapper.url.toString();
-        this.context?.config?.storage?.add('w3c', this.context, summary);
-
-        result.messages
-          .filter((item: any) => options.allowedTypes.includes(item.type))
-          .forEach((item: any) => {
-            item.url = urlWrapper.url.toString();
-            this.context?.config?.storage?.add('w3c_details', this.context, item);
+    this.doms = this.doms || [];
+    for (const index in this.doms) {
+      const dom = this.doms[index];
+      if (dom) {
+        try {
+          const result: any = await validator({
+            url: urlWrapper.url.toString(),
+            data: dom,
           });
 
-        success = true;
-      } catch (error) {
-        success = false;
+          this.context?.eventBus.emit(W3cValidatorModuleEvents.onResult, {
+            module: this,
+            url: urlWrapper,
+            result: result
+          });
+          this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
+
+          const summary: any = {context: this.journeyContexts[index].name};
+          options.allowedTypes.forEach((type: string) => {
+            summary[type] = result.messages.filter((item: any) => item.type === type).length;
+          });
+          this.context?.config?.logger.result(`W3C`, summary, urlWrapper.url.toString());
+          summary.url = urlWrapper.url.toString();
+          this.context?.config?.storage?.add('w3c', this.context, summary);
+
+          result.messages
+            .filter((item: any) => options.allowedTypes.includes(item.type))
+            .forEach((item: any) => {
+              item.url = urlWrapper.url.toString();
+              item.context = this.journeyContexts[index].name;
+              this.context?.config?.storage?.add('w3c_details', this.context, item);
+            });
+
+          success = true;
+        } catch (error) {
+          success = false;
+        }
       }
-    } else {
-      success = false;
     }
 
     return success;
-  }
-
-  /**
-   * Finish analyse process.
-   *
-   * @returns {Promise<any>}
-   */
-  async finish(): Promise<any> {
-    this.dom = null;
   }
 
   /**
@@ -123,13 +123,13 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
    */
   initEvents(journey: AbstractPuppeteerJourney) {
     journey.on(PuppeteerJourneyEvents.JOURNEY_START, async () => {
-      this.dom = null;
+      this.doms = [];
     });
 
-    journey.on(PuppeteerJourneyEvents.JOURNEY_END, async (data: any) => {
+    journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => {
       const wrapper: PageWrapper = data.wrapper;
-
-      this.dom = await wrapper.page.content();
+      this.doms = this.doms || [];
+      this.doms.push(await wrapper.page.content());
     });
   }
 
