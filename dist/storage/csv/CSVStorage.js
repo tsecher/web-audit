@@ -122,7 +122,7 @@ class CSVStorage {
                 default:
                     value = (value === null || value === void 0 ? void 0 : value.toString()) || JSON.stringify(value);
             }
-            values[key] = value;
+            values[key] = value.split('\r\n').join('').split('\r').join('').split('\n').join('');
         });
         return values;
     }

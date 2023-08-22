@@ -126,8 +126,8 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
                 domSize: metrics === null || metrics === void 0 ? void 0 : metrics.getDomElementsCount(),
                 nbRequest: metrics === null || metrics === void 0 ? void 0 : metrics.getRequestsCount(),
                 responsesSize: metrics === null || metrics === void 0 ? void 0 : metrics.getSize(),
-                waterConsumption: ecoindex.computeGreenhouseGasesEmissionfromEcoIndex(ecoindexValue),
-                greenhouseGasesEmission: ecoindex.computeWaterConsumptionfromEcoIndex(ecoindexValue),
+                greenhouseGasesEmission: ecoindex.computeGreenhouseGasesEmissionfromEcoIndex(ecoindexValue),
+                waterConsumption: ecoindex.computeWaterConsumptionfromEcoIndex(ecoindexValue),
             };
         });
     }

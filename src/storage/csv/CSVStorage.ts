@@ -141,7 +141,7 @@ export default class CSVStorage implements StorageInterface {
         default:
           value = value?.toString() || JSON.stringify(value);
       }
-      values[key] = value;
+      values[key] = value.split('\r\n').join('').split('\r').join('').split('\n').join('');
     });
 
     return values;
