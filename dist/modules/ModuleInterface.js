@@ -7,4 +7,6 @@ exports.ModuleEvents = {
     beforeAnalyse: 'beforeAnalyse',
     afterAnalyse: 'afterAnalyse',
     onAnalyseResult: 'onAnalyseResult',
+    startsComputing: 'startsComputing',
+    endsComputing: 'endsComputing',
 };

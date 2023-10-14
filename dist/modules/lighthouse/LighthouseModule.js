@@ -69,7 +69,9 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(ModuleInterface_1.ModuleEvents.startsComputing, { module: this });
             this.reports.forEach((contextReport, index) => {
                 var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
                 if (!contextReport) {
@@ -87,16 +89,13 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
                         (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.logger.error(error);
                     }
                 });
-                (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.LighthouseModuleEvents.onResult, {
+                const eventData = {
                     module: this,
                     url: urlWrapper,
                     result: contextReport
-                });
-                (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, {
-                    module: this,
-                    url: urlWrapper,
-                    result: contextReport
-                });
+                };
+                (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.LighthouseModuleEvents.onResult, eventData);
+                (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, eventData);
                 if (report === null || report === void 0 ? void 0 : report.performance) {
                     (_f = (_e = this.context) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
                 }
@@ -106,9 +105,10 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
                 }
                 report.url = urlWrapper.url.toString();
                 (_o = (_m = (_l = this.context) === null || _l === void 0 ? void 0 : _l.config) === null || _m === void 0 ? void 0 : _m.storage) === null || _o === void 0 ? void 0 : _o.add('lighthouse', this.context, report);
-                (_p = this.context) === null || _p === void 0 ? void 0 : _p.eventBus.emit(exports.LighthouseModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
-                (_q = this.context) === null || _q === void 0 ? void 0 : _q.eventBus.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, { module: this, url: urlWrapper });
+                (_p = this.context) === null || _p === void 0 ? void 0 : _p.eventBus.emit(exports.LighthouseModuleEvents.afterAnalyse, eventData);
+                (_q = this.context) === null || _q === void 0 ? void 0 : _q.eventBus.emit(ModuleInterface_1.ModuleEvents.afterAnalyse, eventData);
             });
+            (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.endsComputing, { module: this });
             return true;
         });
     }
@@ -132,7 +132,9 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
      * @private
      */
     launchLighthouse(wrapper) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(ModuleInterface_1.ModuleEvents.startsComputing, { module: this });
             const browser = yield wrapper.getBrowser();
             const endpoint = new URL(browser.wsEndpoint());
             const options = this.getOptions();
@@ -142,6 +144,7 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
                 report: JSON.parse(ReportGenerator.generateReport(result.lhr, 'json')),
                 html: ReportGenerator.generateReport(result.lhr, 'html'),
             });
+            (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.endsComputing, { module: this });
         });
     }
 }

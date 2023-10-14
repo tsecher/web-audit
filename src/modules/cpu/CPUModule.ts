@@ -26,6 +26,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
   private currentStep = 0;
   private currentContext = 0;
   private hasValue = false;
+  private isPaused: boolean = false;
 
   get name(): string {
     return 'CPU';
@@ -72,12 +73,15 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async () => this.currentContext++);
     journey.on(PuppeteerJourneyEvents.JOURNEY_END, async () => this.stopTimer(true));
     journey.on(PuppeteerJourneyEvents.JOURNEY_ERROR, async () => this.stopTimer(false));
+    this.context?.eventBus.on(ModuleEvents.startsComputing, () => this.pauseTimer());
+    this.context?.eventBus.on(ModuleEvents.endsComputing, () => this.unpauseTimer());
   }
 
   /**
    * {@inheritdoc}
    */
   analyse(urlWrapper: UrlWrapper): Promise<boolean> {
+    this.pauseTimer();
     if (!this.hasValue) {
       return Promise.resolve(false);
     }
@@ -101,20 +105,42 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     this.currentStep = 0;
     this.currentContext = 0;
     this.stock = [];
+    this.isPaused = false;
 
     this.interval = setInterval(() => {
-      const usage: any = {
-        time: (new Date().getTime() - firstTime) / 1000,
-        step: this.currentStep,
-        context: this.currentContext,
-      };
+      if (!this.isPaused) {
+        const usage: any = {
+          time: (new Date().getTime() - firstTime) / 1000,
+          step: this.currentStep,
+          context: this.currentContext,
+        };
 
-      os.cpuUsage((value: any) => {
-        usage.cpu = value * 100;
-      });
-
-      this.stock.push(usage);
+        os.cpuUsage((value: any) => {
+          usage.cpu = value * 100;
+          if(!this.isPaused){
+            this.stock.push(usage);
+          }
+        });
+      }
     }, 100);
+  }
+
+  /**
+   * Pause timer.
+   *
+   * @private
+   */
+  private pauseTimer() {
+    this.isPaused = true;
+  }
+
+  /**
+   * Unpause timer.
+   *
+   * @private
+   */
+  private unpauseTimer() {
+    this.isPaused = false;
   }
 
   /**
@@ -133,6 +159,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    * @private
    */
   private getResult(urlWrapper: UrlWrapper): any {
+    this.pauseTimer();
     this.stock
       .filter((item: any) => {
         return item.context < this.journeyContexts.length
@@ -149,6 +176,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
       this.context?.config?.storage?.add('cpu', this.context, average);
       this.context?.config?.logger.result('CPU', average, urlWrapper.url.toString());
     })
+    this.unpauseTimer();
 
     return true;
   }

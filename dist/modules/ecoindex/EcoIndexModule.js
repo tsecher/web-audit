@@ -67,13 +67,14 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f;
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.hasValue) {
                 return Promise.resolve(false);
             }
             (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(exports.EcoIndexModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
             (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeAnalyse, { module: this, url: urlWrapper });
+            (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(ModuleInterface_1.ModuleEvents.startsComputing, { module: this });
             const results = this.getCleanResults(urlWrapper);
             results.forEach((result, index) => {
                 var _a, _b, _c, _d, _e;
@@ -81,8 +82,9 @@ class EcoIndexModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJ
                 (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('ecoindex', this.context, result);
                 (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
             });
-            (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: urlWrapper, result: results });
-            (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: results });
+            (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.endsComputing, { module: this });
+            (_e = this.context) === null || _e === void 0 ? void 0 : _e.eventBus.emit(exports.EcoIndexModuleEvents.onResult, { module: this, url: urlWrapper, result: results });
+            (_f = this.context) === null || _f === void 0 ? void 0 : _f.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: results });
             return results.length > 0;
         });
     }

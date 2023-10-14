@@ -30,6 +30,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         this.currentStep = 0;
         this.currentContext = 0;
         this.hasValue = false;
+        this.isPaused = false;
     }
     get name() {
         return 'CPU';
@@ -65,18 +66,22 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      * {@inheritdoc}
      */
     initEvents(journey) {
+        var _a, _b;
         // Init ecoindex data.
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, () => __awaiter(this, void 0, void 0, function* () { return this.startTimer(); }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, () => __awaiter(this, void 0, void 0, function* () { return this.currentStep++; }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, () => __awaiter(this, void 0, void 0, function* () { return this.currentContext++; }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, () => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(true); }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_ERROR, () => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(false); }));
+        (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.on(ModuleInterface_1.ModuleEvents.startsComputing, () => this.pauseTimer());
+        (_b = this.context) === null || _b === void 0 ? void 0 : _b.eventBus.on(ModuleInterface_1.ModuleEvents.endsComputing, () => this.unpauseTimer());
     }
     /**
      * {@inheritdoc}
      */
     analyse(urlWrapper) {
         var _a, _b, _c, _d, _e;
+        this.pauseTimer();
         if (!this.hasValue) {
             return Promise.resolve(false);
         }
@@ -97,17 +102,38 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         this.currentStep = 0;
         this.currentContext = 0;
         this.stock = [];
+        this.isPaused = false;
         this.interval = setInterval(() => {
-            const usage = {
-                time: (new Date().getTime() - firstTime) / 1000,
-                step: this.currentStep,
-                context: this.currentContext,
-            };
-            os.cpuUsage((value) => {
-                usage.cpu = value * 100;
-            });
-            this.stock.push(usage);
+            if (!this.isPaused) {
+                const usage = {
+                    time: (new Date().getTime() - firstTime) / 1000,
+                    step: this.currentStep,
+                    context: this.currentContext,
+                };
+                os.cpuUsage((value) => {
+                    usage.cpu = value * 100;
+                    if (!this.isPaused) {
+                        this.stock.push(usage);
+                    }
+                });
+            }
         }, 100);
+    }
+    /**
+     * Pause timer.
+     *
+     * @private
+     */
+    pauseTimer() {
+        this.isPaused = true;
+    }
+    /**
+     * Unpause timer.
+     *
+     * @private
+     */
+    unpauseTimer() {
+        this.isPaused = false;
     }
     /**
      * Stop timer.
@@ -124,6 +150,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      * @private
      */
     getResult(urlWrapper) {
+        this.pauseTimer();
         this.stock
             .filter((item) => {
             return item.context < this.journeyContexts.length
@@ -141,6 +168,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
             (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu', this.context, average);
             (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result('CPU', average, urlWrapper.url.toString());
         });
+        this.unpauseTimer();
         return true;
     }
     /**

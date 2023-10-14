@@ -67,6 +67,7 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
    * {@inheritdoc}
    */
   async analyse(urlWrapper: UrlWrapper): Promise<boolean> {
+    this.context?.eventBus.emit(ModuleEvents.startsComputing, {module:this});
     this.reports.forEach((contextReport: any, index: number) => {
       if (!contextReport) {
         return;
@@ -86,16 +87,13 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
           }
         });
 
-      this.context?.eventBus.emit(LighthouseModuleEvents.onResult, {
+      const eventData = {
         module: this,
         url: urlWrapper,
         result: contextReport
-      });
-      this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {
-        module: this,
-        url: urlWrapper,
-        result: contextReport
-      });
+      }
+      this.context?.eventBus.emit(LighthouseModuleEvents.onResult, eventData);
+      this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, eventData);
 
       if (report?.performance) {
         this.context?.config?.logger.result(`Lighthouse`, report, urlWrapper.url.toString());
@@ -107,9 +105,11 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
       report.url = urlWrapper.url.toString();
       this.context?.config?.storage?.add('lighthouse', this.context, report);
 
-      this.context?.eventBus.emit(LighthouseModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
-      this.context?.eventBus.emit(ModuleEvents.afterAnalyse, {module: this, url: urlWrapper});
+      this.context?.eventBus.emit(LighthouseModuleEvents.afterAnalyse, eventData);
+      this.context?.eventBus.emit(ModuleEvents.afterAnalyse, eventData);
     });
+
+    this.context?.eventBus.emit(ModuleEvents.endsComputing, {module:this});
 
     return true;
   }
@@ -135,6 +135,7 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
    * @private
    */
   protected async launchLighthouse(wrapper: PageWrapper): Promise<any> {
+    this.context?.eventBus.emit(ModuleEvents.startsComputing, {module:this});
     const browser = await wrapper.getBrowser();
     const endpoint = new URL(browser.wsEndpoint());
 
@@ -151,5 +152,7 @@ export class LighthouseModule extends AbstractPuppeteerJourneyModule {
       report: JSON.parse(ReportGenerator.generateReport(result.lhr, 'json')),
       html: ReportGenerator.generateReport(result.lhr, 'html'),
     });
+
+    this.context?.eventBus.emit(ModuleEvents.endsComputing, {module:this});
   }
 }

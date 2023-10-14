@@ -69,6 +69,7 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
     }
     this.context?.eventBus.emit(EcoIndexModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
     this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
+    this.context?.eventBus.emit(ModuleEvents.startsComputing, {module: this});
 
     const results: any[] = this.getCleanResults(urlWrapper);
     results.forEach((result, index) => {
@@ -77,6 +78,7 @@ export class EcoIndexModule extends AbstractPuppeteerJourneyModule {
       this.context?.config?.logger.result(`Ecoindex`, result, urlWrapper.url.toString());
     });
 
+    this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});
     this.context?.eventBus.emit(EcoIndexModuleEvents.onResult, {module: this, url: urlWrapper, result: results});
     this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: results});
 

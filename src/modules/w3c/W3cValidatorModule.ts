@@ -80,6 +80,7 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
       const dom = this.doms[index];
       if (dom) {
         try {
+          this.context?.eventBus.emit(ModuleEvents.startsComputing, {module: this});
           const result: any = await validator({
             url: urlWrapper.url.toString(),
             data: dom,
@@ -107,6 +108,8 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
               item.context = this.journeyContexts[index].name;
               this.context?.config?.storage?.add('w3c_details', this.context, item);
             });
+
+          this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});
 
           success = true;
         } catch (error) {
