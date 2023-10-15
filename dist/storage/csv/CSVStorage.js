@@ -19,6 +19,7 @@ class CSVStorage {
      */
     constructor(dir) {
         this.structures = {};
+        this.installData = {};
         this.dirPath = path_1.default.resolve(dir);
     }
     /**
@@ -32,6 +33,7 @@ class CSVStorage {
         if (!fs_1.default.existsSync(filePath)) {
             fs_1.default.writeFileSync(filePath, this.getCSVLine(data, id));
         }
+        this.installData[id] = data;
         this.structures[id] = data;
     }
     /**
@@ -43,6 +45,17 @@ class CSVStorage {
      */
     add(id, context, data) {
         fs_1.default.appendFileSync(this.getFilePath(id, context), this.getCSVLine(data, id));
+    }
+    /**
+     * Replace.
+     * @param {string} id
+     * @param {WebAuditContextClass} context
+     * @param data
+     */
+    one(id, context, data) {
+        fs_1.default.rmSync(this.getFilePath(id, context));
+        this.installStore(id, context, this.installData[id]);
+        this.add(id, context, data);
     }
     /**
      * Store file.
@@ -122,7 +135,12 @@ class CSVStorage {
                 default:
                     value = (value === null || value === void 0 ? void 0 : value.toString()) || JSON.stringify(value);
             }
-            values[key] = value.split('\r\n').join('').split('\r').join('').split('\n').join('');
+            values[key] = value.split('\r\n')
+                .join('')
+                .split('\r')
+                .join('')
+                .split('\n')
+                .join('');
         });
         return values;
     }

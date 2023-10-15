@@ -5,5 +5,7 @@ export interface StorageInterface {
 
   add(id: string, context: WebAuditContextClass, data: any): void;
 
+  one(id: string, context: WebAuditContextClass, data: any): void;
+
   file(input: string, context: WebAuditContextClass): void;
 }

@@ -35,7 +35,7 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     allowedTypes: ['error', 'warning'],
   };
 
-  protected doms?: Array<string | null> = [];
+  protected doms?: string[] | any[] = [];
 
   /**
    * {@inheritdoc}
@@ -71,14 +71,13 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
     this.context?.eventBus.emit(W3cValidatorModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
     this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, {module: this, url: urlWrapper});
 
-
-    let success: boolean = false;
+    let success = false;
     const options = this.getOptions();
 
     this.doms = this.doms || [];
     for (const index in this.doms) {
-      const dom = this.doms[index];
-      if (dom) {
+      if (this.doms[index]) {
+        const dom = this.doms[index];
         try {
           this.context?.eventBus.emit(ModuleEvents.startsComputing, {module: this});
           const result: any = await validator({
@@ -89,7 +88,7 @@ export class W3cValidatorModule extends AbstractPuppeteerJourneyModule {
           this.context?.eventBus.emit(W3cValidatorModuleEvents.onResult, {
             module: this,
             url: urlWrapper,
-            result: result
+            result: result,
           });
           this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
 

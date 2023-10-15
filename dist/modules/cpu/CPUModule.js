@@ -153,8 +153,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
         this.pauseTimer();
         this.stock
             .filter((item) => {
-            return item.context < this.journeyContexts.length
-                && item.step < this.journeySteps.length;
+            return item.context < this.journeyContexts.length && item.step < this.journeySteps.length;
         })
             .forEach((item) => {
             var _a, _b, _c;
@@ -163,7 +162,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
             item.url = urlWrapper.url;
             (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu_history', this.context, item);
         });
-        this.getAverageData(urlWrapper.url).forEach(average => {
+        this.getAverageData(urlWrapper.url).forEach((average) => {
             var _a, _b, _c, _d, _e;
             (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu', this.context, average);
             (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result('CPU', average, urlWrapper.url.toString());

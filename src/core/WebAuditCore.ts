@@ -1,5 +1,6 @@
 import {ModuleEvents, ModuleInterface} from '../modules/ModuleInterface';
 import {WebAuditCrawler, WebAuditCrawlerEvents} from '../crawlers/Crawler';
+import {AbstractDomainModule} from '../domain/AbstractDomainModule';
 import {AbstractPuppeteerJourneyModule} from '../journey/AbstractPuppeteerJourneyModule';
 import {PageWrapper} from '../journey/PageWrapper';
 import {JourneyInterface} from '../journey/JourneyInterface';
@@ -51,19 +52,26 @@ export class WebAuditCoreClass {
 
 
     const defaultModules = [];
+    const domainModules = [];
     const puppeteerJourneyModules = [];
 
     // Init and sort modules by types (puppeteer or default).
     for (const module of modules) {
       if (module instanceof AbstractPuppeteerJourneyModule) {
         puppeteerJourneyModules.push(module);
+      } else if (module instanceof AbstractDomainModule) {
+        domainModules.push(module);
       } else {
         defaultModules.push(module);
       }
       await module.init(this.context);
     }
 
-    // Analyser default module
+    // Analyse domain module.
+    await this.analyseDomainModules(domainModules, urls);
+
+
+    // Analyse default module.
     await this.analyseDefaultModules(defaultModules, urls);
 
     // Analyse puppeteer modules.
@@ -76,6 +84,27 @@ export class WebAuditCoreClass {
     // Close modules.
     for (const module of modules) {
       await module.finish();
+    }
+  }
+
+  /**
+   * Analyse default modules.
+   *
+   * @param modules
+   * @param {UrlWrapper[]} urls
+   * @returns {Promise<void>}
+   * @private
+   */
+  private async analyseDomainModules(modules: AbstractDomainModule[], urls: UrlWrapper[]) {
+    // Parse urls.
+    for (const url of urls) {
+      this.context.eventBus.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
+
+      for (const module of modules) {
+        this.context.setData(module?.name);
+        await module.analyseDomain(url);
+      }
+      this.context.eventBus.emit(ModuleEvents.afterUrlProcess, {module: this, url: url});
     }
   }
 

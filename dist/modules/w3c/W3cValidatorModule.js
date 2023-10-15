@@ -78,8 +78,8 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
             const options = this.getOptions();
             this.doms = this.doms || [];
             for (const index in this.doms) {
-                const dom = this.doms[index];
-                if (dom) {
+                if (this.doms[index]) {
+                    const dom = this.doms[index];
                     try {
                         (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(ModuleInterface_1.ModuleEvents.startsComputing, { module: this });
                         const result = yield validator({
@@ -89,7 +89,7 @@ class W3cValidatorModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppet
                         (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(exports.W3cValidatorModuleEvents.onResult, {
                             module: this,
                             url: urlWrapper,
-                            result: result
+                            result: result,
                         });
                         (_e = this.context) === null || _e === void 0 ? void 0 : _e.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
                         const summary = { context: this.journeyContexts[index].name };

@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebAuditCoreClass = void 0;
 const ModuleInterface_1 = require("../modules/ModuleInterface");
 const Crawler_1 = require("../crawlers/Crawler");
+const AbstractDomainModule_1 = require("../domain/AbstractDomainModule");
 const AbstractPuppeteerJourneyModule_1 = require("../journey/AbstractPuppeteerJourneyModule");
 const PageWrapper_1 = require("../journey/PageWrapper");
 /**
@@ -54,18 +55,24 @@ class WebAuditCoreClass {
                 .setUrl()
                 .setData();
             const defaultModules = [];
+            const domainModules = [];
             const puppeteerJourneyModules = [];
             // Init and sort modules by types (puppeteer or default).
             for (const module of modules) {
                 if (module instanceof AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule) {
                     puppeteerJourneyModules.push(module);
                 }
+                else if (module instanceof AbstractDomainModule_1.AbstractDomainModule) {
+                    domainModules.push(module);
+                }
                 else {
                     defaultModules.push(module);
                 }
                 yield module.init(this.context);
             }
-            // Analyser default module
+            // Analyse domain module.
+            yield this.analyseDomainModules(domainModules, urls);
+            // Analyse default module.
             yield this.analyseDefaultModules(defaultModules, urls);
             // Analyse puppeteer modules.
             try {
@@ -77,6 +84,27 @@ class WebAuditCoreClass {
             // Close modules.
             for (const module of modules) {
                 yield module.finish();
+            }
+        });
+    }
+    /**
+     * Analyse default modules.
+     *
+     * @param modules
+     * @param {UrlWrapper[]} urls
+     * @returns {Promise<void>}
+     * @private
+     */
+    analyseDomainModules(modules, urls) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Parse urls.
+            for (const url of urls) {
+                this.context.eventBus.emit(ModuleInterface_1.ModuleEvents.beforeUrlProcess, { module: this, url: url });
+                for (const module of modules) {
+                    this.context.setData(module === null || module === void 0 ? void 0 : module.name);
+                    yield module.analyseDomain(url);
+                }
+                this.context.eventBus.emit(ModuleInterface_1.ModuleEvents.afterUrlProcess, { module: this, url: url });
             }
         });
     }

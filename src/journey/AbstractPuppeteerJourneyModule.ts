@@ -4,7 +4,7 @@ import {WebAuditContextClass} from '../core/WebAuditContext';
 
 import {AbstractJourneyModuleInterface} from './AbstractJourneyModuleInterface';
 import {JourneyInterface} from './JourneyInterface';
-import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from "./AbstractPuppeteerJourney";
+import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from './AbstractPuppeteerJourney';
 
 export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface, AbstractJourneyModuleInterface {
 

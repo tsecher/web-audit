@@ -92,7 +92,7 @@ class LighthouseModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppetee
                 const eventData = {
                     module: this,
                     url: urlWrapper,
-                    result: contextReport
+                    result: contextReport,
                 };
                 (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(exports.LighthouseModuleEvents.onResult, eventData);
                 (_d = this.context) === null || _d === void 0 ? void 0 : _d.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, eventData);

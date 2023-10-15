@@ -7,6 +7,8 @@ import {LighthouseModule} from '../../modules/lighthouse/LighthouseModule';
 import {EcoIndexModule} from '../../modules/ecoindex/EcoIndexModule';
 import {CPUModule} from '../../modules/cpu/CPUModule';
 import {W3cValidatorModule} from '../../modules/w3c/W3cValidatorModule';
+import {MozillaObservatoryModule} from '../../modules/mozilla-observatory/MozillaObservatoryModule';
+import {GreenWebFoundationModule} from '../../modules/green-web-foundation/GreenWebFoundationModule';
 
 /**
  * Find module according to configuration file.
@@ -40,6 +42,8 @@ class ModuleFinderClass {
       new EcoIndexModule(),
       new W3cValidatorModule(),
       new CPUModule(),
+      new MozillaObservatoryModule(),
+      new GreenWebFoundationModule(),
     ];
   }
 
@@ -78,7 +82,6 @@ class ModuleFinderClass {
           modulesList.push(new ModuleClass());
         }
       }
-
     }
     return modulesList;
   }

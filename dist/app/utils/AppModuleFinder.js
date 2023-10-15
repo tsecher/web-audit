@@ -11,6 +11,8 @@ const LighthouseModule_1 = require("../../modules/lighthouse/LighthouseModule");
 const EcoIndexModule_1 = require("../../modules/ecoindex/EcoIndexModule");
 const CPUModule_1 = require("../../modules/cpu/CPUModule");
 const W3cValidatorModule_1 = require("../../modules/w3c/W3cValidatorModule");
+const MozillaObservatoryModule_1 = require("../../modules/mozilla-observatory/MozillaObservatoryModule");
+const GreenWebFoundationModule_1 = require("../../modules/green-web-foundation/GreenWebFoundationModule");
 /**
  * Find module according to configuration file.
  */
@@ -38,6 +40,8 @@ class ModuleFinderClass {
             new EcoIndexModule_1.EcoIndexModule(),
             new W3cValidatorModule_1.W3cValidatorModule(),
             new CPUModule_1.CPUModule(),
+            new MozillaObservatoryModule_1.MozillaObservatoryModule(),
+            new GreenWebFoundationModule_1.GreenWebFoundationModule(),
         ];
     }
     /**

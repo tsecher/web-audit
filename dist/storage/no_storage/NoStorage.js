@@ -5,18 +5,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 class NoStorage {
     /**
-     * Init CSV Store file.
+     * Init Store.
      */
     installStore(id, context, data) {
     }
     /**
-     * Add data to csv Store
+     * Add data to Store
      *
      * @param id
      * @param context
      * @param data
      */
     add(id, context, data) {
+    }
+    /**
+     * Replace data.
+     */
+    one(id, context, data) {
     }
     /**
      * Add file.

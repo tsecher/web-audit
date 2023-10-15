@@ -18,6 +18,8 @@ export default class CSVStorage implements StorageInterface {
 
   private structures: any = {};
 
+  private installData: any = {};
+
   /**
    * Constructor.
    *
@@ -42,6 +44,7 @@ export default class CSVStorage implements StorageInterface {
       fs.writeFileSync(filePath, this.getCSVLine(data, id));
     }
 
+    this.installData[id] = data;
     this.structures[id] = data;
   }
 
@@ -54,6 +57,18 @@ export default class CSVStorage implements StorageInterface {
    */
   add(id: string, context: WebAuditContextClass, data: any): void {
     fs.appendFileSync(this.getFilePath(id, context), this.getCSVLine(data, id));
+  }
+
+  /**
+   * Replace.
+   * @param {string} id
+   * @param {WebAuditContextClass} context
+   * @param data
+   */
+  one(id: string, context: WebAuditContextClass, data: any): void {
+    fs.rmSync(this.getFilePath(id, context));
+    this.installStore(id, context, this.installData[id]);
+    this.add(id, context, data);
   }
 
   /**
@@ -141,7 +156,12 @@ export default class CSVStorage implements StorageInterface {
         default:
           value = value?.toString() || JSON.stringify(value);
       }
-      values[key] = value.split('\r\n').join('').split('\r').join('').split('\n').join('');
+      values[key] = value.split('\r\n')
+        .join('')
+        .split('\r')
+        .join('')
+        .split('\n')
+        .join('');
     });
 
     return values;
