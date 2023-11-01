@@ -9,6 +9,7 @@ import {CPUModule} from '../../modules/cpu/CPUModule';
 import {W3cValidatorModule} from '../../modules/w3c/W3cValidatorModule';
 import {MozillaObservatoryModule} from '../../modules/mozilla-observatory/MozillaObservatoryModule';
 import {GreenWebFoundationModule} from '../../modules/green-web-foundation/GreenWebFoundationModule';
+import {DomainLocationModule} from '../../modules/domain-location/DomainLocationModule';
 
 /**
  * Find module according to configuration file.
@@ -44,6 +45,7 @@ class ModuleFinderClass {
       new CPUModule(),
       new MozillaObservatoryModule(),
       new GreenWebFoundationModule(),
+      new DomainLocationModule(),
     ];
   }
 

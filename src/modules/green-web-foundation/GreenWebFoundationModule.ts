@@ -67,6 +67,7 @@ export class GreenWebFoundationModule extends AbstractDomainModule {
 
       const response = await fetch(endpoint, {method: 'GET'});
       const result = await response.json();
+
       result.url = urlWrapper.url.hostname;
 
       const summary = {
@@ -85,6 +86,7 @@ export class GreenWebFoundationModule extends AbstractDomainModule {
       this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
 
       this.context?.config?.logger.result(`Green Web Foundation`, summary, urlWrapper.url.toString());
+      // @ts-ignore
       this.context?.config?.storage?.one('green_web_foundation', this.context, result);
 
       this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});

@@ -81,6 +81,7 @@ class GreenWebFoundationModule extends AbstractDomainModule_1.AbstractDomainModu
                 });
                 (_c = this.context) === null || _c === void 0 ? void 0 : _c.eventBus.emit(ModuleInterface_1.ModuleEvents.onAnalyseResult, { module: this, url: urlWrapper, result: result });
                 (_e = (_d = this.context) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.logger.result(`Green Web Foundation`, summary, urlWrapper.url.toString());
+                // @ts-ignore
                 (_h = (_g = (_f = this.context) === null || _f === void 0 ? void 0 : _f.config) === null || _g === void 0 ? void 0 : _g.storage) === null || _h === void 0 ? void 0 : _h.one('green_web_foundation', this.context, result);
                 (_j = this.context) === null || _j === void 0 ? void 0 : _j.eventBus.emit(ModuleInterface_1.ModuleEvents.endsComputing, { module: this });
                 return true;

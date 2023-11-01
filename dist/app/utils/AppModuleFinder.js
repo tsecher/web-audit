@@ -13,6 +13,7 @@ const CPUModule_1 = require("../../modules/cpu/CPUModule");
 const W3cValidatorModule_1 = require("../../modules/w3c/W3cValidatorModule");
 const MozillaObservatoryModule_1 = require("../../modules/mozilla-observatory/MozillaObservatoryModule");
 const GreenWebFoundationModule_1 = require("../../modules/green-web-foundation/GreenWebFoundationModule");
+const DomainLocationModule_1 = require("../../modules/domain-location/DomainLocationModule");
 /**
  * Find module according to configuration file.
  */
@@ -42,6 +43,7 @@ class ModuleFinderClass {
             new CPUModule_1.CPUModule(),
             new MozillaObservatoryModule_1.MozillaObservatoryModule(),
             new GreenWebFoundationModule_1.GreenWebFoundationModule(),
+            new DomainLocationModule_1.DomainLocationModule(),
         ];
     }
     /**

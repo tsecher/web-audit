@@ -69,6 +69,12 @@ export class MozillaObservatoryModule extends AbstractDomainModule {
       this.context?.eventBus.emit(ModuleEvents.startsComputing, {module: this});
 
       const result = await this.getBaseResult(urlWrapper.url.hostname);
+
+      if (!result.status_code) {
+        this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});
+        return false;
+      }
+
       result.tests = await this.getTestResults(result?.scan_id);
       result.url = urlWrapper.url.hostname;
 
@@ -88,6 +94,7 @@ export class MozillaObservatoryModule extends AbstractDomainModule {
       this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
 
       this.context?.config?.logger.result(`Mozilla Observatory`, summary, urlWrapper.url.toString());
+      // @ts-ignore
       this.context?.config?.storage?.one('mozilla_observatory', this.context, result);
 
       this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});
