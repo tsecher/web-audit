@@ -29,7 +29,7 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
 
   abstract get id(): string;
 
-  private stopJourney = false;
+  private stopJourney: boolean | string = false;
 
   private step = 0;
 
@@ -118,7 +118,8 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
         })
         .catch(async (err: any) => {
           await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
-          this.stop();
+          console.error(err);
+          this.stop(err.message);
           resolve(null);
         });
     });
@@ -149,15 +150,15 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
    */
   _checkStep() {
     if (this.stopJourney) {
-      throw new Error(`Unexpected stop user journey`);
+      throw new Error(`Unexpected stop user journey  ${this.stopJourney}`);
     }
   }
 
   /**
    * Stop journey.
    */
-  stop() {
-    this.stopJourney = true;
+  stop(message: string) {
+    this.stopJourney = message;
   }
 
   /**

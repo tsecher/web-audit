@@ -100,7 +100,8 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
                 }))
                     .catch((err) => __awaiter(this, void 0, void 0, function* () {
                     yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
-                    this.stop();
+                    console.error(err);
+                    this.stop(err.message);
                     resolve(null);
                 }));
             });
@@ -129,14 +130,14 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      */
     _checkStep() {
         if (this.stopJourney) {
-            throw new Error(`Unexpected stop user journey`);
+            throw new Error(`Unexpected stop user journey  ${this.stopJourney}`);
         }
     }
     /**
      * Stop journey.
      */
-    stop() {
-        this.stopJourney = true;
+    stop(message) {
+        this.stopJourney = message;
     }
     /**
      * {@inheritdoc}
