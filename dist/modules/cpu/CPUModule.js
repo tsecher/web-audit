@@ -13,7 +13,6 @@ exports.CPUModule = exports.CPUModuleEvents = void 0;
 const AbstractPuppeteerJourneyModule_1 = require("../../journey/AbstractPuppeteerJourneyModule");
 const AbstractPuppeteerJourney_1 = require("../../journey/AbstractPuppeteerJourney");
 const ModuleInterface_1 = require("../ModuleInterface");
-const os = require('os-utils');
 exports.CPUModuleEvents = {
     createCPUModule: 'cpu__createCPUModule',
     beforeAnalyse: 'cpu__beforeAnalyse',
@@ -26,7 +25,7 @@ exports.CPUModuleEvents = {
 class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourneyModule {
     constructor() {
         super(...arguments);
-        this.stock = [];
+        this.snapshots = [];
         this.currentStep = 0;
         this.currentContext = 0;
         this.hasValue = false;
@@ -68,7 +67,7 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
     initEvents(journey) {
         var _a, _b;
         // Init ecoindex data.
-        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, () => __awaiter(this, void 0, void 0, function* () { return this.startTimer(); }));
+        journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () { return this.startTimer(data); }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, () => __awaiter(this, void 0, void 0, function* () { return this.currentStep++; }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, () => __awaiter(this, void 0, void 0, function* () { return this.currentContext++; }));
         journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_END, () => __awaiter(this, void 0, void 0, function* () { return this.stopTimer(true); }));
@@ -96,28 +95,54 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
     /**
      * Start timer
      */
-    startTimer() {
-        this.hasValue = false;
-        const firstTime = new Date().getTime();
-        this.currentStep = 0;
-        this.currentContext = 0;
-        this.stock = [];
-        this.isPaused = false;
-        this.interval = setInterval(() => {
-            if (!this.isPaused) {
-                const usage = {
-                    time: (new Date().getTime() - firstTime) / 1000,
-                    step: this.currentStep,
-                    context: this.currentContext,
-                };
-                os.cpuUsage((value) => {
-                    usage.cpu = value * 100;
-                    if (!this.isPaused) {
-                        this.stock.push(usage);
-                    }
-                });
-            }
-        }, 100);
+    startTimer(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const cdp = yield data.wrapper.page.target().createCDPSession();
+            this.hasValue = false;
+            this.currentStep = 0;
+            this.currentContext = 0;
+            this.snapshots = [];
+            this.isPaused = false;
+            yield cdp.send('Performance.enable', {
+                timeDomain: 'timeTicks',
+            });
+            const { timestamp: startTime, activeTime: initialActiveTime, } = this.processMetrics(yield cdp.send('Performance.getMetrics'));
+            let cumulativeActiveTime = initialActiveTime;
+            let lastTimestamp = startTime;
+            this.interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
+                const { timestamp, activeTime } = this.processMetrics(yield cdp.send('Performance.getMetrics'));
+                const frameDuration = timestamp - lastTimestamp;
+                let usage = (activeTime - cumulativeActiveTime) / frameDuration;
+                cumulativeActiveTime = activeTime;
+                if (usage > 1) {
+                    usage = 1;
+                }
+                if (!this.isPaused) {
+                    this.snapshots.push({
+                        timestamp,
+                        usage,
+                        step: this.currentStep,
+                        context: this.currentContext,
+                    });
+                }
+                lastTimestamp = timestamp;
+            }), 100);
+        });
+    }
+    /**
+     * Return metrics from browser.
+     *
+     * @param metrics
+     * @returns {{timestamp: number, activeTime: number}}
+     * @protected
+     */
+    processMetrics(metrics) {
+        var _a;
+        const activeTime = metrics.metrics.filter((metric) => metric.name.includes('Duration')).map((metric) => metric.value).reduce((metricA, metricB) => metricA + metricB);
+        return {
+            timestamp: ((_a = metrics.metrics.find((metric) => metric.name === 'Timestamp')) === null || _a === void 0 ? void 0 : _a.value) || 0,
+            activeTime,
+        };
     }
     /**
      * Pause timer.
@@ -151,16 +176,17 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      */
     getResult(urlWrapper) {
         this.pauseTimer();
-        this.stock
-            .filter((item) => {
-            return item.context < this.journeyContexts.length && item.step < this.journeySteps.length;
-        })
-            .forEach((item) => {
-            var _a, _b, _c;
-            item.context = this.journeyContexts[item.context].name;
-            item.step = this.journeySteps[item.step].name;
-            item.url = urlWrapper.url;
-            (_c = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.storage) === null || _c === void 0 ? void 0 : _c.add('cpu_history', this.context, item);
+        const firstTime = this.snapshots[0].timestamp;
+        this.snapshots.forEach((snapshot) => {
+            var _a, _b, _c, _d, _e;
+            const item = {
+                url: urlWrapper.url,
+                time: snapshot.timestamp - firstTime,
+                step: ((_a = this.journeySteps[snapshot.step]) === null || _a === void 0 ? void 0 : _a.name) || '',
+                context: ((_b = this.journeyContexts[snapshot.context]) === null || _b === void 0 ? void 0 : _b.name) || '',
+                cpu: snapshot.usage * 100,
+            };
+            (_e = (_d = (_c = this.context) === null || _c === void 0 ? void 0 : _c.config) === null || _d === void 0 ? void 0 : _d.storage) === null || _e === void 0 ? void 0 : _e.add('cpu_history', this.context, item);
         });
         this.getAverageData(urlWrapper.url).forEach((average) => {
             var _a, _b, _c, _d, _e;
@@ -178,16 +204,16 @@ class CPUModule extends AbstractPuppeteerJourneyModule_1.AbstractPuppeteerJourne
      */
     getAverageData(url) {
         const averages = [];
-        this.journeyContexts.forEach((context) => {
-            const contextStocks = this.stock.filter((item) => item.context === context.name);
+        this.journeyContexts.forEach((context, index) => {
+            const contextStocks = this.snapshots.filter((item) => item.context === index);
             averages.push({
                 cpu: contextStocks.reduce((sum, currentValue) => {
-                    if (currentValue === null || currentValue === void 0 ? void 0 : currentValue.cpu) {
-                        return sum + currentValue.cpu;
+                    if (currentValue === null || currentValue === void 0 ? void 0 : currentValue.usage) {
+                        return sum + currentValue.usage;
                     }
                     return sum;
-                }, 0) / contextStocks.length,
-                time: contextStocks[contextStocks.length - 1].time - contextStocks[0].time,
+                }, 0) * 100 / contextStocks.length,
+                time: contextStocks[contextStocks.length - 1].timestamp - contextStocks[0].timestamp,
                 context: context.name,
                 url: url,
             });

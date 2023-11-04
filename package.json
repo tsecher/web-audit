@@ -38,7 +38,6 @@
     "html-validator": "^6.0.1",
     "lighthouse": "^9.6.7",
     "nodemon": "^2.0.20",
-    "os-utils": "^0.0.14",
     "prompts": "^2.4.2",
     "puppeteer": "^18.2.1",
     "puppeteer-autoscroll-down": "^1.1.2",

@@ -4,8 +4,6 @@ import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/Ab
 import {UrlWrapper} from '../../core/UrlWrapper';
 import {ModuleEvents} from '../ModuleInterface';
 
-const os = require('os-utils');
-
 export const CPUModuleEvents: any = {
   createCPUModule: 'cpu__createCPUModule',
   beforeAnalyse: 'cpu__beforeAnalyse',
@@ -16,10 +14,23 @@ export const CPUModuleEvents: any = {
   afterAnalyse: 'cpu__afterAnalyse',
 };
 
+
+interface CPUUsageSnapshot {
+  timestamp: number;
+  usage: number;
+  step: number;
+  context: number;
+}
+
+export interface CPUStats {
+  average: number;
+  snapshots: CPUUsageSnapshot[];
+}
+
 export class CPUModule extends AbstractPuppeteerJourneyModule {
 
   private interval?: any;
-  private stock: any = [];
+  private snapshots: CPUUsageSnapshot[] = [];
   private currentStep = 0;
   private currentContext = 0;
   private hasValue = false;
@@ -65,7 +76,7 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    */
   initEvents(journey: AbstractPuppeteerJourney): void {
     // Init ecoindex data.
-    journey.on(PuppeteerJourneyEvents.JOURNEY_START, async () => this.startTimer());
+    journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => this.startTimer(data));
     journey.on(PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, async () => this.currentStep++);
     journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async () => this.currentContext++);
     journey.on(PuppeteerJourneyEvents.JOURNEY_END, async () => this.stopTimer(true));
@@ -96,30 +107,66 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
   /**
    * Start timer
    */
-  private startTimer() {
+  async startTimer(data: any) {
+
+    const cdp = await data.wrapper.page.target().createCDPSession();
     this.hasValue = false;
-    const firstTime = new Date().getTime();
     this.currentStep = 0;
     this.currentContext = 0;
-    this.stock = [];
+    this.snapshots = [];
     this.isPaused = false;
 
-    this.interval = setInterval(() => {
+    await cdp.send('Performance.enable', {
+      timeDomain: 'timeTicks',
+    });
+
+    const {
+      timestamp: startTime,
+      activeTime: initialActiveTime,
+    } = this.processMetrics(await cdp.send('Performance.getMetrics'));
+
+    let cumulativeActiveTime = initialActiveTime;
+
+    let lastTimestamp = startTime;
+    this.interval = setInterval(async () => {
+      const {timestamp, activeTime} = this.processMetrics(await cdp.send('Performance.getMetrics'));
+      const frameDuration = timestamp - lastTimestamp;
+      let usage = (activeTime - cumulativeActiveTime) / frameDuration;
+      cumulativeActiveTime = activeTime;
+
+      if (usage > 1) {
+        usage = 1;
+      }
       if (!this.isPaused) {
-        const usage: any = {
-          time: (new Date().getTime() - firstTime) / 1000,
+        this.snapshots.push({
+          timestamp,
+          usage,
           step: this.currentStep,
           context: this.currentContext,
-        };
-
-        os.cpuUsage((value: any) => {
-          usage.cpu = value * 100;
-          if (!this.isPaused) {
-            this.stock.push(usage);
-          }
         });
       }
+
+      lastTimestamp = timestamp;
     }, 100);
+  }
+
+
+  /**
+   * Return metrics from browser.
+   *
+   * @param metrics
+   * @returns {{timestamp: number, activeTime: number}}
+   * @protected
+   */
+  protected processMetrics(metrics: any): {
+    timestamp: number;
+    activeTime: number;
+  } {
+    const activeTime = metrics.metrics.filter((metric: any) => metric.name.includes('Duration')).map((metric: any) => metric.value).reduce((metricA: any, metricB: any) => metricA + metricB);
+    return {
+      timestamp: metrics.metrics.find((metric: any) => metric.name === 'Timestamp')?.value || 0,
+      activeTime,
+    };
   }
 
   /**
@@ -157,23 +204,25 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    */
   private getResult(urlWrapper: UrlWrapper): any {
     this.pauseTimer();
-    this.stock
-      .filter((item: any) => {
-        return item.context < this.journeyContexts.length && item.step < this.journeySteps.length;
-      })
-      .forEach((item: any) => {
-        item.context = this.journeyContexts[item.context].name;
-        item.step = this.journeySteps[item.step].name;
-        item.url = urlWrapper.url;
-        this.context?.config?.storage?.add('cpu_history', this.context, item);
-      });
 
+    const firstTime = this.snapshots[0].timestamp;
+
+    this.snapshots.forEach((snapshot: CPUUsageSnapshot) => {
+      const item = {
+        url: urlWrapper.url,
+        time: snapshot.timestamp - firstTime,
+        step: this.journeySteps[snapshot.step]?.name || '',
+        context: this.journeyContexts[snapshot.context]?.name || '',
+        cpu: snapshot.usage * 100,
+      };
+      this.context?.config?.storage?.add('cpu_history', this.context, item);
+    });
     this.getAverageData(urlWrapper.url).forEach((average: any) => {
       this.context?.config?.storage?.add('cpu', this.context, average);
       this.context?.config?.logger.result('CPU', average, urlWrapper.url.toString());
     });
-    this.unpauseTimer();
 
+    this.unpauseTimer();
     return true;
   }
 
@@ -185,16 +234,16 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    */
   private getAverageData(url: URL) {
     const averages: any[] = [];
-    this.journeyContexts.forEach((context: any) => {
-      const contextStocks = this.stock.filter((item: any) => item.context === context.name);
+    this.journeyContexts.forEach((context: any, index: number) => {
+      const contextStocks = this.snapshots.filter((item: CPUUsageSnapshot) => item.context === index);
       averages.push({
-        cpu: contextStocks.reduce((sum: number, currentValue: any) => {
-          if (currentValue?.cpu) {
-            return sum + currentValue.cpu;
+        cpu: contextStocks.reduce((sum: number, currentValue: CPUUsageSnapshot) => {
+          if (currentValue?.usage) {
+            return sum + currentValue.usage;
           }
           return sum;
-        }, 0) / contextStocks.length,
-        time: contextStocks[contextStocks.length - 1].time - contextStocks[0].time,
+        }, 0) * 100 / contextStocks.length,
+        time: contextStocks[contextStocks.length - 1].timestamp - contextStocks[0].timestamp,
         context: context.name,
         url: url,
       });
@@ -203,3 +252,4 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     return averages;
   }
 }
+
