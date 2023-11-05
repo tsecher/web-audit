@@ -74,6 +74,7 @@ export class DomainLocationModule extends AbstractDomainModule {
       this.context?.eventBus.emit(ModuleEvents.startsComputing, {module: this});
 
       const result = await this.getBaseResult(urlWrapper.url.hostname);
+      result.url = urlWrapper.url.hostname;
 
       const summary = {
         url: urlWrapper.url.hostname,

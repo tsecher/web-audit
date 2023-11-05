@@ -75,6 +75,7 @@ class DomainLocationModule extends AbstractDomainModule_1.AbstractDomainModule {
             try {
                 (_a = this.context) === null || _a === void 0 ? void 0 : _a.eventBus.emit(ModuleInterface_1.ModuleEvents.startsComputing, { module: this });
                 const result = yield this.getBaseResult(urlWrapper.url.hostname);
+                result.url = urlWrapper.url.hostname;
                 const summary = {
                     url: urlWrapper.url.hostname,
                     latitude: result.latitude,
