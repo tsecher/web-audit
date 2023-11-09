@@ -1,3 +1,5 @@
+import {CDPSession} from 'puppeteer';
+
 import {WebAuditContextClass} from '../../core/WebAuditContext';
 import {AbstractPuppeteerJourneyModule} from '../../journey/AbstractPuppeteerJourneyModule';
 import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '../../journey/AbstractPuppeteerJourney';
@@ -16,10 +18,11 @@ export const CPUModuleEvents: any = {
 
 
 interface CPUUsageSnapshot {
-  timestamp: number;
-  usage: number;
+  metrics: any;
   step: number;
   context: number;
+  usage: number;
+  timestamp: number;
 }
 
 export interface CPUStats {
@@ -35,6 +38,50 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
   private currentContext = 0;
   private hasValue = false;
   private isPaused = false;
+  private cpuCount = 1;
+  private durationsMetrics = [
+    // 'Timestamp',
+    // 'AudioHandlers',
+    // 'Documents',
+    // 'Frames',
+    // 'JSEventListeners',
+    // 'LayoutObjects',
+    // 'MediaKeySessions',
+    // 'MediaKeys',
+    // 'Nodes',
+    // 'Resources',
+    // 'ContextLifecycleStateObservers',
+    // 'V8PerContextDatas',
+    // 'WorkerGlobalScopes',
+    // 'UACSSResources',
+    // 'RTCPeerConnections',
+    // 'ResourceFetchers',
+    // 'AdSubframes',
+    // 'DetachedScriptStates',
+    // 'ArrayBufferContents',
+    // 'LayoutCount',
+    // 'RecalcStyleCount',
+    'LayoutDuration',
+    'RecalcStyleDuration',
+    'DevToolsCommandDuration',
+    'ScriptDuration',
+    'V8CompileDuration',
+    'TaskDuration',
+    'TaskOtherDuration',
+    // 'ThreadTime',
+    // 'ProcessTime',
+    // 'JSHeapUsedSize',
+    // 'JSHeapTotalSize',
+    // 'FirstMeaningfulPaint',
+    // 'DomContentLoaded',
+    // 'NavigationStart',
+  ];
+
+  private mainDurationMetrics = [
+    'LayoutDuration',
+    'RecalcStyleDuration',
+    'ScriptDuration',
+  ];
 
   get name(): string {
     return 'CPU';
@@ -49,6 +96,9 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    */
   init(context: WebAuditContextClass): void {
     this.context = context;
+
+    const os = require('os-utils');
+    this.cpuCount = os.cpuCount();
 
     // Install eco index store.
     this.context?.config.storage?.installStore('cpu', this.context, {
@@ -120,34 +170,40 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
       timeDomain: 'timeTicks',
     });
 
-    const {
-      timestamp: startTime,
-      activeTime: initialActiveTime,
-    } = this.processMetrics(await cdp.send('Performance.getMetrics'));
 
-    let cumulativeActiveTime = initialActiveTime;
+    this.addMetrics(cdp);
 
-    let lastTimestamp = startTime;
     this.interval = setInterval(async () => {
-      const {timestamp, activeTime} = this.processMetrics(await cdp.send('Performance.getMetrics'));
-      const frameDuration = timestamp - lastTimestamp;
-      let usage = (activeTime - cumulativeActiveTime) / frameDuration;
-      cumulativeActiveTime = activeTime;
-
-      if (usage > 1) {
-        usage = 1;
-      }
       if (!this.isPaused) {
-        this.snapshots.push({
-          timestamp,
-          usage,
-          step: this.currentStep,
-          context: this.currentContext,
-        });
+        this.addMetrics(cdp);
       }
-
-      lastTimestamp = timestamp;
     }, 100);
+  }
+
+  /**
+   * Add metrics.
+   *
+   * @param cdp
+   * @returns {Promise<void>}
+   * @protected
+   */
+  protected async addMetrics(cdp: CDPSession) {
+    let metrics;
+    try {
+      metrics = await cdp.send('Performance.getMetrics');
+    } catch (err) {
+      this.stopTimer(true);
+      return;
+    }
+
+    this.snapshots.push({
+      metrics: this.getMetricsValues(metrics),
+      step: this.currentStep,
+      context: this.currentContext,
+      timestamp: 0,
+      usage: 0,
+    });
+
   }
 
 
@@ -158,15 +214,13 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    * @returns {{timestamp: number, activeTime: number}}
    * @protected
    */
-  protected processMetrics(metrics: any): {
-    timestamp: number;
-    activeTime: number;
-  } {
-    const activeTime = metrics.metrics.filter((metric: any) => metric.name.includes('Duration')).map((metric: any) => metric.value).reduce((metricA: any, metricB: any) => metricA + metricB);
-    return {
-      timestamp: metrics.metrics.find((metric: any) => metric.name === 'Timestamp')?.value || 0,
-      activeTime,
-    };
+  protected getMetricsValues(metrics: any): any {
+    const values: any = {};
+    metrics.metrics
+      .forEach((item: any) => {
+        values[item.name] = item.value;
+      });
+    return values;
   }
 
   /**
@@ -203,17 +257,26 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
    * @private
    */
   private getResult(urlWrapper: UrlWrapper): any {
-    this.pauseTimer();
+    this.snapshots.sort((snapA, snapB) => snapA.metrics.Timestamp - snapB.metrics.Timestamp);
 
-    const firstTime = this.snapshots[0].timestamp;
+    const firstTimeStamp = this.snapshots[0].metrics.Timestamp;
+    this.snapshots[0].metrics.Timestamp = 0;
+
+    for (let i = this.snapshots.length - 1; i > 0; i--) {
+      this.snapshots[i].timestamp = this.snapshots[i].metrics.Timestamp - firstTimeStamp;
+      Object.keys(this.snapshots[i].metrics).forEach((metricName: string) => {
+        this.snapshots[i].metrics[metricName] -= this.snapshots[i - 1].metrics[metricName];
+      });
+      this.snapshots[i].usage = this.getSnapshotUsage(this.snapshots[i]);
+    }
 
     this.snapshots.forEach((snapshot: CPUUsageSnapshot) => {
       const item = {
         url: urlWrapper.url,
-        time: snapshot.timestamp - firstTime,
+        time: snapshot.timestamp,
         step: this.journeySteps[snapshot.step]?.name || '',
         context: this.journeyContexts[snapshot.context]?.name || '',
-        cpu: snapshot.usage * 100,
+        cpu: snapshot.usage,
       };
       this.context?.config?.storage?.add('cpu_history', this.context, item);
     });
@@ -236,20 +299,40 @@ export class CPUModule extends AbstractPuppeteerJourneyModule {
     const averages: any[] = [];
     this.journeyContexts.forEach((context: any, index: number) => {
       const contextStocks = this.snapshots.filter((item: CPUUsageSnapshot) => item.context === index);
+      const time = contextStocks[contextStocks.length - 1].timestamp - contextStocks[0].timestamp;
+      const cumulActiveTime = contextStocks.reduce((sum: number, currentValue: CPUUsageSnapshot) => {
+        if (currentValue?.usage) {
+          return sum + currentValue.usage;
+        }
+        return sum;
+      }, 0);
+
       averages.push({
-        cpu: contextStocks.reduce((sum: number, currentValue: CPUUsageSnapshot) => {
-          if (currentValue?.usage) {
-            return sum + currentValue.usage;
-          }
-          return sum;
-        }, 0) * 100 / contextStocks.length,
-        time: contextStocks[contextStocks.length - 1].timestamp - contextStocks[0].timestamp,
+        cpu: cumulActiveTime / contextStocks.length,
+        time: time,
         context: context.name,
         url: url,
       });
     });
 
     return averages;
+  }
+
+  /**
+   * Return snappshot usage value.
+   *
+   * @param {CPUUsageSnapshot} snapshot
+   * @returns {number}
+   * @private
+   */
+  private getSnapshotUsage(snapshot: CPUUsageSnapshot) {
+    let all = 0;
+    this.durationsMetrics.forEach((metricName: string) => {
+      all += snapshot.metrics[metricName];
+    });
+
+    // The all time is the cumulation of all time of all cpus used during the snapshot session.
+    return all / this.cpuCount / snapshot.metrics.Timestamp * 100;
   }
 }
 
