@@ -1,6 +1,6 @@
 import events from 'events';
 
-import {WebAuditContextClass} from './WebAuditContext';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 export class WebAuditEventClass {
 

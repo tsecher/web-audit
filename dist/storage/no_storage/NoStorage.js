@@ -1,9 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * store data in
  */
-class NoStorage {
+export default class NoStorage {
     /**
      * Init Store.
      */
@@ -32,4 +30,3 @@ class NoStorage {
     file(input, context) {
     }
 }
-exports.default = NoStorage;

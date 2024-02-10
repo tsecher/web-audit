@@ -1,6 +1,6 @@
-import {ModuleInterface} from '../modules/ModuleInterface';
-import {UrlWrapper} from '../core/UrlWrapper';
-import {WebAuditContextClass} from '../core/WebAuditContext';
+import {MODULE_TYPES, ModuleInterface} from '##/modules/ModuleInterface';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 /**
  * Abstract domain module.
@@ -13,15 +13,19 @@ export abstract class AbstractDomainModule implements ModuleInterface {
 
   abstract get name(): string;
 
+  get type(): string {
+    return MODULE_TYPES.BEFORE;
+  }
+
   abstract init(context: WebAuditContextClass): void;
 
-  abstract analyse(url: UrlWrapper): Promise<boolean>;
+  abstract analyseDomain(url: UrlWrapper): Promise<boolean>;
 
   abstract finish(): void;
 
-  async analyseDomain(url: UrlWrapper) {
+  async analyse(url: UrlWrapper) {
     if (this.isAnalysableDomain(url.url.hostname)) {
-      return this.analyse(url);
+      return this.analyseDomain(url);
     }
     return true;
   }

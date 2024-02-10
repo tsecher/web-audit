@@ -1,63 +1,36 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ModuleFinder = void 0;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const AppConfig_1 = require("../conf/AppConfig");
-const LighthouseModule_1 = require("../../modules/lighthouse/LighthouseModule");
-const EcoIndexModule_1 = require("../../modules/ecoindex/EcoIndexModule");
-const CPUModule_1 = require("../../modules/cpu/CPUModule");
-const W3cValidatorModule_1 = require("../../modules/w3c/W3cValidatorModule");
-const MozillaObservatoryModule_1 = require("../../modules/mozilla-observatory/MozillaObservatoryModule");
-const GreenWebFoundationModule_1 = require("../../modules/green-web-foundation/GreenWebFoundationModule");
-const DomainLocationModule_1 = require("../../modules/domain-location/DomainLocationModule");
+import fs from 'fs';
+import path from 'path';
+import { AppConfig, AppConfigFileName } from '##/app/conf/AppConfig';
 /**
  * Find module according to configuration file.
  */
 class ModuleFinderClass {
+    modules;
     /**
      * Return the list of available modules.
      *
      * @returns {ModuleInterface[]}
      */
-    getModules(force = false) {
+    async getModules(force = false) {
         if (force || !this.modules) {
-            this.initModules();
+            await this.initModules();
         }
         return this.modules || [];
-    }
-    /**
-     * Return all embed modules.
-     *
-     * @returns {ModuleInterface[]}
-     * @protected
-     */
-    getEmbedModules() {
-        return [
-            new LighthouseModule_1.LighthouseModule(),
-            new EcoIndexModule_1.EcoIndexModule(),
-            new W3cValidatorModule_1.W3cValidatorModule(),
-            new CPUModule_1.CPUModule(),
-            new MozillaObservatoryModule_1.MozillaObservatoryModule(),
-            new GreenWebFoundationModule_1.GreenWebFoundationModule(),
-            new DomainLocationModule_1.DomainLocationModule(),
-        ];
     }
     /**
      * Init modules.
      *
      * @protected
      */
-    initModules() {
+    async initModules() {
         const modules = {};
-        this.getEmbedModules()
-            .concat(this.getModulesFromConfig())
+        (await this.getModulesFromConfig())
             .map((module) => {
             modules[module.id] = module;
         });
+        if (Object.keys(modules).length < 1) {
+            throw new Error(`No modules defined. Please add modules in your ${AppConfigFileName}`);
+        }
         this.modules = Object.values(modules);
     }
     /**
@@ -67,15 +40,14 @@ class ModuleFinderClass {
      * @returns {ModuleInterface[]}
      * @protected
      */
-    getModulesFromConfig() {
-        var _a;
-        const moduleDataList = (_a = AppConfig_1.AppConfig.getConfig()) === null || _a === void 0 ? void 0 : _a.modules;
+    async getModulesFromConfig() {
+        const moduleDataList = AppConfig.getConfig()?.modules;
         const modulesList = [];
         if (moduleDataList && moduleDataList.length) {
             for (const moduleData of moduleDataList) {
-                const modulePath = path_1.default.resolve(process.cwd(), moduleData.path);
-                if (fs_1.default.existsSync(modulePath)) {
-                    const ModuleClass = require(modulePath)[moduleData.id];
+                const modulePath = path.resolve(process.cwd(), moduleData);
+                if (fs.existsSync(modulePath)) {
+                    const ModuleClass = (await import(modulePath)).default;
                     modulesList.push(new ModuleClass());
                 }
             }
@@ -83,4 +55,4 @@ class ModuleFinderClass {
         return modulesList;
     }
 }
-exports.ModuleFinder = new ModuleFinderClass();
+export const ModuleFinder = new ModuleFinderClass();

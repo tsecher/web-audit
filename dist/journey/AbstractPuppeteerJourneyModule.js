@@ -1,26 +1,24 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbstractPuppeteerJourneyModule = void 0;
-const AbstractPuppeteerJourney_1 = require("./AbstractPuppeteerJourney");
-class AbstractPuppeteerJourneyModule {
-    constructor() {
-        this.journeyContexts = [];
-        this.journeySteps = [];
+import { MODULE_TYPES } from '##/modules/ModuleInterface';
+import { AbstractPuppeteerJourney, PuppeteerJourneyEvents } from '##/journey/AbstractPuppeteerJourney';
+export class AbstractPuppeteerJourneyModule {
+    defaultOptions;
+    context;
+    journeyContexts = [];
+    journeySteps = [];
+    /**
+     * {@inheritdoc}
+     */
+    get type() {
+        return MODULE_TYPES.JOURNEY;
     }
     /**
      * {@inheritdoc}
      */
     getOptions(inputOptions = {}) {
-        return Object.assign(Object.assign({}, this.defaultOptions), inputOptions);
+        return {
+            ...this.defaultOptions,
+            ...inputOptions,
+        };
     }
     /**
      * {@inheritdoc}
@@ -33,13 +31,13 @@ class AbstractPuppeteerJourneyModule {
      */
     initJourney(journey) {
         this.initEvents(journey);
-        if (journey instanceof AbstractPuppeteerJourney_1.AbstractPuppeteerJourney) {
-            journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_START, (data) => __awaiter(this, void 0, void 0, function* () {
+        if (journey instanceof AbstractPuppeteerJourney) {
+            journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data) => {
                 this.journeyContexts = [];
                 this.journeySteps = [];
-            }));
-            journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, (data) => __awaiter(this, void 0, void 0, function* () { return this.journeyContexts.push(data); }));
-            journey.on(AbstractPuppeteerJourney_1.PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, (data) => __awaiter(this, void 0, void 0, function* () { return this.journeySteps.push(data); }));
+            });
+            journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data) => this.journeyContexts.push(data));
+            journey.on(PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, async (data) => this.journeySteps.push(data));
         }
         return this;
     }
@@ -51,4 +49,3 @@ class AbstractPuppeteerJourneyModule {
         this.journeySteps = [];
     }
 }
-exports.AbstractPuppeteerJourneyModule = AbstractPuppeteerJourneyModule;

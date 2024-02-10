@@ -1,16 +1,23 @@
-import {LoggerInterface} from '../loggers/Logger';
-import {ModuleInterface} from '../modules/ModuleInterface';
-import {ModuleFinder} from '../app/utils/AppModuleFinder';
-import CSVStorage from '../storage/csv/CSVStorage';
-import {JourneyInterface} from '../journey/JourneyInterface';
-import {JourneyFinder} from '../app/utils/AppJourneyFinder';
+import fs from 'fs';
+import path from 'path';
 
-const fs = require('fs');
-const path = require('path');
+// @ts-ignore
+import yargs from 'yargs/yargs';
+// @ts-ignore
+import {hideBin} from 'yargs/helpers';
+// @ts-ignore
+import inquirer from 'inquirer';
 
-const yargs = require('yargs/yargs');
-const {hideBin} = require('yargs/helpers');
-const prompts = require('prompts');
+import {LoggerInterface} from '##/loggers/Logger';
+import {ModuleInterface} from '##/modules/ModuleInterface';
+import {ModuleFinder} from '##/app/utils/AppModuleFinder';
+import CSVStorage from '##/storage/csv/CSVStorage';
+import {JourneyInterface} from '##/journey/JourneyInterface';
+import {JourneyFinder} from '##/app/utils/AppJourneyFinder';
+import {CrawlerFinder} from '##/app/utils/AppCrawlerFinder';
+
+
+// import prompts from 'prompts';
 
 const params: any = yargs(hideBin(process.argv)).argv;
 
@@ -22,7 +29,7 @@ const params: any = yargs(hideBin(process.argv)).argv;
 async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<any> {
   let selected: URL[] = [];
   if (params.urls && typeof params.urls === 'string') {
-    const urls = params.urls.split(CSVStorage.SEPARATOR);
+    const urls = params.urls.split(',');
     selected = urls
       .map((url: any) => {
         try {
@@ -40,8 +47,8 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
     let value = '';
 
     do {
-      manual = await prompts([{
-        type: 'text',
+      manual = await inquirer.prompt([{
+        type: 'input',
         name: 'urls',
         message: `URLs ? (leave empty to stop)`,
       }]);
@@ -55,7 +62,6 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
       } catch (error) {
         logger.error(`Bad URL format : ${value}`);
       }
-
     }
     while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
   }
@@ -72,7 +78,7 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
  * @returns {ModuleInterface}
  */
 async function getModules(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allModules: ModuleInterface[] = ModuleFinder.getModules();
+  const allModules: ModuleInterface[] = await ModuleFinder.getModules();
 
   let selected: ModuleInterface[] = [];
   if (params.modules && typeof params.modules === 'string') {
@@ -82,15 +88,15 @@ async function getModules(required: boolean, logger: LoggerInterface): Promise<a
 
   // Manual
   if (required && !selected.length) {
-    const manual = await prompts([{
-      type: 'multiselect',
+    const manual = await inquirer.prompt([{
+      type: 'checkbox',
       name: 'modules',
       message: `Modules ?`,
+      default: allModules,
       choices: allModules.map((module) => {
         return {
-          title: module.name,
+          name: module.name,
           value: module,
-          selected: true,
         };
       }),
     }]);
@@ -118,7 +124,7 @@ async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise
     let file = params.file || '';
     let answer: any = {file: file};
     while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
-      answer = await prompts([{
+      answer = await inquirer.prompt([{
         type: 'text',
         name: 'file',
         message: `File path (relative to ${process.cwd()})`,
@@ -128,19 +134,19 @@ async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise
     }
 
     // read urls.
-    const urls: URL[] = fs.readFileSync(file, 'utf-8')
+    const urls: URL[] = [];
+    fs.readFileSync(file, 'utf-8')
       .split('\n')
-      .map((row: string) => {
+      .forEach((row: string) => {
         const cell = row.split(CSVStorage.SEPARATOR)[0].trim();
         const value: string = cell[0] === '"' ? cell.slice(1, -1) : cell;
 
         try {
-          return new URL(value);
+          urls.push(new URL(value));
         } catch (error) {
-          return false;
+          // Mute error.
         }
-      })
-      .filter((url: URL) => url);
+      });
 
     urlsData = {
       data: urls,
@@ -163,7 +169,7 @@ async function getVersionArgs(required: boolean, logger: LoggerInterface): Promi
 
   if (required && !params.v) {
 
-    const answer = await prompts([{
+    const answer = await inquirer.prompt([{
       type: 'text',
       name: 'version',
       message: `Version ?`,
@@ -186,7 +192,7 @@ async function getVersionArgs(required: boolean, logger: LoggerInterface): Promi
  * @returns {ModuleInterface}
  */
 async function getJourney(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allJourneys: JourneyInterface[] = JourneyFinder.getJourneys();
+  const allJourneys: JourneyInterface[] = await JourneyFinder.getJourneys();
 
   let selected: JourneyInterface | null = null;
   if (params.journey && typeof params.journey === 'string') {
@@ -195,15 +201,14 @@ async function getJourney(required: boolean, logger: LoggerInterface): Promise<a
 
   // Manual
   if (required && !selected) {
-    const manual = await prompts([{
-      type: 'select',
+    const manual = await inquirer.prompt([{
+      type: 'list',
       name: 'journey',
       message: `Journey ?`,
       choices: allJourneys.map((journey) => {
         return {
-          title: journey.name,
+          name: journey.name,
           value: journey,
-          selected: true,
         };
       }),
     }]);
@@ -214,6 +219,43 @@ async function getJourney(required: boolean, logger: LoggerInterface): Promise<a
   return {
     data: selected,
     shortcut: selected ? `--journey=${selected.id}` : '',
+  };
+}
+
+
+/**
+ * Return crawler;
+ *
+ * @returns {any}
+ */
+async function getCrawler(required: boolean, logger: LoggerInterface): Promise<any> {
+  const allCrawlers: any[] = await CrawlerFinder.getCrawler();
+
+  let selected: JourneyInterface | null = null;
+  if (params.crawler && typeof params.crawler === 'string') {
+    selected = allCrawlers.filter((crawler) => params.crawler === crawler.id)[0];
+  }
+
+  // Manual
+  if (required && !selected) {
+    const manual = await inquirer.prompt([{
+      type: 'list',
+      name: 'crawler',
+      message: `Crawler ?`,
+      choices: allCrawlers.map((crawler) => {
+        return {
+          name: crawler.label,
+          value: crawler,
+        };
+      }),
+    }]);
+
+    selected = manual.crawler;
+  }
+
+  return {
+    data: selected,
+    shortcut: selected ? `--crawler=${selected.id}` : '',
   };
 }
 
@@ -231,6 +273,8 @@ export async function getArgs(required: string[], logger: LoggerInterface) {
   args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
   args.modules = await getModules(required.indexOf('modules') > -1, logger);
   args.journey = await getJourney(required.indexOf('journey') > -1, logger);
+  args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
+
 
   logger.warning(`Shortcut: `);
   logger.warning(Object.values(args).map((value: any) => value.shortcut).join(' '));

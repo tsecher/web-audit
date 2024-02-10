@@ -1,17 +1,12 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = __importDefault(require("path"));
-const index_1 = require("../index");
-const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
-const UrlWrapper_1 = require("../core/UrlWrapper");
-const AppConfig_1 = require("../app/conf/AppConfig");
-const Logger_1 = require("../loggers/Logger");
-const args_1 = require("./args");
+import path from 'path';
+import { Config, Context, Core, Event } from '##/index';
+import CSVStorage from '##/storage/csv/CSVStorage';
+import { UrlWrapper } from '##/core/UrlWrapper';
+import { AppConfig, AppConfigFileName } from '##/app/conf/AppConfig';
+import { WebAuditLogger } from '##/loggers/Logger';
+import { getArgs } from '##/scripts/args';
 // Init config.
-AppConfig_1.AppConfig.setConfig(path_1.default.resolve(process.cwd(), 'config.json'));
+AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
 /**
  * Launch analyse.
  *
@@ -19,31 +14,31 @@ AppConfig_1.AppConfig.setConfig(path_1.default.resolve(process.cwd(), 'config.js
  */
 function doAnalyse(args) {
     const { urls, modules, version, journey } = args;
-    const urlsWrapper = urls.map((url) => new UrlWrapper_1.UrlWrapper(url));
+    const urlsWrapper = urls.map((url) => new UrlWrapper(url));
     /** ======================================================
      ||                  Context                      ||
      =======================================================*/
-    const config = new index_1.Config(Logger_1.WebAuditLogger, new CSVStorage_1.default(`./analyses/${urls[0].hostname}`));
-    const eventBus = new index_1.Event();
-    const context = new index_1.Context(config, eventBus);
+    const config = new Config(WebAuditLogger, new CSVStorage(`./analyses/${urls[0].hostname}`));
+    const eventBus = new Event();
+    const context = new Context(config, eventBus);
     context.setVersion(version);
     /** ======================================================
      ||                  Analyse                      ||
      =======================================================*/
     const success = () => {
-        Logger_1.WebAuditLogger.success(`Analyse success`);
+        WebAuditLogger.success(`Analyse success`);
     };
     const error = (error) => {
-        Logger_1.WebAuditLogger.error(`Analyse error :`);
-        Logger_1.WebAuditLogger.error(error);
+        WebAuditLogger.error(`Analyse error :`);
+        WebAuditLogger.error(error);
     };
     // Const
-    const core = new index_1.Core(context);
+    const core = new Core(context);
     core.analyseUrls(urlsWrapper, modules, journey)
         .then(success)
         .catch(error);
 }
 // Get args.
-(0, args_1.getArgs)(['urlsFiles', 'modules', 'version', 'journey'], Logger_1.WebAuditLogger)
+getArgs(['urlsFiles', 'modules', 'version', 'journey'], WebAuditLogger)
     .then((args) => doAnalyse(args))
-    .catch((error) => Logger_1.WebAuditLogger.exit(error));
+    .catch((error) => WebAuditLogger.exit(error));

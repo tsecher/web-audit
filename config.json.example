@@ -1,8 +1,0 @@
-{
-  "modules": [
-    {
-      "path": "custom/modules/print/Print.js",
-      "id": "PrintModule"
-    }
-  ]
-}

@@ -1,11 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppConfig = void 0;
-const fs_1 = __importDefault(require("fs"));
+import fs from 'fs';
 class AppConfigClass {
+    config;
     /**
      * Update the config.
      *
@@ -14,8 +9,8 @@ class AppConfigClass {
      */
     setConfig(input) {
         if (typeof input === 'string') {
-            if (fs_1.default.existsSync(input)) {
-                this.config = JSON.parse(fs_1.default.readFileSync(input, 'utf-8'));
+            if (fs.existsSync(input)) {
+                this.config = JSON.parse(fs.readFileSync(input, 'utf-8'));
             }
             else {
                 this.config = {};
@@ -46,4 +41,5 @@ class AppConfigClass {
         }
     }
 }
-exports.AppConfig = new AppConfigClass();
+export const AppConfig = new AppConfigClass();
+export const AppConfigFileName = 'web-audit.config.json';

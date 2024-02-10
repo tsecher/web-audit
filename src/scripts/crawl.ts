@@ -1,19 +1,18 @@
 import path from 'path';
 
-import {Config, Context, Core, Event} from '../index';
-import {UrlWrapper} from '../core/UrlWrapper';
-import CSVStorage from '../storage/csv/CSVStorage';
-import {WebAuditCrawler} from '../crawlers/Crawler';
-import {AppConfig} from '../app/conf/AppConfig';
-import {WebAuditLogger} from '../loggers/Logger';
-
-import {getArgs} from './args';
+import {Config, Context, Core, Event} from '##/index';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import CSVStorage from '##/storage/csv/CSVStorage';
+import {WebAuditCrawler} from '##/crawlers/Crawler';
+import {AppConfig, AppConfigFileName} from '##/app/conf/AppConfig';
+import {WebAuditLogger} from '##/loggers/Logger';
+import {getArgs} from '##/scripts/args';
 
 // Init config.
-AppConfig.setConfig(path.resolve(process.cwd(), 'config.json'));
+AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
 
 async function doCrawl(args: any) {
-  const {urls, version, journey} = args;
+  const {urls, version, journey, crawler} = args;
 
 
   /** ======================================================
@@ -49,9 +48,9 @@ async function doCrawl(args: any) {
    ||                  Crawl                      ||
    =======================================================*/
   const core = new Core(context);
-  return core.crawlWebsite(new UrlWrapper(urls[0]), journey, options);
+  return core.crawlWebsite(crawler, new UrlWrapper(urls[0]), journey, options);
 }
 
-getArgs(['urls', 'version', 'journey'], WebAuditLogger)
+getArgs(['urls', 'version', 'journey', 'crawler'], WebAuditLogger)
   .then((args: any) => doCrawl(args))
   .catch((error) => WebAuditLogger.exit(error));

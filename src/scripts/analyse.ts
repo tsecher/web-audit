@@ -1,16 +1,15 @@
 import path from 'path';
 
-import {Config, Context, Core, Event} from '../index';
-import CSVStorage from '../storage/csv/CSVStorage';
-import {UrlWrapper} from '../core/UrlWrapper';
-import {AppConfig} from '../app/conf/AppConfig';
-import {WebAuditLogger} from '../loggers/Logger';
-
-import {getArgs} from './args';
+import {Config, Context, Core, Event} from '##/index';
+import CSVStorage from '##/storage/csv/CSVStorage';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {AppConfig, AppConfigFileName} from '##/app/conf/AppConfig';
+import {WebAuditLogger} from '##/loggers/Logger';
+import {getArgs} from '##/scripts/args';
 
 
 // Init config.
-AppConfig.setConfig(path.resolve(process.cwd(), 'config.json'));
+AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
 
 /**
  * Launch analyse.

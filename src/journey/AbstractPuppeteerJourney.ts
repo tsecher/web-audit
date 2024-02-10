@@ -1,9 +1,8 @@
-import {WebAuditContextClass} from '../core/WebAuditContext';
-import {UrlWrapper} from '../core/UrlWrapper';
-
-import {PageWrapper} from './PageWrapper';
-import {AbstractEventsClass} from './AbstractEventsClass';
-import {JourneyInterface} from './JourneyInterface';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {PageWrapper} from '##/journey/PageWrapper';
+import {AbstractEventsClass} from '##/journey/AbstractEventsClass';
+import {JourneyInterface} from '##/journey/JourneyInterface';
 
 /**
  * Journey events.

@@ -47,3 +47,4 @@ class AppConfigClass {
 }
 
 export const AppConfig: AppConfigClass = new AppConfigClass();
+export const AppConfigFileName = 'web-audit.config.json';

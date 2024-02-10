@@ -1,13 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditConfigClass = void 0;
 /**
  * Config.
  */
-class WebAuditConfigClass {
+export class WebAuditConfigClass {
+    logger;
+    storage;
     constructor(logger, storage) {
         this.logger = logger;
         this.storage = storage;
     }
 }
-exports.WebAuditConfigClass = WebAuditConfigClass;

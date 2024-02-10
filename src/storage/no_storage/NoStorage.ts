@@ -1,5 +1,5 @@
-import {StorageInterface} from '../Storage';
-import {WebAuditContextClass} from '../../core/WebAuditContext';
+import {StorageInterface} from '##/storage/Storage';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 /**
  * store data in

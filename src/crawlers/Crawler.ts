@@ -1,9 +1,9 @@
 import {HTTPResponse} from 'puppeteer';
 
-import {UrlWrapper} from '../core/UrlWrapper';
-import {PageWrapper} from '../journey/PageWrapper';
-import {JourneyInterface} from '../journey/JourneyInterface';
-import {WebAuditContextClass} from '../core/WebAuditContext';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {PageWrapper} from '##/journey/PageWrapper';
+import {JourneyInterface} from '##/journey/JourneyInterface';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 export interface WebAuditCrawlerType {
   baseUrl: URL;
@@ -35,9 +35,23 @@ export const WebAuditCrawlerEvents: any = {
 };
 
 /**
+ * Web audit crawler interface.
+ */
+export interface WebAuditCrawlerInterface {
+
+  /**
+   * Crawl action.
+   */
+  crawl(journey: JourneyInterface): Promise<void>;
+}
+
+/**
  * Website crawler.
  */
-export class WebAuditCrawler {
+export class WebAuditCrawler implements WebAuditCrawlerInterface {
+
+  static id = 'default';
+  static label = 'Default crawler';
 
   protected defaultOptions: any = {
     followSearchParams: true,
@@ -78,7 +92,7 @@ export class WebAuditCrawler {
 
     // Prepare storage.
     this.context.config.storage?.installStore(
-      'page_found',
+      'pages',
       this.context,
       {
         url: 'Referenced url',
@@ -134,7 +148,7 @@ export class WebAuditCrawler {
 
     if (pageInfo.log) {
       this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawled, eventData);
-      this.context.config.storage?.add('page_found', this.context, pageInfo);
+      this.context.config.storage?.add('pages', this.context, pageInfo);
 
       if (pageInfo.status >= 300 && pageInfo < 400) {
         this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);

@@ -11,11 +11,21 @@ export const ModuleEvents = {
   endsComputing: 'endsComputing',
 };
 
+
+export const MODULE_TYPES: any = {
+  BEFORE: 'before',
+  STANDARD: 'standard',
+  JOURNEY: 'journey',
+};
+
+
 export interface ModuleInterface {
 
   get name(): string;
 
   get id(): string;
+
+  get type(): string;
 
   /**
    * Init before configuration.

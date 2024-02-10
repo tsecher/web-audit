@@ -1,10 +1,9 @@
-import {ModuleInterface} from '../modules/ModuleInterface';
-import {UrlWrapper} from '../core/UrlWrapper';
-import {WebAuditContextClass} from '../core/WebAuditContext';
-
-import {AbstractJourneyModuleInterface} from './AbstractJourneyModuleInterface';
-import {JourneyInterface} from './JourneyInterface';
-import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from './AbstractPuppeteerJourney';
+import {MODULE_TYPES, ModuleInterface} from '##/modules/ModuleInterface';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {AbstractJourneyModuleInterface} from '##/journey/AbstractJourneyModuleInterface';
+import {JourneyInterface} from '##/journey/JourneyInterface';
+import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '##/journey/AbstractPuppeteerJourney';
 
 export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface, AbstractJourneyModuleInterface {
 
@@ -22,6 +21,13 @@ export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface,
 
   protected journeyContexts: any = [];
   protected journeySteps: any = [];
+
+  /**
+   * {@inheritdoc}
+   */
+  get type(): string {
+    return MODULE_TYPES.JOURNEY;
+  }
 
   /**
    * {@inheritdoc}

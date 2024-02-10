@@ -1,22 +1,10 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbstractPuppeteerJourney = exports.PuppeteerJourneyEvents = void 0;
-const AbstractEventsClass_1 = require("./AbstractEventsClass");
+import { AbstractEventsClass } from '##/journey/AbstractEventsClass';
 /**
  * Journey events.
  *
  * @type {{JOURNEY_START: string, JOURNEY_END: string}}
  */
-exports.PuppeteerJourneyEvents = {
+export const PuppeteerJourneyEvents = {
     JOURNEY_START: 'Journey start',
     JOURNEY_END: 'Journey end',
     JOURNEY_NEW_CONTEXT: 'Journey new context',
@@ -28,14 +16,16 @@ exports.PuppeteerJourneyEvents = {
 /**
  * Base class defining puppeteer journey.
  */
-class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass {
+export class AbstractPuppeteerJourney extends AbstractEventsClass {
+    stopJourney = false;
+    step = 0;
+    eventData;
+    _context;
     /**
      * Constructor.
      */
     constructor() {
         super();
-        this.stopJourney = false;
-        this.step = 0;
         this.stopJourney = false;
     }
     set context(context) {
@@ -49,33 +39,30 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      *
      * @returns {Promise<void>}
      */
-    play(wrapper, url) {
-        var _a, _b;
-        return __awaiter(this, void 0, void 0, function* () {
-            this.stopJourney = false;
-            this.eventData = { wrapper: wrapper, url: url, journey: this };
-            // Play specifics.
-            try {
-                yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_START, this.eventData);
-                yield this.journey(wrapper, url);
-                if (this.stopJourney) {
-                    yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
-                }
-                else {
-                    yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
-                }
+    async play(wrapper, url) {
+        this.stopJourney = false;
+        this.eventData = { wrapper: wrapper, url: url, journey: this };
+        // Play specifics.
+        try {
+            await this.trigger(PuppeteerJourneyEvents.JOURNEY_START, this.eventData);
+            await this.journey(wrapper, url);
+            if (this.stopJourney) {
+                await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
             }
-            catch (err) {
-                (_a = this.context) === null || _a === void 0 ? void 0 : _a.config.logger.error(err);
-                yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
+            else {
+                await this.trigger(PuppeteerJourneyEvents.JOURNEY_END, this.eventData);
             }
-            try {
-                yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_CLOSE, this.eventData);
-            }
-            catch (err) {
-                (_b = this.context) === null || _b === void 0 ? void 0 : _b.config.logger.error(err);
-            }
-        });
+        }
+        catch (err) {
+            this.context?.config.logger.error(err);
+            await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, this.eventData);
+        }
+        try {
+            await this.trigger(PuppeteerJourneyEvents.JOURNEY_CLOSE, this.eventData);
+        }
+        catch (err) {
+            this.context?.config.logger.error(err);
+        }
     }
     /**
      * Wrap action in simple promise.
@@ -83,27 +70,28 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      * @param cb
      * @returns {Promise<unknown>}
      */
-    addStep(name, cb) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this._checkStep();
-            const eventData = Object.assign(Object.assign({}, this.eventData), {
+    async addStep(name, cb) {
+        this._checkStep();
+        const eventData = {
+            ...this.eventData,
+            ...{
                 step: this.step,
                 name: name,
-            });
-            yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, eventData);
-            return new Promise((resolve) => {
-                cb()
-                    .then((data) => __awaiter(this, void 0, void 0, function* () {
-                    this.step++;
-                    yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, eventData);
-                    resolve(data);
-                }))
-                    .catch((err) => __awaiter(this, void 0, void 0, function* () {
-                    yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
-                    console.error(err);
-                    this.stop(err.message);
-                    resolve(null);
-                }));
+            },
+        };
+        await this.trigger(PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, eventData);
+        return new Promise((resolve) => {
+            cb()
+                .then(async (data) => {
+                this.step++;
+                await this.trigger(PuppeteerJourneyEvents.JOURNEY_AFTER_STEP, eventData);
+                resolve(data);
+            })
+                .catch(async (err) => {
+                await this.trigger(PuppeteerJourneyEvents.JOURNEY_ERROR, eventData);
+                console.error(err);
+                this.stop(err.message);
+                resolve(null);
             });
         });
     }
@@ -113,15 +101,16 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
      * @param {string} name
      * @returns {Promise<void>}
      */
-    triggerNewContext(name) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this._checkStep();
-            const eventData = Object.assign(Object.assign({}, this.eventData), {
+    async triggerNewContext(name) {
+        this._checkStep();
+        const eventData = {
+            ...this.eventData,
+            ...{
                 step: this.step,
                 name: name,
-            });
-            yield this.trigger(exports.PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, eventData);
-        });
+            },
+        };
+        await this.trigger(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, eventData);
     }
     /**
      * Check if journey can still run.
@@ -158,4 +147,3 @@ class AbstractPuppeteerJourney extends AbstractEventsClass_1.AbstractEventsClass
         return Promise.resolve(true);
     }
 }
-exports.AbstractPuppeteerJourney = AbstractPuppeteerJourney;

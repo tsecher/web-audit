@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-import {AppConfig} from '../conf/AppConfig';
-import {JourneyInterface} from '../../journey/JourneyInterface';
-import {DefaultPuppeteerJourney} from '../../journey/DefaultPuppeteerJourney';
+import {AppConfig} from '##/app/conf/AppConfig';
+import {JourneyInterface} from '##/journey/JourneyInterface';
+import DefaultPuppeteerJourney from '##/journey/DefaultPuppeteerJourney';
+import {WebAuditCrawler} from '##/crawlers/Crawler';
 
 /**
  * Find journey according to configuration file.
@@ -17,9 +18,9 @@ class JourneyFinderClass {
    *
    * @returns {JourneyInterface[]}
    */
-  public getJourneys(force = false): JourneyInterface[] {
+  public async getJourneys(force = false): Promise<JourneyInterface[]> {
     if (force || !this.journeys) {
-      this.initJourneys();
+      await this.initJourneys();
     }
 
     return this.journeys || [];
@@ -42,12 +43,14 @@ class JourneyFinderClass {
    *
    * @protected
    */
-  protected initJourneys() {
-
+  protected async initJourneys() {
     const journeys: any = {};
-    this.getEmbedJourneys()
-      .concat(this.getJourneysFromConfig())
-      .map((journey: JourneyInterface) => {
+
+    const defaultJourney = new DefaultPuppeteerJourney();
+    journeys[defaultJourney.id] = defaultJourney;
+
+    (await this.getJourneysFromConfig())
+      .map((journey: any) => {
         journeys[journey.id] = journey;
       });
 
@@ -61,15 +64,15 @@ class JourneyFinderClass {
    * @returns {JourneyInterface[]}
    * @protected
    */
-  protected getJourneysFromConfig(): JourneyInterface[] {
+  protected async getJourneysFromConfig(): Promise<JourneyInterface[]> {
     const journeyDataList = AppConfig.getConfig()?.journeys;
     const journeysList: JourneyInterface[] = [];
     if (journeyDataList && journeyDataList.length) {
       for (const journeyData of journeyDataList) {
-        const journeyPath = path.resolve(process.cwd(), journeyData.path);
+        const journeyPath = path.resolve(process.cwd(), journeyData);
         if (fs.existsSync(journeyPath)) {
-          const JourneyClass = require(journeyPath)[journeyData.id];
-          journeysList.push(new JourneyClass());
+          const ModuleClass = (await import(journeyPath)).default;
+          journeysList.push(new ModuleClass());
         }
       }
 

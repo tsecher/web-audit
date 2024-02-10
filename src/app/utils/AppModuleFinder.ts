@@ -1,15 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-import {AppConfig} from '../conf/AppConfig';
-import {ModuleInterface} from '../../modules/ModuleInterface';
-import {LighthouseModule} from '../../modules/lighthouse/LighthouseModule';
-import {EcoIndexModule} from '../../modules/ecoindex/EcoIndexModule';
-import {CPUModule} from '../../modules/cpu/CPUModule';
-import {W3cValidatorModule} from '../../modules/w3c/W3cValidatorModule';
-import {MozillaObservatoryModule} from '../../modules/mozilla-observatory/MozillaObservatoryModule';
-import {GreenWebFoundationModule} from '../../modules/green-web-foundation/GreenWebFoundationModule';
-import {DomainLocationModule} from '../../modules/domain-location/DomainLocationModule';
+import {AppConfig, AppConfigFileName} from '##/app/conf/AppConfig';
+import {ModuleInterface} from '##/modules/ModuleInterface';
 
 /**
  * Find module according to configuration file.
@@ -23,30 +16,12 @@ class ModuleFinderClass {
    *
    * @returns {ModuleInterface[]}
    */
-  public getModules(force = false): ModuleInterface[] {
+  public async getModules(force = false): Promise<ModuleInterface[]> {
     if (force || !this.modules) {
-      this.initModules();
+      await this.initModules();
     }
 
     return this.modules || [];
-  }
-
-  /**
-   * Return all embed modules.
-   *
-   * @returns {ModuleInterface[]}
-   * @protected
-   */
-  protected getEmbedModules(): ModuleInterface[] {
-    return [
-      new LighthouseModule(),
-      new EcoIndexModule(),
-      new W3cValidatorModule(),
-      new CPUModule(),
-      new MozillaObservatoryModule(),
-      new GreenWebFoundationModule(),
-      new DomainLocationModule(),
-    ];
   }
 
   /**
@@ -54,14 +29,18 @@ class ModuleFinderClass {
    *
    * @protected
    */
-  protected initModules() {
+  protected async initModules() {
 
     const modules: any = {};
-    this.getEmbedModules()
-      .concat(this.getModulesFromConfig())
+    (await this.getModulesFromConfig())
       .map((module: ModuleInterface) => {
         modules[module.id] = module;
       });
+
+
+    if (Object.keys(modules).length < 1) {
+      throw new Error(`No modules defined. Please add modules in your ${AppConfigFileName}`);
+    }
 
     this.modules = Object.values(modules);
   }
@@ -73,14 +52,15 @@ class ModuleFinderClass {
    * @returns {ModuleInterface[]}
    * @protected
    */
-  protected getModulesFromConfig(): ModuleInterface[] {
+  protected async getModulesFromConfig(): Promise<ModuleInterface[]> {
     const moduleDataList = AppConfig.getConfig()?.modules;
     const modulesList: ModuleInterface[] = [];
+
     if (moduleDataList && moduleDataList.length) {
       for (const moduleData of moduleDataList) {
-        const modulePath = path.resolve(process.cwd(), moduleData.path);
+        const modulePath = path.resolve(process.cwd(), moduleData);
         if (fs.existsSync(modulePath)) {
-          const ModuleClass = require(modulePath)[moduleData.id];
+          const ModuleClass = (await import(modulePath)).default;
           modulesList.push(new ModuleClass());
         }
       }

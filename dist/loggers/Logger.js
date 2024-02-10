@@ -1,32 +1,26 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditLogger = exports.LoggerClass = void 0;
-const colors_1 = __importDefault(require("colors"));
+import colors from 'colors';
 /**
  * Logger class.
  */
-class LoggerClass {
+export class LoggerClass {
     error(data, id) {
-        this.log(data, id, colors_1.default.red);
+        this.log(data, id, colors.red);
     }
     message(data, id) {
         this.log(data, id);
     }
     success(data, id) {
-        this.log(data, id, colors_1.default.green);
+        this.log(data, id, colors.green);
     }
     warning(data, id) {
-        this.log(data, id, colors_1.default.yellow);
+        this.log(data, id, colors.yellow);
     }
     exit(data, id) {
         this.error(data, id);
         process.exit();
     }
     result(name, values, id) {
-        this.log(`${colors_1.default.bgGreen(`[${name}] : `)}`, id);
+        this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
         console.table({ values }, Object.keys(values)
             .filter((item) => item !== 'url'));
     }
@@ -47,8 +41,7 @@ class LoggerClass {
         }
     }
 }
-exports.LoggerClass = LoggerClass;
 /**
  * Default logger class.
  */
-exports.WebAuditLogger = new LoggerClass();
+export const WebAuditLogger = new LoggerClass();

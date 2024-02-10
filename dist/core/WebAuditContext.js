@@ -1,10 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditContextClass = void 0;
 /**
  * Context.
  */
-class WebAuditContextClass {
+export class WebAuditContextClass {
+    config;
+    eventBus;
+    _id;
+    _url;
+    _data;
+    _version;
     constructor(config, eventBus) {
         this.config = config;
         this.eventBus = eventBus;
@@ -42,9 +45,9 @@ class WebAuditContextClass {
      * @param context
      */
     isSame(context) {
-        return (context === null || context === void 0 ? void 0 : context.id) === this.id &&
-            (context === null || context === void 0 ? void 0 : context.url) === this.url &&
-            JSON.stringify(context === null || context === void 0 ? void 0 : context.data) === JSON.stringify(this.data);
+        return context?.id === this.id &&
+            context?.url === this.url &&
+            JSON.stringify(context?.data) === JSON.stringify(this.data);
     }
     /**
      * Readable context.
@@ -59,4 +62,3 @@ class WebAuditContextClass {
         return `${tid} ${tdata} ${turl}`;
     }
 }
-exports.WebAuditContextClass = WebAuditContextClass;

@@ -1,4 +1,4 @@
-import {WebAuditContextClass} from '../core/WebAuditContext';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 export interface StorageInterface {
   installStore(id: string, context: WebAuditContextClass, data: any): void;

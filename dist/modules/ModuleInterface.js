@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ModuleEvents = void 0;
-exports.ModuleEvents = {
+export const ModuleEvents = {
     beforeUrlProcess: 'beforeURLProcess',
     afterUrlProcess: 'afterURLProcess',
     beforeAnalyse: 'beforeAnalyse',
@@ -9,4 +6,9 @@ exports.ModuleEvents = {
     onAnalyseResult: 'onAnalyseResult',
     startsComputing: 'startsComputing',
     endsComputing: 'endsComputing',
+};
+export const MODULE_TYPES = {
+    BEFORE: 'before',
+    STANDARD: 'standard',
+    JOURNEY: 'journey',
 };

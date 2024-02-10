@@ -1,7 +1,6 @@
-import {UrlWrapper} from '../core/UrlWrapper';
-import {WebAuditContextClass} from '../core/WebAuditContext';
-
-import {PageWrapper} from './PageWrapper';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {PageWrapper} from '##/journey/PageWrapper';
 
 export interface JourneyInterface {
 

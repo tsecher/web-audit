@@ -1,5 +1,5 @@
-import {StorageInterface} from '../storage/Storage';
-import {LoggerInterface} from '../loggers/Logger';
+import {StorageInterface} from '##/storage/Storage';
+import {LoggerInterface} from '##/loggers/Logger';
 
 /**
  * Config.

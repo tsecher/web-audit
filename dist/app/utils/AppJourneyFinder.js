@@ -1,25 +1,20 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.JourneyFinder = void 0;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const AppConfig_1 = require("../conf/AppConfig");
-const DefaultPuppeteerJourney_1 = require("../../journey/DefaultPuppeteerJourney");
+import fs from 'fs';
+import path from 'path';
+import { AppConfig } from '##/app/conf/AppConfig';
+import DefaultPuppeteerJourney from '##/journey/DefaultPuppeteerJourney';
 /**
  * Find journey according to configuration file.
  */
 class JourneyFinderClass {
+    journeys;
     /**
      * Return the list of available journeys.
      *
      * @returns {JourneyInterface[]}
      */
-    getJourneys(force = false) {
+    async getJourneys(force = false) {
         if (force || !this.journeys) {
-            this.initJourneys();
+            await this.initJourneys();
         }
         return this.journeys || [];
     }
@@ -31,7 +26,7 @@ class JourneyFinderClass {
      */
     getEmbedJourneys() {
         return [
-            new DefaultPuppeteerJourney_1.DefaultPuppeteerJourney(),
+            new DefaultPuppeteerJourney(),
         ];
     }
     /**
@@ -39,10 +34,11 @@ class JourneyFinderClass {
      *
      * @protected
      */
-    initJourneys() {
+    async initJourneys() {
         const journeys = {};
-        this.getEmbedJourneys()
-            .concat(this.getJourneysFromConfig())
+        const defaultJourney = new DefaultPuppeteerJourney();
+        journeys[defaultJourney.id] = defaultJourney;
+        (await this.getJourneysFromConfig())
             .map((journey) => {
             journeys[journey.id] = journey;
         });
@@ -55,20 +51,19 @@ class JourneyFinderClass {
      * @returns {JourneyInterface[]}
      * @protected
      */
-    getJourneysFromConfig() {
-        var _a;
-        const journeyDataList = (_a = AppConfig_1.AppConfig.getConfig()) === null || _a === void 0 ? void 0 : _a.journeys;
+    async getJourneysFromConfig() {
+        const journeyDataList = AppConfig.getConfig()?.journeys;
         const journeysList = [];
         if (journeyDataList && journeyDataList.length) {
             for (const journeyData of journeyDataList) {
-                const journeyPath = path_1.default.resolve(process.cwd(), journeyData.path);
-                if (fs_1.default.existsSync(journeyPath)) {
-                    const JourneyClass = require(journeyPath)[journeyData.id];
-                    journeysList.push(new JourneyClass());
+                const journeyPath = path.resolve(process.cwd(), journeyData);
+                if (fs.existsSync(journeyPath)) {
+                    const ModuleClass = (await import(journeyPath)).default;
+                    journeysList.push(new ModuleClass());
                 }
             }
         }
         return journeysList;
     }
 }
-exports.JourneyFinder = new JourneyFinderClass();
+export const JourneyFinder = new JourneyFinderClass();

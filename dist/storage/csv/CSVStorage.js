@@ -1,37 +1,34 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 /**
  *
  */
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
+import fs from 'fs';
+import path from 'path';
 /**
  * store data in
  */
-class CSVStorage {
+export default class CSVStorage {
+    static SEPARATOR = ';';
+    dirPath;
+    structures = {};
+    installData = {};
     /**
      * Constructor.
      *
      * @param dir Path of stored csv.
      */
     constructor(dir) {
-        this.structures = {};
-        this.installData = {};
-        this.dirPath = path_1.default.resolve(dir);
+        this.dirPath = path.resolve(dir);
     }
     /**
      * Init CSV Store file.
      */
     installStore(id, context, data) {
         const filePath = this.getFilePath(id, context);
-        if (!fs_1.default.existsSync(path_1.default.dirname(filePath))) {
-            fs_1.default.mkdirSync(path_1.default.dirname(filePath), { recursive: true });
+        if (!fs.existsSync(path.dirname(filePath))) {
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
         }
-        if (!fs_1.default.existsSync(filePath)) {
-            fs_1.default.writeFileSync(filePath, this.getCSVLine(data, id));
+        if (!fs.existsSync(filePath)) {
+            fs.writeFileSync(filePath, this.getCSVLine(data, id));
         }
         this.installData[id] = data;
         this.structures[id] = data;
@@ -44,7 +41,7 @@ class CSVStorage {
      * @param data
      */
     add(id, context, data) {
-        fs_1.default.appendFileSync(this.getFilePath(id, context), this.getCSVLine(data, id));
+        fs.appendFileSync(this.getFilePath(id, context), this.getCSVLine(data, id));
     }
     /**
      * Replace.
@@ -53,7 +50,7 @@ class CSVStorage {
      * @param data
      */
     one(id, context, data) {
-        fs_1.default.rmSync(this.getFilePath(id, context));
+        fs.rmSync(this.getFilePath(id, context));
         this.installStore(id, context, this.installData[id]);
         this.add(id, context, data);
     }
@@ -64,9 +61,9 @@ class CSVStorage {
      * @param context
      */
     file(input, context) {
-        const output = path_1.default.join(this.dirPath, String((context === null || context === void 0 ? void 0 : context.version) || 'undefined'), input);
-        fs_1.default.mkdirSync(path_1.default.dirname(output), { recursive: true });
-        fs_1.default.renameSync(input, output);
+        const output = path.join(this.dirPath, String(context?.version || 'undefined'), input);
+        fs.mkdirSync(path.dirname(output), { recursive: true });
+        fs.renameSync(input, output);
     }
     /**
      * Get csv values.
@@ -97,7 +94,7 @@ class CSVStorage {
      * @private
      */
     getFilePath(id, context) {
-        return path_1.default.join(this.dirPath, String(context.version), `${id}.csv`);
+        return path.join(this.dirPath, String(context.version), `${id}.csv`);
     }
     /**
      * Get the data structure from head.
@@ -133,9 +130,9 @@ class CSVStorage {
                 case 'undefined':
                     break;
                 default:
-                    value = (value === null || value === void 0 ? void 0 : value.toString()) || JSON.stringify(value);
+                    value = value?.toString() || JSON.stringify(value);
             }
-            values[key] = value.split('\r\n')
+            values[key] = (value || '').split('\r\n')
                 .join('')
                 .split('\r')
                 .join('')
@@ -145,5 +142,3 @@ class CSVStorage {
         return values;
     }
 }
-exports.default = CSVStorage;
-CSVStorage.SEPARATOR = ';';

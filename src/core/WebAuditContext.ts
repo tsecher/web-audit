@@ -1,5 +1,5 @@
-import {WebAuditConfigClass} from './WebAuditConfig';
-import {WebAuditEventClass} from './WebAuditEvent';
+import {WebAuditConfigClass} from '##/core/WebAuditConfig';
+import {WebAuditEventClass} from '##/core/WebAuditEvent';
 
 /**
  * Context.

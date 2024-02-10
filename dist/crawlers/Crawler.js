@@ -1,23 +1,11 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditCrawler = exports.WebAuditCrawlerEvents = void 0;
-const UrlWrapper_1 = require("../core/UrlWrapper");
-const PageWrapper_1 = require("../journey/PageWrapper");
+import { UrlWrapper } from '##/core/UrlWrapper';
+import { PageWrapper } from '##/journey/PageWrapper';
 /**
  * Events.
  *
  * @type {{onCreateCrawl: string}}
  */
-exports.WebAuditCrawlerEvents = {
+export const WebAuditCrawlerEvents = {
     createCrawl: 'crawler__createCrawl',
     beforeCrawl: 'crawler__beforeCrawl',
     afterCrawl: 'crawler__afterCrawl',
@@ -33,7 +21,19 @@ exports.WebAuditCrawlerEvents = {
 /**
  * Website crawler.
  */
-class WebAuditCrawler {
+export class WebAuditCrawler {
+    context;
+    baseUrlWrapper;
+    static id = 'default';
+    static label = 'Default crawler';
+    defaultOptions = {
+        followSearchParams: true,
+        uniqueParams: ['page'],
+    };
+    options;
+    urlsToParse = {};
+    alreadyParsedUrls = [];
+    pageWrapper;
     /**
      * Constructor.
      *
@@ -42,23 +42,19 @@ class WebAuditCrawler {
      * @param options
      */
     constructor(context, baseUrlWrapper, options) {
-        var _a;
         this.context = context;
         this.baseUrlWrapper = baseUrlWrapper;
-        this.defaultOptions = {
-            followSearchParams: true,
-            uniqueParams: ['page'],
+        this.options = {
+            ...this.defaultOptions,
+            ...options,
         };
-        this.urlsToParse = {};
-        this.alreadyParsedUrls = [];
-        this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
-        this.pageWrapper = new PageWrapper_1.PageWrapper(this.context);
+        this.pageWrapper = new PageWrapper(this.context);
         // Prepare options.
         this.initBaseUrl(baseUrlWrapper.url.toString());
         // Emit.
-        this.context.eventBus.emit(exports.WebAuditCrawlerEvents.createCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
+        this.context.eventBus.emit(WebAuditCrawlerEvents.createCrawl, { crawler: this, baseUrl: this.baseUrlWrapper });
         // Prepare storage.
-        (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.installStore('page_found', this.context, {
+        this.context.config.storage?.installStore('pages', this.context, {
             url: 'Referenced url',
             status: `Status`,
             size: `Content length`,
@@ -69,14 +65,12 @@ class WebAuditCrawler {
     /**
      * Crawl url.
      */
-    crawl(journey) {
-        return __awaiter(this, void 0, void 0, function* () {
-            // Init puppeteer browser.
-            yield this.pageWrapper.newPage();
-            yield journey.beforeAll(this.pageWrapper, [this.baseUrlWrapper]);
-            yield this.crawlUrl(this.baseUrlWrapper.url, null, journey);
-            yield this.pageWrapper.close();
-        });
+    async crawl(journey) {
+        // Init puppeteer browser.
+        await this.pageWrapper.newPage();
+        await journey.beforeAll(this.pageWrapper, [this.baseUrlWrapper]);
+        await this.crawlUrl(this.baseUrlWrapper.url, null, journey);
+        await this.pageWrapper.close();
     }
     /**
      * Crawl url.
@@ -84,38 +78,35 @@ class WebAuditCrawler {
      * @param {UrlWrapper} url
      * @private
      */
-    crawlUrl(url, source = null, journey) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.isAlreadyParsed(url)) {
-                return Promise.resolve();
-            }
-            this.context.setData('Page crawled').setUrl(url);
-            // Get info.
-            let pageInfo;
-            try {
-                pageInfo = yield this.getPageInfo(this.pageWrapper, url, source, journey);
-            }
-            catch (error) {
-                return Promise.resolve();
-            }
-            const eventData = { crawler: this, data: pageInfo, baseUrl: this.baseUrlWrapper, pageWrapper: this.pageWrapper };
-            // Add to parsed urls.
-            this.addToParsedUrls(pageInfo.url);
-            this.addToParsedUrls(pageInfo.final);
-            this.addToParsedUrls(pageInfo.source);
-            if (pageInfo.log) {
-                this.context.eventBus.emit(exports.WebAuditCrawlerEvents.onPageCrawled, eventData);
-                (_a = this.context.config.storage) === null || _a === void 0 ? void 0 : _a.add('page_found', this.context, pageInfo);
-                if (pageInfo.status >= 300 && pageInfo < 400) {
-                    this.context.eventBus.emit(exports.WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
-                }
-                if (pageInfo.crawl) {
-                    yield this.crawlSubPages(this.pageWrapper, pageInfo.final, journey);
-                }
-            }
+    async crawlUrl(url, source = null, journey) {
+        if (this.isAlreadyParsed(url)) {
             return Promise.resolve();
-        });
+        }
+        this.context.setData('Page crawled').setUrl(url);
+        // Get info.
+        let pageInfo;
+        try {
+            pageInfo = await this.getPageInfo(this.pageWrapper, url, source, journey);
+        }
+        catch (error) {
+            return Promise.resolve();
+        }
+        const eventData = { crawler: this, data: pageInfo, baseUrl: this.baseUrlWrapper, pageWrapper: this.pageWrapper };
+        // Add to parsed urls.
+        this.addToParsedUrls(pageInfo.url);
+        this.addToParsedUrls(pageInfo.final);
+        this.addToParsedUrls(pageInfo.source);
+        if (pageInfo.log) {
+            this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawled, eventData);
+            this.context.config.storage?.add('pages', this.context, pageInfo);
+            if (pageInfo.status >= 300 && pageInfo < 400) {
+                this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
+            }
+            if (pageInfo.crawl) {
+                await this.crawlSubPages(this.pageWrapper, pageInfo.final, journey);
+            }
+        }
+        return Promise.resolve();
     }
     /**
      * Return page info.
@@ -126,66 +117,64 @@ class WebAuditCrawler {
      * @returns {Promise<any>}
      * @private
      */
-    getPageInfo(pageWapper, inputUrl, source, journey) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const infos = {
-                url: inputUrl.toString(),
-                source: (source === null || source === void 0 ? void 0 : source.toString()) || '',
-                status: '',
-                size: '',
-                final: '',
-                crawl: true,
-                log: true,
-            };
-            // Check eligibility.
-            const beforeCrawl = yield journey.isEligible(pageWapper, new UrlWrapper_1.UrlWrapper(inputUrl));
-            if (!beforeCrawl) {
-                infos.crawl = false;
-                infos.log = false;
-                return infos;
-            }
-            this.context.config.logger.message(`Parse : ${inputUrl.toString()}`);
-            // Listen data.
-            let status = '';
-            let size = '';
-            const onResponse = (response) => __awaiter(this, void 0, void 0, function* () {
-                if (status === '') {
-                    // eslint-disable-next-line require-atomic-updates
-                    status = yield response.status();
-                }
-                if (size === '') {
-                    try {
-                        // eslint-disable-next-line require-atomic-updates
-                        size = (yield response.buffer()).length;
-                    }
-                    catch (error) {
-                        // Redirect has no size.
-                    }
-                }
-            });
-            this.pageWrapper.page.on('response', onResponse);
-            // Navigate to page.
-            try {
-                yield this.pageWrapper.goto(inputUrl.toString(), true);
-            }
-            catch (error) {
-                this.context.config.logger.error(error);
-                this.pageWrapper.page.off('response', onResponse);
-                return Promise.resolve(infos);
-            }
-            try {
-                yield this.pageWrapper.page.waitForSelector('body');
-            }
-            catch (err) {
-                this.context.config.logger.error(`Load timeout`);
-            }
-            // Remove listeneer data.
-            this.pageWrapper.page.off('response', onResponse);
-            infos.status = status;
-            infos.size = size;
-            infos.final = (yield pageWapper.page.url()) || '';
+    async getPageInfo(pageWapper, inputUrl, source, journey) {
+        const infos = {
+            url: inputUrl.toString(),
+            source: source?.toString() || '',
+            status: '',
+            size: '',
+            final: '',
+            crawl: true,
+            log: true,
+        };
+        // Check eligibility.
+        const beforeCrawl = await journey.isEligible(pageWapper, new UrlWrapper(inputUrl));
+        if (!beforeCrawl) {
+            infos.crawl = false;
+            infos.log = false;
             return infos;
-        });
+        }
+        this.context.config.logger.message(`Parse : ${inputUrl.toString()}`);
+        // Listen data.
+        let status = '';
+        let size = '';
+        const onResponse = async (response) => {
+            if (status === '') {
+                // eslint-disable-next-line require-atomic-updates
+                status = await response.status();
+            }
+            if (size === '') {
+                try {
+                    // eslint-disable-next-line require-atomic-updates
+                    size = (await response.buffer()).length;
+                }
+                catch (error) {
+                    // Redirect has no size.
+                }
+            }
+        };
+        this.pageWrapper.page.on('response', onResponse);
+        // Navigate to page.
+        try {
+            await this.pageWrapper.goto(inputUrl.toString(), true);
+        }
+        catch (error) {
+            this.context.config.logger.error(error);
+            this.pageWrapper.page.off('response', onResponse);
+            return Promise.resolve(infos);
+        }
+        try {
+            await this.pageWrapper.page.waitForSelector('body');
+        }
+        catch (err) {
+            this.context.config.logger.error(`Load timeout`);
+        }
+        // Remove listeneer data.
+        this.pageWrapper.page.off('response', onResponse);
+        infos.status = status;
+        infos.size = size;
+        infos.final = await pageWapper.page.url() || '';
+        return infos;
     }
     /**
      * Crawl inner href.
@@ -196,34 +185,32 @@ class WebAuditCrawler {
      * @returns {Promise<void>}
      * @private
      */
-    crawlSubPages(pageWrapper, source, journey) {
-        return __awaiter(this, void 0, void 0, function* () {
-            // Get
-            const hrefs = [];
-            const links = yield pageWrapper.page.$$('a[href], link[rel="alternate"]');
-            // Clean href links.
-            for (const link of links) {
-                try {
-                    const href = yield (yield link.getProperty('href')).jsonValue();
-                    const cleanURL = this.getCleanUrlFromHref(href, source);
-                    if (cleanURL) {
-                        hrefs.push(cleanURL);
-                    }
-                }
-                catch (error) {
-                    // Bad URL.
+    async crawlSubPages(pageWrapper, source, journey) {
+        // Get
+        const hrefs = [];
+        const links = await pageWrapper.page.$$('a[href], link[rel="alternate"]');
+        // Clean href links.
+        for (const link of links) {
+            try {
+                const href = await (await link.getProperty('href')).jsonValue();
+                const cleanURL = this.getCleanUrlFromHref(href, source);
+                if (cleanURL) {
+                    hrefs.push(cleanURL);
                 }
             }
-            const subUrls = this.getEligibleUrls(hrefs);
-            this.context.eventBus.emit(exports.WebAuditCrawlerEvents.onCrawlUrls, {
-                crawler: this,
-                urlsList: subUrls,
-                baseUrl: this.baseUrlWrapper,
-            });
-            for (const url of subUrls) {
-                yield this.crawlUrl(url, source, journey);
+            catch (error) {
+                // Bad URL.
             }
+        }
+        const subUrls = this.getEligibleUrls(hrefs);
+        this.context.eventBus.emit(WebAuditCrawlerEvents.onCrawlUrls, {
+            crawler: this,
+            urlsList: subUrls,
+            baseUrl: this.baseUrlWrapper,
         });
+        for (const url of subUrls) {
+            await this.crawlUrl(url, source, journey);
+        }
     }
     /**
      * Clean base url.
@@ -344,7 +331,6 @@ class WebAuditCrawler {
      * @private
      */
     getCleanUrlFromHref(href, origin) {
-        var _a;
         let input = href;
         // Deal with anchor.
         if (input.indexOf('#') === 0) {
@@ -352,7 +338,7 @@ class WebAuditCrawler {
         }
         // Deal with relative href.
         if (input.indexOf('/') === 0 && input.length > 1) {
-            input = `${(_a = this.options.domain) === null || _a === void 0 ? void 0 : _a.toString()}${input}`;
+            input = `${this.options.domain?.toString()}${input}`;
         }
         // Deal with parameters urls.
         if (this.options.followSearchParams && input.indexOf('?') === 0) {
@@ -379,7 +365,6 @@ class WebAuditCrawler {
      * @returns {string}
      */
     normalizeURL(url) {
-        var _a, _b;
         const idURL = new URL(url);
         idURL.hash = '';
         idURL.protocol = '';
@@ -387,7 +372,7 @@ class WebAuditCrawler {
             idURL.search = '';
         }
         const uniqueParams = this.options.uniqueParams || [];
-        if ((_b = (_a = this.options) === null || _a === void 0 ? void 0 : _a.uniqueParams) === null || _b === void 0 ? void 0 : _b.length) {
+        if (this.options?.uniqueParams?.length) {
             Array.from(idURL.searchParams)
                 .filter(([key]) => uniqueParams.indexOf(key) < 0)
                 .forEach(([key]) => {
@@ -409,4 +394,3 @@ class WebAuditCrawler {
         return id;
     }
 }
-exports.WebAuditCrawler = WebAuditCrawler;

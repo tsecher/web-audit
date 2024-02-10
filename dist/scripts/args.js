@@ -1,151 +1,134 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getArgs = void 0;
-const AppModuleFinder_1 = require("../app/utils/AppModuleFinder");
-const CSVStorage_1 = __importDefault(require("../storage/csv/CSVStorage"));
-const AppJourneyFinder_1 = require("../app/utils/AppJourneyFinder");
-const fs = require('fs');
-const path = require('path');
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
-const prompts = require('prompts');
+import fs from 'fs';
+import path from 'path';
+// @ts-ignore
+import yargs from 'yargs/yargs';
+// @ts-ignore
+import { hideBin } from 'yargs/helpers';
+// @ts-ignore
+import inquirer from 'inquirer';
+import { ModuleFinder } from '##/app/utils/AppModuleFinder';
+import CSVStorage from '##/storage/csv/CSVStorage';
+import { JourneyFinder } from '##/app/utils/AppJourneyFinder';
+import { CrawlerFinder } from '##/app/utils/AppCrawlerFinder';
+// import prompts from 'prompts';
 const params = yargs(hideBin(process.argv)).argv;
 /**
  * Return urls from args.
  *
  * @returns {URL[]}
  */
-function getUrlsArgs(required, logger) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let selected = [];
-        if (params.urls && typeof params.urls === 'string') {
-            const urls = params.urls.split(CSVStorage_1.default.SEPARATOR);
-            selected = urls
-                .map((url) => {
-                try {
-                    return new URL(url);
+async function getUrlsArgs(required, logger) {
+    let selected = [];
+    if (params.urls && typeof params.urls === 'string') {
+        const urls = params.urls.split(',');
+        selected = urls
+            .map((url) => {
+            try {
+                return new URL(url);
+            }
+            catch (error) {
+                return false;
+            }
+        })
+            .filter((url) => url);
+    }
+    // Manual
+    if (!selected.length) {
+        let manual = {};
+        let value = '';
+        do {
+            manual = await inquirer.prompt([{
+                    type: 'input',
+                    name: 'urls',
+                    message: `URLs ? (leave empty to stop)`,
+                }]);
+            value = manual.urls;
+            try {
+                if (value.trim().length > 0) {
+                    selected.push(new URL(value));
                 }
-                catch (error) {
-                    return false;
-                }
-            })
-                .filter((url) => url);
-        }
-        // Manual
-        if (!selected.length) {
-            let manual = {};
-            let value = '';
-            do {
-                manual = yield prompts([{
-                        type: 'text',
-                        name: 'urls',
-                        message: `URLs ? (leave empty to stop)`,
-                    }]);
-                value = manual.urls;
-                try {
-                    if (value.trim().length > 0) {
-                        selected.push(new URL(value));
-                    }
-                }
-                catch (error) {
-                    logger.error(`Bad URL format : ${value}`);
-                }
-            } while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
-        }
-        return {
-            data: selected,
-            shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
-        };
-    });
+            }
+            catch (error) {
+                logger.error(`Bad URL format : ${value}`);
+            }
+        } while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
+    }
+    return {
+        data: selected,
+        shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
+    };
 }
 /**
  * Return modules;
  *
  * @returns {ModuleInterface}
  */
-function getModules(required, logger) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const allModules = AppModuleFinder_1.ModuleFinder.getModules();
-        let selected = [];
-        if (params.modules && typeof params.modules === 'string') {
-            const names = params.modules.split(',');
-            selected = allModules.filter((module) => names.indexOf(module.id) > -1);
-        }
-        // Manual
-        if (required && !selected.length) {
-            const manual = yield prompts([{
-                    type: 'multiselect',
-                    name: 'modules',
-                    message: `Modules ?`,
-                    choices: allModules.map((module) => {
-                        return {
-                            title: module.name,
-                            value: module,
-                            selected: true,
-                        };
-                    }),
-                }]);
-            selected = manual.modules;
-        }
-        return {
-            data: selected,
-            shortcut: selected.length ? `--modules=${selected.map((module) => module.id).join()}` : '',
-        };
-    });
+async function getModules(required, logger) {
+    const allModules = await ModuleFinder.getModules();
+    let selected = [];
+    if (params.modules && typeof params.modules === 'string') {
+        const names = params.modules.split(',');
+        selected = allModules.filter((module) => names.indexOf(module.id) > -1);
+    }
+    // Manual
+    if (required && !selected.length) {
+        const manual = await inquirer.prompt([{
+                type: 'checkbox',
+                name: 'modules',
+                message: `Modules ?`,
+                default: allModules,
+                choices: allModules.map((module) => {
+                    return {
+                        name: module.name,
+                        value: module,
+                    };
+                }),
+            }]);
+        selected = manual.modules;
+    }
+    return {
+        data: selected,
+        shortcut: selected.length ? `--modules=${selected.map((module) => module.id).join()}` : '',
+    };
 }
 /**
  * Return urls from args.
  *
  * @returns {URL[]}
  */
-function getFilesArgs(required, logger) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        let urlsData = yield getUrlsArgs(false, logger);
-        if (required && !((_a = urlsData.data) === null || _a === void 0 ? void 0 : _a.length)) {
-            let file = params.file || '';
-            let answer = { file: file };
-            while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
-                answer = yield prompts([{
-                        type: 'text',
-                        name: 'file',
-                        message: `File path (relative to ${process.cwd()})`,
-                    }]);
-                file = path.resolve(process.cwd(), answer.file);
-            }
-            // read urls.
-            const urls = fs.readFileSync(file, 'utf-8')
-                .split('\n')
-                .map((row) => {
-                const cell = row.split(CSVStorage_1.default.SEPARATOR)[0].trim();
-                const value = cell[0] === '"' ? cell.slice(1, -1) : cell;
-                try {
-                    return new URL(value);
-                }
-                catch (error) {
-                    return false;
-                }
-            })
-                .filter((url) => url);
-            urlsData = {
-                data: urls,
-                shortcut: `--file=${answer.file}`,
-            };
+async function getFilesArgs(required, logger) {
+    let urlsData = await getUrlsArgs(false, logger);
+    if (required && !urlsData.data?.length) {
+        let file = params.file || '';
+        let answer = { file: file };
+        while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
+            answer = await inquirer.prompt([{
+                    type: 'text',
+                    name: 'file',
+                    message: `File path (relative to ${process.cwd()})`,
+                }]);
+            file = path.resolve(process.cwd(), answer.file);
         }
-        return urlsData;
-    });
+        // read urls.
+        const urls = [];
+        fs.readFileSync(file, 'utf-8')
+            .split('\n')
+            .forEach((row) => {
+            const cell = row.split(CSVStorage.SEPARATOR)[0].trim();
+            const value = cell[0] === '"' ? cell.slice(1, -1) : cell;
+            try {
+                urls.push(new URL(value));
+            }
+            catch (error) {
+                // Mute error.
+            }
+        });
+        urlsData = {
+            data: urls,
+            shortcut: `--file=${answer.file}`,
+        };
+    }
+    return urlsData;
 }
 /**
  * Version.
@@ -154,77 +137,101 @@ function getFilesArgs(required, logger) {
  * @param {LoggerInterface} logger
  * @returns {Promise<any>}
  */
-function getVersionArgs(required, logger) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let version = params.v;
-        if (required && !params.v) {
-            const answer = yield prompts([{
-                    type: 'text',
-                    name: 'version',
-                    message: `Version ?`,
-                }]);
-            const date = new Date();
-            version = answer.version.length ? answer.version : `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
-        }
-        return {
-            data: version,
-            shortcut: `--v=${version}`,
-        };
-    });
+async function getVersionArgs(required, logger) {
+    let version = params.v;
+    if (required && !params.v) {
+        const answer = await inquirer.prompt([{
+                type: 'text',
+                name: 'version',
+                message: `Version ?`,
+            }]);
+        const date = new Date();
+        version = answer.version.length ? answer.version : `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
+    }
+    return {
+        data: version,
+        shortcut: `--v=${version}`,
+    };
 }
 /**
  * Return modules;
  *
  * @returns {ModuleInterface}
  */
-function getJourney(required, logger) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const allJourneys = AppJourneyFinder_1.JourneyFinder.getJourneys();
-        let selected = null;
-        if (params.journey && typeof params.journey === 'string') {
-            selected = allJourneys.filter((journey) => params.journey === journey.id)[0];
-        }
-        // Manual
-        if (required && !selected) {
-            const manual = yield prompts([{
-                    type: 'select',
-                    name: 'journey',
-                    message: `Journey ?`,
-                    choices: allJourneys.map((journey) => {
-                        return {
-                            title: journey.name,
-                            value: journey,
-                            selected: true,
-                        };
-                    }),
-                }]);
-            selected = manual.journey;
-        }
-        return {
-            data: selected,
-            shortcut: selected ? `--journey=${selected.id}` : '',
-        };
-    });
+async function getJourney(required, logger) {
+    const allJourneys = await JourneyFinder.getJourneys();
+    let selected = null;
+    if (params.journey && typeof params.journey === 'string') {
+        selected = allJourneys.filter((journey) => params.journey === journey.id)[0];
+    }
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+                type: 'list',
+                name: 'journey',
+                message: `Journey ?`,
+                choices: allJourneys.map((journey) => {
+                    return {
+                        name: journey.name,
+                        value: journey,
+                    };
+                }),
+            }]);
+        selected = manual.journey;
+    }
+    return {
+        data: selected,
+        shortcut: selected ? `--journey=${selected.id}` : '',
+    };
+}
+/**
+ * Return crawler;
+ *
+ * @returns {any}
+ */
+async function getCrawler(required, logger) {
+    const allCrawlers = await CrawlerFinder.getCrawler();
+    let selected = null;
+    if (params.crawler && typeof params.crawler === 'string') {
+        selected = allCrawlers.filter((crawler) => params.crawler === crawler.id)[0];
+    }
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+                type: 'list',
+                name: 'crawler',
+                message: `Crawler ?`,
+                choices: allCrawlers.map((crawler) => {
+                    return {
+                        name: crawler.label,
+                        value: crawler,
+                    };
+                }),
+            }]);
+        selected = manual.crawler;
+    }
+    return {
+        data: selected,
+        shortcut: selected ? `--crawler=${selected.id}` : '',
+    };
 }
 /**
  * Return user args.
  *
  * @returns {{urls: URL[]}}
  */
-function getArgs(required, logger) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const args = {};
-        args.urls = required.indexOf('urls') > -1 ? yield getUrlsArgs(required.indexOf('urls') > -1, logger) : yield getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
-        args.version = yield getVersionArgs(required.indexOf('version') > -1, logger);
-        args.modules = yield getModules(required.indexOf('modules') > -1, logger);
-        args.journey = yield getJourney(required.indexOf('journey') > -1, logger);
-        logger.warning(`Shortcut: `);
-        logger.warning(Object.values(args).map((value) => value.shortcut).join(' '));
-        const result = {};
-        Object.keys(args).forEach((key) => {
-            result[key] = args[key].data;
-        });
-        return result;
+export async function getArgs(required, logger) {
+    const args = {};
+    args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
+    args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
+    args.modules = await getModules(required.indexOf('modules') > -1, logger);
+    args.journey = await getJourney(required.indexOf('journey') > -1, logger);
+    args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
+    logger.warning(`Shortcut: `);
+    logger.warning(Object.values(args).map((value) => value.shortcut).join(' '));
+    const result = {};
+    Object.keys(args).forEach((key) => {
+        result[key] = args[key].data;
     });
+    return result;
 }
-exports.getArgs = getArgs;

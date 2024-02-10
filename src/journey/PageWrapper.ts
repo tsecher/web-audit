@@ -3,7 +3,18 @@ import fs from 'fs';
 import puppeteer from 'puppeteer';
 import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
 
-import {WebAuditContextClass} from '../core/WebAuditContext';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
+
+
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+];
 
 /**
  * Default Options for page wrapper.
@@ -74,10 +85,10 @@ export class PageWrapper {
   async getBrowser() {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
         args: this.options.browserArgs,
         ignoreHTTPSErrors: true,
-        ignoreDefaultArgs: ['--disable-gpu'],
+        ignoreDefaultArgs: ['--disable-gpu', '--enable-automation'],
       });
     }
 
@@ -106,6 +117,7 @@ export class PageWrapper {
     const browser = await this.getBrowser();
 
     this._page = await browser.newPage();
+    this._page.setUserAgent(userAgents[Math.floor(Math.random() * userAgents.length)]);
     await this._page.setViewport(this.options.viewport);
 
     return this;

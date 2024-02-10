@@ -1,7 +1,6 @@
-import {UrlWrapper} from '../core/UrlWrapper';
-
-import {AbstractPuppeteerJourney} from './AbstractPuppeteerJourney';
-import {PageWrapper} from './PageWrapper';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {AbstractPuppeteerJourney} from '##/journey/AbstractPuppeteerJourney';
+import {PageWrapper} from '##/journey/PageWrapper';
 
 /**
  * Default journey.
@@ -11,7 +10,7 @@ import {PageWrapper} from './PageWrapper';
  *  3. Scroll to bottom
  *  4. Wait load
  */
-export class DefaultPuppeteerJourney extends AbstractPuppeteerJourney {
+export default class DefaultPuppeteerJourney extends AbstractPuppeteerJourney {
 
   /**
    * {@inheritdoc}
@@ -40,13 +39,12 @@ export class DefaultPuppeteerJourney extends AbstractPuppeteerJourney {
   async journey(wrapper: PageWrapper, url: UrlWrapper): Promise<void> {
     const wait = 1000;
 
-    let i: any;
     await this.addStep(`Go to ${url.url.toString()}`, async () => {
       await wrapper.goto(url.url.toString());
     });
 
-    await this.addStep(`Wait 1s`, async () => {
-      await wrapper.wait(Number(wait));
+    await this.addStep(`Wait 3s`, async () => {
+      await wrapper.wait(3 * Number(wait));
     });
 
     await this.addStep('Scroll to bottom', async () => {

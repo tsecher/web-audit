@@ -1,12 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebAuditEventClass = void 0;
-const events_1 = __importDefault(require("events"));
-class WebAuditEventClass {
-    constructor(event = new events_1.default.EventEmitter()) {
+import events from 'events';
+export class WebAuditEventClass {
+    event;
+    _context;
+    constructor(event = new events.EventEmitter()) {
         this.event = event;
     }
     get context() {
@@ -22,10 +18,9 @@ class WebAuditEventClass {
      * @param args
      */
     emit(eventName, args) {
-        var _a;
         this.event.emit(eventName, {
             context: this._context || {},
-            config: (_a = this._context) === null || _a === void 0 ? void 0 : _a.config,
+            config: this._context?.config,
             data: args,
         });
         return this;
@@ -42,4 +37,3 @@ class WebAuditEventClass {
         return this;
     }
 }
-exports.WebAuditEventClass = WebAuditEventClass;

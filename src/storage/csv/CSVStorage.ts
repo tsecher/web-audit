@@ -4,8 +4,8 @@
 import fs from 'fs';
 import path from 'path';
 
-import {StorageInterface} from '../Storage';
-import {WebAuditContextClass} from '../../core/WebAuditContext';
+import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {StorageInterface} from '##/storage/Storage';
 
 /**
  * store data in
@@ -156,7 +156,7 @@ export default class CSVStorage implements StorageInterface {
         default:
           value = value?.toString() || JSON.stringify(value);
       }
-      values[key] = value.split('\r\n')
+      values[key] = (value || '').split('\r\n')
         .join('')
         .split('\r')
         .join('')

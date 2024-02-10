@@ -1,0 +1,11 @@
+{
+  "modules": [
+    "../modules/CustomModule.js"
+  ],
+  "crawlers": [
+    "../crawlers/CustomCrawler.js"
+  ],
+  "journeys": [
+    "../journeys/CustomJourneys.js"
+  ]
+}
