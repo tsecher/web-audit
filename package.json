@@ -1,6 +1,6 @@
 {
   "name": "web_audit",
-  "version": "4.0.0-rc10",
+  "version": "5.0.0-rc1",
   "description": "Web audit tools",
   "main": "dist/index",
   "typings": "dist/index",
