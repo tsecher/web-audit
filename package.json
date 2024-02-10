@@ -9,9 +9,9 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "analyse": "bin/analyse",
-    "crawl": "bin/crawl",
-    "generate": "bin/generate"
+    "analyse": "bin/analyse.js",
+    "crawl": "bin/crawl.js",
+    "generate": "bin/generate.js"
   },
   "scripts": {
     "dev": "nodemon",
