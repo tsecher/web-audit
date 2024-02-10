@@ -31,7 +31,6 @@
     "events": "^3.3.0",
     "glob": "^8.0.3",
     "inquirer": "^9.2.12",
-    "os-utils": "^0.0.14",
     "puppeteer": "^21.7.0",
     "puppeteer-autoscroll-down": "^1.1.2",
     "yargs": "^17.6.0"
