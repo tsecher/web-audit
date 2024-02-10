@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('../dist/scripts/generate.js');
+import '../dist/scripts/generate.js';

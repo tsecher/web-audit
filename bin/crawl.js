@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('../dist/scripts/crawl.js');
+import '../dist/scripts/crawl.js';
