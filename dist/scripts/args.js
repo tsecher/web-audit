@@ -11,6 +11,7 @@ import CSVStorage from '##/storage/csv/CSVStorage';
 import { JourneyFinder } from '##/app/utils/AppJourneyFinder';
 import { CrawlerFinder } from '##/app/utils/AppCrawlerFinder';
 import { StorageFinder } from '##/app/utils/AppStorageFinder';
+import { LoggerFinder } from '##/app/utils/AppLoggerFinder';
 // import prompts from 'prompts';
 const params = yargs(hideBin(process.argv)).argv;
 /**
@@ -248,11 +249,44 @@ async function getStorage(required, logger) {
     };
 }
 /**
+ * Return storage;
+ *
+ * @returns {any}
+ */
+async function getLogger(required) {
+    const allLoggers = await LoggerFinder.getLogger();
+    let selected = null;
+    if (params.logger && typeof params.logger === 'string') {
+        selected = allLoggers.filter((logger) => params.logger === logger.id)[0];
+    }
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+                type: 'list',
+                name: 'logger',
+                message: `Logger ?`,
+                choices: allLoggers.map((logger) => {
+                    return {
+                        name: logger.name,
+                        value: logger,
+                    };
+                }),
+            }]);
+        selected = manual.logger;
+    }
+    return {
+        data: selected,
+        shortcut: selected ? `--logger=${selected.id}` : '',
+    };
+}
+/**
  * Return user args.
  *
  * @returns {{urls: URL[]}}
  */
-export async function getArgs(required, logger) {
+export async function getArgs(required) {
+    const loggerData = await getLogger(required.indexOf('version') > -1);
+    const logger = loggerData.data;
     const args = {};
     args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
     args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
@@ -260,6 +294,7 @@ export async function getArgs(required, logger) {
     args.journey = await getJourney(required.indexOf('journey') > -1, logger);
     args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
     args.storage = await getStorage(required.indexOf('storage') > -1, logger);
+    args.logger = loggerData;
     logger.warning(`Shortcut: `);
     logger.warning(Object.values(args).map((value) => value.shortcut).join(' '));
     const result = {};

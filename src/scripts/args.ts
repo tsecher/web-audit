@@ -17,6 +17,7 @@ import {JourneyFinder} from '##/app/utils/AppJourneyFinder';
 import {CrawlerFinder} from '##/app/utils/AppCrawlerFinder';
 import {StorageFinder} from '##/app/utils/AppStorageFinder';
 import {StorageInterface} from '##/storage/Storage';
+import {LoggerFinder} from '##/app/utils/AppLoggerFinder';
 
 
 // import prompts from 'prompts';
@@ -298,21 +299,61 @@ async function getStorage(required: boolean, logger: LoggerInterface): Promise<a
   };
 }
 
+
+/**
+ * Return storage;
+ *
+ * @returns {any}
+ */
+async function getLogger(required: boolean): Promise<any> {
+  const allLoggers: any[] = await LoggerFinder.getLogger();
+
+  let selected: LoggerInterface | null = null;
+  if (params.logger && typeof params.logger === 'string') {
+    selected = allLoggers.filter((logger) => params.logger === logger.id)[0];
+  }
+
+  // Manual
+  if (required && !selected) {
+    const manual = await inquirer.prompt([{
+      type: 'list',
+      name: 'logger',
+      message: `Logger ?`,
+      choices: allLoggers.map((logger) => {
+        return {
+          name: logger.name,
+          value: logger,
+        };
+      }),
+    }]);
+
+    selected = manual.logger;
+  }
+
+  return {
+    data: selected,
+    shortcut: selected ? `--logger=${selected.id}` : '',
+  };
+}
+
 /**
  * Return user args.
  *
  * @returns {{urls: URL[]}}
  */
-export async function getArgs(required: string[], logger: LoggerInterface) {
+export async function getArgs(required: string[]) {
+
+  const loggerData = await getLogger(required.indexOf('version') > -1);
+  const logger: LoggerInterface = loggerData.data;
 
   const args: any = {};
-
   args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
   args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
   args.modules = await getModules(required.indexOf('modules') > -1, logger);
   args.journey = await getJourney(required.indexOf('journey') > -1, logger);
   args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
   args.storage = await getStorage(required.indexOf('storage') > -1, logger);
+  args.logger = loggerData;
 
 
   logger.warning(`Shortcut: `);

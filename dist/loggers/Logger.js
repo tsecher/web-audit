@@ -3,6 +3,12 @@ import colors from 'colors';
  * Logger class.
  */
 export class LoggerClass {
+    get id() {
+        return 'console';
+    }
+    get name() {
+        return 'Console';
+    }
     error(data, id) {
         this.log(data, id, colors.red);
     }

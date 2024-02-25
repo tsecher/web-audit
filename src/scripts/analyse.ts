@@ -1,7 +1,6 @@
 import path from 'path';
 
 import {Config, Context, Core, Event} from '##/index';
-import CSVStorage from '##/storage/csv/CSVStorage';
 import {UrlWrapper} from '##/core/UrlWrapper';
 import {AppConfig, AppConfigFileName} from '##/app/conf/AppConfig';
 import {WebAuditLogger} from '##/loggers/Logger';
@@ -17,7 +16,7 @@ AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
  * @param args
  */
 function doAnalyse(args: any) {
-  const {urls, modules, version, journey, storage} = args;
+  const {urls, modules, version, journey, storage, logger} = args;
 
   const urlsWrapper = urls.map((url: URL) => new UrlWrapper(url));
 
@@ -27,7 +26,7 @@ function doAnalyse(args: any) {
   // Init storage.
   storage.init(urls, version);
   const config = new Config(
-    WebAuditLogger,
+    logger,
     storage,
   );
 
@@ -56,6 +55,6 @@ function doAnalyse(args: any) {
 }
 
 // Get args.
-getArgs(['urlsFiles', 'modules', 'version', 'journey', 'storage'], WebAuditLogger)
+getArgs(['urlsFiles', 'modules', 'version', 'journey', 'storage', 'logger'])
   .then((args) => doAnalyse(args))
   .catch((error) => WebAuditLogger.exit(error));

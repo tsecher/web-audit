@@ -4,6 +4,8 @@ import { ModuleGenerator } from '##/modules/ModuleGenerator';
 import { ModulePackageGenerator } from '##/modules/ModulePackageGenerator';
 import { JourneyGenerator } from '##/journey/JourneyGenerator';
 import { JourneyPackageGenerator } from '##/journey/JourneyPackageGenerator';
+import { LoggerGenerator } from '##/loggers/LoggerGenerator';
+import { LoggerPackageGenerator } from '##/loggers/LoggerPackageGenerator';
 const generators = [
     {
         name: 'Module',
@@ -20,6 +22,14 @@ const generators = [
     {
         name: 'Journey Package',
         value: () => new JourneyPackageGenerator(),
+    },
+    {
+        name: 'Logger',
+        value: () => new LoggerGenerator(),
+    },
+    {
+        name: 'Logger Package',
+        value: () => new LoggerPackageGenerator(),
     },
 ];
 const result = await inquirer.prompt({

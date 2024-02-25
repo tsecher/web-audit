@@ -12,14 +12,14 @@ AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
  * @param args
  */
 function doAnalyse(args) {
-    const { urls, modules, version, journey, storage } = args;
+    const { urls, modules, version, journey, storage, logger } = args;
     const urlsWrapper = urls.map((url) => new UrlWrapper(url));
     /** ======================================================
      ||                  Context                      ||
      =======================================================*/
     // Init storage.
     storage.init(urls, version);
-    const config = new Config(WebAuditLogger, storage);
+    const config = new Config(logger, storage);
     const eventBus = new Event();
     const context = new Context(config, eventBus);
     context.setVersion(version);
@@ -40,6 +40,6 @@ function doAnalyse(args) {
         .catch(error);
 }
 // Get args.
-getArgs(['urlsFiles', 'modules', 'version', 'journey', 'storage'], WebAuditLogger)
+getArgs(['urlsFiles', 'modules', 'version', 'journey', 'storage', 'logger'])
     .then((args) => doAnalyse(args))
     .catch((error) => WebAuditLogger.exit(error));

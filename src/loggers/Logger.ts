@@ -6,6 +6,21 @@ import colors from 'colors';
 export interface LoggerInterface {
 
   /**
+   * Name.
+   *
+   * @returns {string}
+   */
+  get name(): string;
+
+  /**
+   * ID.
+   *
+   * @returns {string}
+   */
+  get id(): string;
+
+
+  /**
    * Log a message.
    *
    * @param data
@@ -59,6 +74,14 @@ export interface LoggerInterface {
  * Logger class.
  */
 export class LoggerClass implements LoggerInterface {
+
+  get id(): string {
+    return 'console';
+  }
+
+  get name(): string {
+    return 'Console';
+  }
 
   error(data: any, id?: string): void {
     this.log(data, id, colors.red);
