@@ -7,5 +7,11 @@
   ],
   "journeys": [
     "../journeys/CustomJourneys.js"
-  ]
+  ],
+  "storages": [
+    "../storages/CustomStorages.js"
+  ],
+  "csv_storage": {
+    "directory": "./analyses/"
+  }
 }

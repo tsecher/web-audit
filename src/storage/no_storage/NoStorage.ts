@@ -7,6 +7,26 @@ import {WebAuditContextClass} from '##/core/WebAuditContext';
 export default class NoStorage implements StorageInterface {
 
   /**
+   * {@inheritdoc}
+   */
+  get id(): string {
+    return 'no_storage';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  get name(): string {
+    return 'No storage';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  init(urls: URL[], version: string) {
+  }
+
+  /**
    * Init Store.
    */
   installStore(id: string, context: WebAuditContextClass, data: any): void {

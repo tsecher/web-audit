@@ -17,16 +17,18 @@ AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
  * @param args
  */
 function doAnalyse(args: any) {
-  const {urls, modules, version, journey} = args;
+  const {urls, modules, version, journey, storage} = args;
 
   const urlsWrapper = urls.map((url: URL) => new UrlWrapper(url));
 
   /** ======================================================
    ||                  Context                      ||
    =======================================================*/
+  // Init storage.
+  storage.init(urls, version);
   const config = new Config(
     WebAuditLogger,
-    new CSVStorage(`./analyses/${urls[0].hostname}`),
+    storage,
   );
 
   const eventBus = new Event();
@@ -54,6 +56,6 @@ function doAnalyse(args: any) {
 }
 
 // Get args.
-getArgs(['urlsFiles', 'modules', 'version', 'journey'], WebAuditLogger)
+getArgs(['urlsFiles', 'modules', 'version', 'journey', 'storage'], WebAuditLogger)
   .then((args) => doAnalyse(args))
   .catch((error) => WebAuditLogger.exit(error));

@@ -1,6 +1,13 @@
 import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 export interface StorageInterface {
+
+  get name(): string;
+
+  get id(): string;
+
+  init(urls: URL[], version: string): void;
+
   installStore(id: string, context: WebAuditContextClass, data: any): void;
 
   add(id: string, context: WebAuditContextClass, data: any): void;

@@ -3,21 +3,29 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { AppConfig } from '##/app/conf/AppConfig';
 /**
  * store data in
  */
 export default class CSVStorage {
     static SEPARATOR = ';';
-    dirPath;
+    dirPath = '';
     structures = {};
     installData = {};
     /**
-     * Constructor.
-     *
-     * @param dir Path of stored csv.
+     * {@inheritdoc}
      */
-    constructor(dir) {
-        this.dirPath = path.resolve(dir);
+    get id() {
+        return 'csv_storage';
+    }
+    /**
+     * {@inheritdoc}
+     */
+    get name() {
+        return 'CSV';
+    }
+    init(urls, version) {
+        this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
     }
     /**
      * Init CSV Store file.

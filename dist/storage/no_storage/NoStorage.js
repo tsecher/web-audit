@@ -3,6 +3,23 @@
  */
 export default class NoStorage {
     /**
+     * {@inheritdoc}
+     */
+    get id() {
+        return 'no_storage';
+    }
+    /**
+     * {@inheritdoc}
+     */
+    get name() {
+        return 'No storage';
+    }
+    /**
+     * {@inheritdoc}
+     */
+    init(urls, version) {
+    }
+    /**
      * Init Store.
      */
     installStore(id, context, data) {

@@ -6,6 +6,8 @@ import path from 'path';
 
 import {WebAuditContextClass} from '##/core/WebAuditContext';
 import {StorageInterface} from '##/storage/Storage';
+import {UrlWrapper} from '##/core/UrlWrapper';
+import {AppConfig} from '##/app/conf/AppConfig';
 
 /**
  * store data in
@@ -14,21 +16,28 @@ export default class CSVStorage implements StorageInterface {
 
   static SEPARATOR = ';';
 
-  private readonly dirPath: string;
+  private dirPath = '';
 
   private structures: any = {};
 
   private installData: any = {};
 
   /**
-   * Constructor.
-   *
-   * @param dir Path of stored csv.
+   * {@inheritdoc}
    */
-  constructor(
-    dir: string,
-  ) {
-    this.dirPath = path.resolve(dir);
+  get id(): string {
+    return 'csv_storage';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  get name(): string {
+    return 'CSV';
+  }
+
+  init(urls: URL[], version: string) {
+    this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
   }
 
   /**

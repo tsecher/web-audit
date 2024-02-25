@@ -15,6 +15,8 @@ import CSVStorage from '##/storage/csv/CSVStorage';
 import {JourneyInterface} from '##/journey/JourneyInterface';
 import {JourneyFinder} from '##/app/utils/AppJourneyFinder';
 import {CrawlerFinder} from '##/app/utils/AppCrawlerFinder';
+import {StorageFinder} from '##/app/utils/AppStorageFinder';
+import {StorageInterface} from '##/storage/Storage';
 
 
 // import prompts from 'prompts';
@@ -261,6 +263,42 @@ async function getCrawler(required: boolean, logger: LoggerInterface): Promise<a
 
 
 /**
+ * Return storage;
+ *
+ * @returns {any}
+ */
+async function getStorage(required: boolean, logger: LoggerInterface): Promise<any> {
+  const allStorages: any[] = await StorageFinder.getStorage();
+
+  let selected: StorageInterface | null = null;
+  if (params.storage && typeof params.storage === 'string') {
+    selected = allStorages.filter((storage) => params.storage === storage.id)[0];
+  }
+
+  // Manual
+  if (required && !selected) {
+    const manual = await inquirer.prompt([{
+      type: 'list',
+      name: 'storage',
+      message: `Storage ?`,
+      choices: allStorages.map((storage) => {
+        return {
+          name: storage.name,
+          value: storage,
+        };
+      }),
+    }]);
+
+    selected = manual.storage;
+  }
+
+  return {
+    data: selected,
+    shortcut: selected ? `--storage=${selected.id}` : '',
+  };
+}
+
+/**
  * Return user args.
  *
  * @returns {{urls: URL[]}}
@@ -274,6 +312,7 @@ export async function getArgs(required: string[], logger: LoggerInterface) {
   args.modules = await getModules(required.indexOf('modules') > -1, logger);
   args.journey = await getJourney(required.indexOf('journey') > -1, logger);
   args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
+  args.storage = await getStorage(required.indexOf('storage') > -1, logger);
 
 
   logger.warning(`Shortcut: `);
