@@ -71,9 +71,8 @@ export class PageWrapper {
     async getBrowser() {
         if (!this.browser) {
             this.browser = await puppeteer.launch({
-                headless: 'new',
+                headless: true,
                 args: this.options.browserArgs,
-                ignoreHTTPSErrors: true,
                 ignoreDefaultArgs: ['--disable-gpu', '--enable-automation'],
             });
         }

@@ -1,5 +1,6 @@
 import {StorageInterface} from '##/storage/Storage';
 import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {ModuleInterface} from "##/modules/ModuleInterface";
 
 /**
  * store data in
@@ -27,9 +28,9 @@ export default class NoStorage implements StorageInterface {
   }
 
   /**
-   * Init Store.
+   * Init Store with schema.
    */
-  installStore(id: string, context: WebAuditContextClass, data: any): void {
+  installSchema(id: string, context: WebAuditContextClass, schema: any): void {
   }
 
   /**
@@ -38,14 +39,15 @@ export default class NoStorage implements StorageInterface {
    * @param id
    * @param context
    * @param data
+   * @param module
    */
-  add(id: string, context: WebAuditContextClass, data: any): void {
+  add(id: string, context: WebAuditContextClass, data: any, module: ModuleInterface): void {
   }
 
   /**
    * Replace data.
    */
-  one(id: string, context: WebAuditContextClass, data: any): void {
+  one(id: string, context: WebAuditContextClass, data: any, module: ModuleInterface): void {
   }
 
   /**
@@ -53,8 +55,9 @@ export default class NoStorage implements StorageInterface {
    *
    * @param {string} input
    * @param context
+   * @param module
    */
-  file(input: string, context: any): void {
+  file(input: string, context: any, module: ModuleInterface): void {
   }
 
 }

@@ -1,5 +1,6 @@
 import {WebAuditContextClass} from '../core/WebAuditContext';
 import {UrlWrapper} from '../core/UrlWrapper';
+import {StoredInterface} from "##/storage/StoredInterface";
 
 export const ModuleEvents = {
   beforeUrlProcess: 'beforeURLProcess',
@@ -19,7 +20,7 @@ export const MODULE_TYPES: any = {
 };
 
 
-export interface ModuleInterface {
+export interface ModuleInterface extends StoredInterface{
 
   get name(): string;
 
@@ -47,4 +48,8 @@ export interface ModuleInterface {
    */
   finish(): void;
 
+  /**
+   * Return the data schema.
+   */
+  getSchema(): any;
 }

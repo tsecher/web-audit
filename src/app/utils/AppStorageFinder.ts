@@ -56,11 +56,11 @@ class StorageFinderClass {
     const storagesList: StorageInterface[] = [];
 
     if (storageDataList && storageDataList.length) {
-      for (const crawlerData of storageDataList) {
-        const crawlerPath = path.resolve(process.cwd(), crawlerData);
-        if (fs.existsSync(crawlerPath)) {
-          const CrawlerClass = (await import(crawlerPath)).default;
-          storagesList.push(CrawlerClass);
+      for (const storageData of storageDataList) {
+        const storagePath = path.resolve(process.cwd(), storageData);
+        if (fs.existsSync(storagePath)) {
+          const StorageClass = (await import(storagePath)).default;
+          storagesList.push(StorageClass);
         }
       }
     }

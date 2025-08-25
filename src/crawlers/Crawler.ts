@@ -4,6 +4,7 @@ import {UrlWrapper} from '##/core/UrlWrapper';
 import {PageWrapper} from '##/journey/PageWrapper';
 import {JourneyInterface} from '##/journey/JourneyInterface';
 import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {StoredInterface} from "##/storage/StoredInterface";
 
 export interface WebAuditCrawlerType {
   baseUrl: URL;
@@ -48,7 +49,7 @@ export interface WebAuditCrawlerInterface {
 /**
  * Website crawler.
  */
-export class WebAuditCrawler implements WebAuditCrawlerInterface {
+export class WebAuditCrawler implements WebAuditCrawlerInterface, StoredInterface {
 
   static id = 'default';
   static label = 'Default crawler';
@@ -65,6 +66,8 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface {
   private alreadyParsedUrls: string[] = [];
 
   private pageWrapper: PageWrapper;
+
+  private statusSummary: any = {};
 
   /**
    * Constructor.
@@ -91,23 +94,19 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface {
     this.context.eventBus.emit(WebAuditCrawlerEvents.createCrawl, {crawler: this, baseUrl: this.baseUrlWrapper});
 
     // Prepare storage.
-    this.context.config.storage?.installStore(
-      'pages',
-      this.context,
-      {
-        url: 'Referenced url',
-        status: `Status`,
-        size: `Content length`,
-        final: 'Final URL (if redirected)',
-        source: `Orignal page (where url is referenced)`,
-      },
-    );
+    this.context.config.storage?.installSchema(this, this.context);
   }
+
+  get id(): string {
+    return `crawl`;
+  }
+
 
   /**
    * Crawl url.
    */
   async crawl(journey: JourneyInterface): Promise<void> {
+    this.statusSummary = {};
     // Init puppeteer browser.
     await this.pageWrapper.newPage();
 
@@ -116,6 +115,23 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface {
     await this.crawlUrl(this.baseUrlWrapper.url, null, journey);
 
     await this.pageWrapper.close();
+
+    this.summary();
+  }
+
+  /**
+   * Summary log.
+   */
+  summary() {
+    const total = Object.values(this.statusSummary).reduce((previous: any, current: any) => {
+      return previous + current;
+    }, 0);
+    this.context.config.logger.result('Crawl', {
+      ...this.statusSummary,
+      ...{
+        Total: total,
+      },
+    });
   }
 
   /**
@@ -148,7 +164,9 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface {
 
     if (pageInfo.log) {
       this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawled, eventData);
-      this.context.config.storage?.add('pages', this.context, pageInfo);
+      this.context.config.storage?.add(this,'pages', this.context, pageInfo);
+
+      this.statusSummary[pageInfo.status] = (this.statusSummary[pageInfo.status] || 0) + 1;
 
       if (pageInfo.status >= 300 && pageInfo < 400) {
         this.context.eventBus.emit(WebAuditCrawlerEvents.onPageCrawledRedirected, eventData);
@@ -483,4 +501,41 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface {
 
     return id;
   }
+
+  getSchema(): any {
+    return {
+      "pages": {
+        "label": "Pages found",
+        "description": "The list of paged found by crawl",
+        "structure": {
+          "url": {
+            "label": "Referenced url",
+            "description": "The exposed URL",
+            "type": "string"
+          },
+          "status": {
+            "label": "Status",
+            "description": "The status code of the response",
+            "type": "number"
+          },
+          "size": {
+            "label": "Content length (KB)",
+            "description": "The response size.",
+            "type": "number"
+          },
+          "final": {
+            "label": "Final URL (if redirected)",
+            "description": "The final URL (after redirections)",
+            "type": "string"
+          },
+          "source": {
+            "label": "Orignal page (where url is referenced)",
+            "description": "The source page, where the url was first found.",
+            "type": "string"
+          },
+        }
+      }
+    };
+  }
+
 }

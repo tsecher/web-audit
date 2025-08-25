@@ -1,0 +1,98 @@
+import {AbstractPuppeteerJourneyModule} from 'web_audit/dist/journey/AbstractPuppeteerJourneyModule.js';
+import {ModuleEvents} from 'web_audit/dist/modules/ModuleInterface.js';
+
+/**
+ * <%= readable_name; %> Module events.
+ */
+export const <%= CamelName; %>ModuleEvents = {
+	create<%= CamelName; %>Module: '<%= snake_name; %>_module__create<%= CamelName; %>Module',
+	beforeAnalyse: '<%= snake_name; %>_module__beforeAnalyse',
+	onResult: '<%= snake_name; %>_module__onResult',
+	onResultDetail: '<%= snake_name; %>_module__onResultDetail',
+	afterAnalyse: '<%= snake_name; %>_module__afterAnalyse',
+};
+
+/**
+ * <%= readable_name; %>.
+ */
+export default class <%= CamelName; %>Module extends AbstractPuppeteerJourneyModule {
+	get name() {
+		return '<%= readable_name; %>';
+	}
+
+	get id() {
+		return `<%= snake_name; %>`;
+	}
+
+	contextsData = {};
+
+	/**
+	 * {@inheritdoc}
+	 */
+	async init(context) {
+		this.context = context;
+		// Install <%= readable_name; %> store.
+		this.context.config.storage?.installStore('<%= snake_name; %>', this.context, {
+			url: 'Url',
+			context: 'Context',
+			// @TODO: Define storage
+		});
+
+		// Emit.
+		this.context.eventBus.emit(<%= CamelName; %>ModuleEvents.create<%= CamelName; %>Module, {module: this});
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	initEvents(journey) {
+		// @TODO : Add events.
+	}
+
+	/**
+	 * Return context data
+	 */
+	async getContextData(data) {
+
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	async analyse(urlWrapper) {
+		this.context?.eventBus.emit(ModuleEvents.startsComputing, {module: this});
+
+		const eventData = {
+			module: this,
+			url: urlWrapper,
+		};
+		this.context?.eventBus.emit(<%= CamelName; %>ModuleEvents.beforeAnalyse, eventData);
+		this.context?.eventBus.emit(ModuleEvents.beforeAnalyse, eventData);
+
+		// @TODO : Analyse
+
+		// Summary.
+		eventData.result = {
+			url: urlWrapper.url.toString(),
+			context: contextName,
+			// @TODO: Add summary
+		};
+		this.context?.eventBus.emit(<%= CamelName; %>ModuleEvents.onResult, eventData);
+		this.context?.config?.logger.result(`<%= readable_name; %>`, eventData.result, urlWrapper.url.toString());
+		this.context?.config?.storage?.add('<%= snake_name; %>', this.context, eventData.result);
+		this.context?.eventBus.emit(ModuleEvents.afterAnalyse, eventData);
+		this.context?.eventBus.emit(<%= CamelName; %>ModuleEvents.afterAnalyse, eventData);
+
+		this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	getSchema() {
+		// @Todo return the data schema.
+		return {}
+	}
+
+}

@@ -1,4 +1,5 @@
 import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {StoredInterface} from "##/storage/StoredInterface";
 
 export interface StorageInterface {
 
@@ -8,11 +9,11 @@ export interface StorageInterface {
 
   init(urls: URL[], version: string): void;
 
-  installStore(id: string, context: WebAuditContextClass, data: any): void;
+  installSchema(stored: StoredInterface, context: WebAuditContextClass):void;
 
-  add(id: string, context: WebAuditContextClass, data: any): void;
+  add(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void;
 
-  one(id: string, context: WebAuditContextClass, data: any): void;
+  one(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void;
 
-  file(input: string, context: WebAuditContextClass): void;
+  file(stored: StoredInterface, input: string, context: WebAuditContextClass): void;
 }

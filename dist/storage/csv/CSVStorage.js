@@ -28,48 +28,47 @@ export default class CSVStorage {
         this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
     }
     /**
-     * Init CSV Store file.
+     * Init CSV Store file with schema.
      */
-    installStore(id, context, data) {
-        const filePath = this.getFilePath(id, context);
-        if (!fs.existsSync(path.dirname(filePath))) {
-            fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        }
-        if (!fs.existsSync(filePath)) {
-            fs.writeFileSync(filePath, this.getCSVLine(data, id));
-        }
-        this.installData[id] = data;
-        this.structures[id] = data;
+    installSchema(stored, context) {
+        Object.entries(stored.getSchema()).forEach(([group_id, group]) => {
+            const group_path = this.getGroupPath(stored, group_id);
+            const filePath = this.getFilePath(group_path, context);
+            if (!fs.existsSync(path.dirname(filePath))) {
+                fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            }
+            if (!fs.existsSync(filePath)) {
+                const data = {};
+                Object.entries(group.structure).forEach(([data_id, structure]) => {
+                    data[data_id] = structure.label;
+                });
+                fs.writeFileSync(filePath, this.getCSVLine(data, group_path));
+                this.installData[group_path] = data;
+                this.structures[group_path] = data;
+            }
+        });
     }
     /**
      * Add data to csv Store
-     *
-     * @param id
-     * @param context
-     * @param data
      */
-    add(id, context, data) {
-        fs.appendFileSync(this.getFilePath(id, context), this.getCSVLine(data, id));
+    add(stored, group_id, context, data) {
+        const group_path = this.getGroupPath(stored, group_id);
+        fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, group_path));
     }
     /**
      * Replace.
-     * @param {string} id
-     * @param {WebAuditContextClass} context
-     * @param data
      */
-    one(id, context, data) {
-        fs.rmSync(this.getFilePath(id, context));
-        this.installStore(id, context, this.installData[id]);
-        this.add(id, context, data);
+    one(stored, group_id, context, data) {
+        const group_path = this.getGroupPath(stored, group_id);
+        fs.rmSync(this.getFilePath(group_path, context));
+        this.installSchema(stored, context);
+        this.add(stored, group_id, context, data);
     }
     /**
      * Store file.
-     *
-     * @param input
-     * @param context
      */
-    file(input, context) {
-        const output = path.join(this.dirPath, String(context?.version || 'undefined'), input);
+    file(stored, input, context) {
+        const output = path.join(this.dirPath, module.id, 'files', String(context?.version || 'undefined'), input);
         fs.mkdirSync(path.dirname(output), { recursive: true });
         fs.renameSync(input, output);
     }
@@ -148,5 +147,11 @@ export default class CSVStorage {
                 .join('');
         });
         return values;
+    }
+    /**
+     * Return the group base path.
+     */
+    getGroupPath(stored, group_id) {
+        return `${stored.id}/${group_id}`;
     }
 }

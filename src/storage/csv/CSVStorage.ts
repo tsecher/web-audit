@@ -6,8 +6,8 @@ import path from 'path';
 
 import {WebAuditContextClass} from '##/core/WebAuditContext';
 import {StorageInterface} from '##/storage/Storage';
-import {UrlWrapper} from '##/core/UrlWrapper';
 import {AppConfig} from '##/app/conf/AppConfig';
+import {StoredInterface} from "##/storage/StoredInterface";
 
 /**
  * store data in
@@ -41,53 +41,53 @@ export default class CSVStorage implements StorageInterface {
   }
 
   /**
-   * Init CSV Store file.
+   * Init CSV Store file with schema.
    */
-  installStore(id: string, context: WebAuditContextClass, data: any): void {
-    const filePath = this.getFilePath(id, context);
-    if (!fs.existsSync(path.dirname(filePath))) {
-      fs.mkdirSync(path.dirname(filePath), {recursive: true});
-    }
+  installSchema(stored: StoredInterface, context: WebAuditContextClass): void {
+    Object.entries(stored.getSchema()).forEach(([group_id, group]: [string, any])=> {
+      const group_path = this.getGroupPath(stored, group_id);
+      const filePath = this.getFilePath(group_path, context);
+      if (!fs.existsSync(path.dirname(filePath))) {
+        fs.mkdirSync(path.dirname(filePath), {recursive: true});
+      }
 
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, this.getCSVLine(data, id));
-    }
+      if (!fs.existsSync(filePath)) {
+        const data: any = {};
+        Object.entries(group.structure).forEach(([data_id,structure]: [string, any]) => {
+          data[data_id] = structure.label;
+        })
+        fs.writeFileSync(filePath, this.getCSVLine(data, group_path));
 
-    this.installData[id] = data;
-    this.structures[id] = data;
+        this.installData[group_path] = data;
+        this.structures[group_path] = data;
+      }
+    })
+
   }
 
   /**
    * Add data to csv Store
-   *
-   * @param id
-   * @param context
-   * @param data
    */
-  add(id: string, context: WebAuditContextClass, data: any): void {
-    fs.appendFileSync(this.getFilePath(id, context), this.getCSVLine(data, id));
+  add(stored:StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void {
+    const group_path = this.getGroupPath(stored, group_id);
+    fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, group_path));
   }
 
   /**
    * Replace.
-   * @param {string} id
-   * @param {WebAuditContextClass} context
-   * @param data
    */
-  one(id: string, context: WebAuditContextClass, data: any): void {
-    fs.rmSync(this.getFilePath(id, context));
-    this.installStore(id, context, this.installData[id]);
-    this.add(id, context, data);
+  one(stored:StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void {
+    const group_path = this.getGroupPath(stored, group_id);
+    fs.rmSync(this.getFilePath(group_path, context));
+    this.installSchema(stored, context);
+    this.add(stored, group_id, context, data);
   }
 
   /**
    * Store file.
-   *
-   * @param input
-   * @param context
    */
-  file(input: string, context: WebAuditContextClass): void {
-    const output = path.join(this.dirPath, String(context?.version || 'undefined'), input);
+  file(stored:StoredInterface, input: string, context: WebAuditContextClass): void {
+    const output = path.join(this.dirPath, module.id, 'files', String(context?.version || 'undefined'), input);
     fs.mkdirSync(path.dirname(output), {recursive: true});
     fs.renameSync(input, output);
   }
@@ -176,4 +176,10 @@ export default class CSVStorage implements StorageInterface {
     return values;
   }
 
+  /**
+   * Return the group base path.
+   */
+  private getGroupPath(stored: StoredInterface, group_id: string) {
+    return `${stored.id}/${group_id}`;
+  }
 }

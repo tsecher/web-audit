@@ -20,9 +20,9 @@ export default class NoStorage {
     init(urls, version) {
     }
     /**
-     * Init Store.
+     * Init Store with schema.
      */
-    installStore(id, context, data) {
+    installSchema(id, context, schema) {
     }
     /**
      * Add data to Store
@@ -30,20 +30,22 @@ export default class NoStorage {
      * @param id
      * @param context
      * @param data
+     * @param module
      */
-    add(id, context, data) {
+    add(id, context, data, module) {
     }
     /**
      * Replace data.
      */
-    one(id, context, data) {
+    one(id, context, data, module) {
     }
     /**
      * Add file.
      *
      * @param {string} input
      * @param context
+     * @param module
      */
-    file(input, context) {
+    file(input, context, module) {
     }
 }
