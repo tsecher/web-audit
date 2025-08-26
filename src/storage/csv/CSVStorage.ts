@@ -44,7 +44,7 @@ export default class CSVStorage implements StorageInterface {
    * Init CSV Store file with schema.
    */
   installSchema(stored: StoredInterface, context: WebAuditContextClass): void {
-    Object.entries(stored.getSchema()).forEach(([group_id, group]: [string, any])=> {
+    Object.entries(stored.getSchema().structure).forEach(([group_id, group]: [string, any])=> {
       const group_path = this.getGroupPath(stored, group_id);
       const filePath = this.getFilePath(group_path, context);
       if (!fs.existsSync(path.dirname(filePath))) {

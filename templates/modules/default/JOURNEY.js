@@ -112,7 +112,33 @@ export default class <%= CamelName; %>Module extends AbstractPuppeteerJourneyMod
 	 */
 	getSchema() {
 		// @Todo return the data schema.
-		return {}
+		/*
+		 * It is strongly recommended to return the content of an external json file.
+		 * Here is the structure that must be returned (see "doc/module/schema.md")?
+		 */
+		return {
+			"id": "<%= snake_name; %>",
+			"label" : "<%= readable_name; %>",
+			"description": "",
+			"types": ["journey"], // ["page", "domain", "journey"]
+			"structure": {
+				"<%= snake_name; %>": {
+					"label": "<%= readable_name; %>",
+					"description": "",
+					"structure": {
+						// "data_1": {
+						// 	"label": "Data 1",
+						// 	"description": "Description of Data 1",
+						// 	"type": "number",
+						// 	"values": {
+						// 		"goal": 1,
+						// 		"default_threshold": 0.8
+						// 	}
+						// }
+					}
+				}
+			}
+		}
 	}
 
 }

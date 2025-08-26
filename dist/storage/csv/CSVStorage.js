@@ -31,7 +31,7 @@ export default class CSVStorage {
      * Init CSV Store file with schema.
      */
     installSchema(stored, context) {
-        Object.entries(stored.getSchema()).forEach(([group_id, group]) => {
+        Object.entries(stored.getSchema().structure).forEach(([group_id, group]) => {
             const group_path = this.getGroupPath(stored, group_id);
             const filePath = this.getFilePath(group_path, context);
             if (!fs.existsSync(path.dirname(filePath))) {

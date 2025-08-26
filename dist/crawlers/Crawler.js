@@ -410,35 +410,40 @@ export class WebAuditCrawler {
     }
     getSchema() {
         return {
-            "pages": {
-                "label": "Pages found",
-                "description": "The list of paged found by crawl",
-                "structure": {
-                    "url": {
-                        "label": "Referenced url",
-                        "description": "The exposed URL",
-                        "type": "string"
-                    },
-                    "status": {
-                        "label": "Status",
-                        "description": "The status code of the response",
-                        "type": "number"
-                    },
-                    "size": {
-                        "label": "Content length (KB)",
-                        "description": "The response size.",
-                        "type": "number"
-                    },
-                    "final": {
-                        "label": "Final URL (if redirected)",
-                        "description": "The final URL (after redirections)",
-                        "type": "string"
-                    },
-                    "source": {
-                        "label": "Orignal page (where url is referenced)",
-                        "description": "The source page, where the url was first found.",
-                        "type": "string"
-                    },
+            "id": "crawler",
+            "label": "Crawler",
+            "description": "The crawler retreives static published page information",
+            "structure": {
+                "pages": {
+                    "label": "Pages found",
+                    "description": "The list of paged found by crawl",
+                    "structure": {
+                        "url": {
+                            "label": "Referenced url",
+                            "description": "The exposed URL",
+                            "type": "string"
+                        },
+                        "status": {
+                            "label": "Status",
+                            "description": "The status code of the response",
+                            "type": "number"
+                        },
+                        "size": {
+                            "label": "Content length (KB)",
+                            "description": "The response size.",
+                            "type": "number"
+                        },
+                        "final": {
+                            "label": "Final URL (if redirected)",
+                            "description": "The final URL (after redirections)",
+                            "type": "string"
+                        },
+                        "source": {
+                            "label": "Orignal page (where url is referenced)",
+                            "description": "The source page, where the url was first found.",
+                            "type": "string"
+                        },
+                    }
                 }
             }
         };
