@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-import '../dist/scripts/set-up.js';
+import '../dist/scripts/setup.js';
