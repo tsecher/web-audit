@@ -3,53 +3,53 @@ import {UrlWrapper} from '../core/UrlWrapper';
 import {StoredInterface} from "##/storage/StoredInterface";
 
 export const ModuleEvents = {
-  beforeUrlProcess: 'beforeURLProcess',
-  afterUrlProcess: 'afterURLProcess',
-  beforeAnalyse: 'beforeAnalyse',
-  afterAnalyse: 'afterAnalyse',
-  onAnalyseResult: 'onAnalyseResult',
-  startsComputing: 'startsComputing',
-  endsComputing: 'endsComputing',
+    beforeUrlProcess: 'beforeURLProcess',
+    afterUrlProcess: 'afterURLProcess',
+    beforeAnalyse: 'beforeAnalyse',
+    afterAnalyse: 'afterAnalyse',
+    onAnalyseResult: 'onAnalyseResult',
+    startsComputing: 'startsComputing',
+    endsComputing: 'endsComputing',
 };
 
 
 export const MODULE_TYPES: any = {
-  BEFORE: 'before',
-  STANDARD: 'standard',
-  JOURNEY: 'journey',
+    BEFORE: 'before',
+    STANDARD: 'standard',
+    JOURNEY: 'journey',
 };
 
 
-export interface ModuleInterface extends StoredInterface{
+export interface ModuleInterface extends StoredInterface {
 
-  get name(): string;
+    get name(): string;
 
-  get id(): string;
+    get id(): string;
 
-  get type(): string;
+    get type(): string;
 
-  /**
-   * Init before configuration.
-   *
-   * @param {WebAuditContextClass} context
-   */
-  init(context: WebAuditContextClass): void;
+    /**
+     * Init before configuration.
+     *
+     * @param {WebAuditContextClass} context
+     */
+    init(context: WebAuditContextClass): void;
 
-  /**
-   * Analyse urls.
-   *
-   * @param url
-   * @param parser
-   */
-  analyse(url: UrlWrapper): Promise<boolean>;
+    /**
+     * Analyse urls.
+     *
+     * @param url
+     * @param parser
+     */
+    analyse(url: UrlWrapper): Promise<boolean>;
 
-  /**
-   * Finish process.
-   */
-  finish(): void;
+    /**
+     * Finish process.
+     */
+    finish(): void;
 
-  /**
-   * Return the data schema.
-   */
-  getSchema(): any;
+    /**
+     * Return the data schema.
+     */
+    getSchema(): any;
 }

@@ -1,4 +1,4 @@
 export interface GeneratorInterface {
 
-  generate(): Promise<any>;
+    generate(): Promise<any>;
 }

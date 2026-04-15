@@ -1,0 +1,11 @@
+export const config = {
+	"modules": [
+		// 'data/web-audit-module-ecoindex/src/modules/EcoIndexModule.js'
+	],
+	"crawlers": [],
+	"journeys": [],
+	"storages": [],
+	"csv_storage": {
+		"directory": "./analyses/"
+	},
+}

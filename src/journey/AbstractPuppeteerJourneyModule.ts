@@ -7,68 +7,70 @@ import {AbstractPuppeteerJourney, PuppeteerJourneyEvents} from '##/journey/Abstr
 
 export abstract class AbstractPuppeteerJourneyModule implements ModuleInterface, AbstractJourneyModuleInterface {
 
-  abstract get id(): string;
+    abstract get id(): string;
 
-  abstract get name(): string;
+    abstract get name(): string;
 
-  abstract init(context: WebAuditContextClass): void;
+    abstract init(context: WebAuditContextClass): void;
 
-  abstract initEvents(journey: JourneyInterface): void;
+    abstract initEvents(journey: JourneyInterface): void;
 
-  protected defaultOptions?: any;
+    abstract getSchema(): any;
 
-  protected context?: WebAuditContextClass;
+    protected defaultOptions?: any;
 
-  protected journeyContexts: any = [];
-  protected journeySteps: any = [];
+    protected context?: WebAuditContextClass;
 
-  /**
-   * {@inheritdoc}
-   */
-  get type(): string {
-    return MODULE_TYPES.JOURNEY;
-  }
+    protected journeyContexts: any = [];
+    protected journeySteps: any = [];
 
-  /**
-   * {@inheritdoc}
-   */
-  getOptions(inputOptions: any = {}): any {
-    return {
-      ...this.defaultOptions,
-      ...inputOptions,
-    };
-  }
+    /**
+     * {@inheritdoc}
+     */
+    get type(): string {
+        return MODULE_TYPES.JOURNEY;
+    }
 
-  /**
-   * {@inheritdoc}
-   */
-  analyse(url: UrlWrapper): Promise<boolean> {
-    return Promise.resolve(true);
-  }
+    /**
+     * {@inheritdoc}
+     */
+    getOptions(inputOptions: any = {}): any {
+        return {
+            ...this.defaultOptions,
+            ...inputOptions,
+        };
+    }
 
-  /**
-   * {@inheritdoc}
-   */
-  initJourney(journey: JourneyInterface): AbstractJourneyModuleInterface {
-    this.initEvents(journey);
-    if (journey instanceof AbstractPuppeteerJourney) {
-      journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => {
+    /**
+     * {@inheritdoc}
+     */
+    analyse(url: UrlWrapper): Promise<boolean> {
+        return Promise.resolve(true);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    initJourney(journey: JourneyInterface): AbstractJourneyModuleInterface {
+        this.initEvents(journey);
+        if (journey instanceof AbstractPuppeteerJourney) {
+            journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data: any) => {
+                this.journeyContexts = [];
+                this.journeySteps = [];
+            });
+            journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.journeyContexts.push(data));
+            journey.on(PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, async (data: any) => this.journeySteps.push(data));
+        }
+        return this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    finish(): void {
         this.journeyContexts = [];
         this.journeySteps = [];
-      });
-      journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data: any) => this.journeyContexts.push(data));
-      journey.on(PuppeteerJourneyEvents.JOURNEY_BEFORE_STEP, async (data: any) => this.journeySteps.push(data));
     }
-    return this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  finish(): void {
-    this.journeyContexts = [];
-    this.journeySteps = [];
-  }
 
 
 }

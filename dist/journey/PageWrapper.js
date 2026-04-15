@@ -138,10 +138,10 @@ export class PageWrapper {
             // Create file.
             const body = await this.page.evaluate(() => document?.querySelector('html')?.outerHTML);
             fs.writeFileSync(`${screenPath}/${steppedName}.html`, body, 'utf8');
-            this.context.config.storage?.file(`${screenPath}/${steppedName}.html`, this.context);
+            this.context.config.storage?.file(null, `${screenPath}/${steppedName}.html`, this.context);
             // Snapshot.
             await this.page.screenshot({ path: `${screenPath}/${steppedName}.png` });
-            this.context.config.storage?.file(`${screenPath}/${steppedName}.png`, this.context);
+            this.context.config.storage?.file(null, `${screenPath}/${steppedName}.png`, this.context);
         }
         return Promise.resolve(this);
     }

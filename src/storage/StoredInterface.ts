@@ -1,6 +1,5 @@
-
 export interface StoredInterface {
-  get id(): string;
+    get id(): string;
 
-  getSchema(): any;
+    getSchema(): any;
 }

@@ -12,15 +12,15 @@ import {LoggerGenerator} from '##/loggers/generator/LoggerGenerator';
 
 export class LoggerPackageGenerator extends LoggerGenerator {
 
-  /**
-   * {@inheritdoc}
-   */
-  protected async create(data: any) {
-    const packageName = `web-audit-logger-${data.snake_name.split('_').join('-')}`;
-    data.path = path.join(data.path, packageName);
+    /**
+     * {@inheritdoc}
+     */
+    protected async create(data: any) {
+        const packageName = `web-audit-logger-${data.snake_name.split('_').join('-')}`;
+        data.path = path.join(data.path, packageName);
 
-    await super.create(data);
+        await super.create(data);
 
-    await generateFile(`loggers/package/package.json`, `${data.path}/package.json`, data);
-  }
+        await generateFile(`loggers/package/package.json`, `${data.path}/package.json`, data);
+    }
 }

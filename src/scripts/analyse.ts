@@ -16,45 +16,46 @@ AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
  * @param args
  */
 function doAnalyse(args: any) {
-  const {urls, modules, version, journey, storage, logger} = args;
+    const {urls, modules, version, journey, storage, logger} = args;
 
-  const urlsWrapper = urls.map((url: URL) => new UrlWrapper(url));
+    const urlsWrapper = urls.map((url: URL) => new UrlWrapper(url));
 
-  /** ======================================================
-   ||                  Context                      ||
-   =======================================================*/
-  // Init storage.
-  storage.init(urls, version);
-  const config = new Config(
-    logger,
-    storage,
-  );
+    /** ======================================================
+     ||                  Context                      ||
+     =======================================================*/
+    // Init storage.
+    storage.init(urls, version);
+    const config = new Config(
+        logger,
+        storage,
+        AppConfig
+    );
 
-  const eventBus = new Event();
+    const eventBus = new Event();
 
-  const context = new Context(config, eventBus);
-  context.setVersion(version);
+    const context = new Context(config, eventBus);
+    context.setVersion(version);
 
 
-  /** ======================================================
-   ||                  Analyse                      ||
-   =======================================================*/
-  const success = () => {
-    WebAuditLogger.success(`Analyse success`);
-  };
-  const error = (error: any) => {
-    WebAuditLogger.error(`Analyse error :`);
-    WebAuditLogger.error(error);
-  };
+    /** ======================================================
+     ||                  Analyse                      ||
+     =======================================================*/
+    const success = () => {
+        WebAuditLogger.success(`Analyse success`);
+    };
+    const error = (error: any) => {
+        WebAuditLogger.error(`Analyse error :`);
+        WebAuditLogger.error(error);
+    };
 
-  // Const
-  const core = new Core(context);
-  core.analyseUrls(urlsWrapper, modules, journey)
-    .then(success)
-    .catch(error);
+    // Const
+    const core = new Core(context);
+    core.analyseUrls(urlsWrapper, modules, journey)
+        .then(success)
+        .catch(error);
 }
 
 // Get args.
 getArgs(['urlsFiles', 'modules', 'version', 'journey', 'storage', 'logger'])
-  .then((args) => doAnalyse(args))
-  .catch((error) => WebAuditLogger.exit(error));
+    .then((args) => doAnalyse(args))
+    .catch((error) => WebAuditLogger.exit(error));

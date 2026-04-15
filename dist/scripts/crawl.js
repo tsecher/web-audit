@@ -5,7 +5,7 @@ import { AppConfig, AppConfigFileName } from '##/app/conf/AppConfig';
 import { getArgs } from '##/scripts/args';
 import { WebAuditLogger } from '##/loggers/Logger';
 // Init config.
-AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
+await AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
 async function doCrawl(args) {
     const { urls, version, journey, crawler, storage, logger } = args;
     /** ======================================================
@@ -27,7 +27,7 @@ async function doCrawl(args) {
     // Init storage;
     storage.init(urls, version);
     // Context
-    const config = new Config(logger, storage);
+    const config = new Config(logger, storage, AppConfig);
     const eventBus = new Event();
     const context = new Context(config, eventBus);
     context.setVersion(version);

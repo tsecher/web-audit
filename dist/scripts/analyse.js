@@ -19,7 +19,7 @@ function doAnalyse(args) {
      =======================================================*/
     // Init storage.
     storage.init(urls, version);
-    const config = new Config(logger, storage);
+    const config = new Config(logger, storage, AppConfig);
     const eventBus = new Event();
     const context = new Context(config, eventBus);
     context.setVersion(version);

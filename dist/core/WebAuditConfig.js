@@ -4,8 +4,10 @@
 export class WebAuditConfigClass {
     logger;
     storage;
-    constructor(logger, storage) {
+    AppConfig;
+    constructor(logger, storage, AppConfig) {
         this.logger = logger;
         this.storage = storage;
+        this.AppConfig = AppConfig;
     }
 }

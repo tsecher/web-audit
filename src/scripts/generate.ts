@@ -14,57 +14,57 @@ import {StoragePackageGenerator} from '##/storage/generator/StoragePackageGenera
 
 
 const generators = [
-  {
-    name: 'Module',
-    value: () => new ModuleGenerator(),
-  },
-  {
-    name: 'Module Package',
-    value: () => new ModulePackageGenerator(),
-  },
-  {
-    name: 'Journey',
-    value: () => new JourneyGenerator(),
-  },
-  {
-    name: 'Journey Package',
-    value: () => new JourneyPackageGenerator(),
-  },
-  {
-    name: 'Logger',
-    value: () => new LoggerGenerator(),
-  },
-  {
-    name: 'Logger Package',
-    value: () => new LoggerPackageGenerator(),
-  },
-  {
-    name: 'Crawler',
-    value: () => new CrawlerGenerator(),
-  },
-  {
-    name: 'Crawler Package',
-    value: () => new CrawlerPackageGenerator(),
-  },
-  {
-    name: 'Storage',
-    value: () => new StorageGenerator(),
-  },
-  {
-    name: 'Storage Package',
-    value: () => new StoragePackageGenerator(),
-  },
+    {
+        name: 'Module',
+        value: () => new ModuleGenerator(),
+    },
+    {
+        name: 'Module Package',
+        value: () => new ModulePackageGenerator(),
+    },
+    {
+        name: 'Journey',
+        value: () => new JourneyGenerator(),
+    },
+    {
+        name: 'Journey Package',
+        value: () => new JourneyPackageGenerator(),
+    },
+    {
+        name: 'Logger',
+        value: () => new LoggerGenerator(),
+    },
+    {
+        name: 'Logger Package',
+        value: () => new LoggerPackageGenerator(),
+    },
+    {
+        name: 'Crawler',
+        value: () => new CrawlerGenerator(),
+    },
+    {
+        name: 'Crawler Package',
+        value: () => new CrawlerPackageGenerator(),
+    },
+    {
+        name: 'Storage',
+        value: () => new StorageGenerator(),
+    },
+    {
+        name: 'Storage Package',
+        value: () => new StoragePackageGenerator(),
+    },
 ];
 
 const result = await inquirer.prompt({
-  type: 'list',
-  name: 'generator',
-  message: `Generator type?`,
-  choices: generators,
+    type: 'list',
+    name: 'generator',
+    message: `Generator type?`,
+    choices: generators,
 });
 
 if (result.generator) {
-  const generator = result.generator();
-  await generator.generate();
+    const generator = result.generator();
+    await generator.generate();
 }
 

@@ -4,6 +4,14 @@ Aggregation of serveral indicators for auditing a web pages.
 
 
 # How to ? 
+
+## Setup
+Install this package as you normally do :  
+`yarn install web-audit`
+
+Setup configuration file :  
+`yarn setup`
+
 ## Crawl a site
 A command line allows you to crawl a specific web site.
 All urls found will be placed in a pages_found.csv file in the version folder.

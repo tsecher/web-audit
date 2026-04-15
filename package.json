@@ -11,7 +11,8 @@
   "bin": {
     "analyse": "bin/analyse.js",
     "crawl": "bin/crawl.js",
-    "generate": "bin/generate.js"
+    "generate": "bin/generate.js",
+    "setup": "bin/setup.js"
   },
   "scripts": {
     "dev": "nodemon",
@@ -20,7 +21,8 @@
     "install-chrome": "node ./node_modules/puppeteer/install.js",
     "crawl": "node ./dist/scripts/crawl.js",
     "analyse": "node ./dist/scripts/analyse.js",
-    "generate": "node ./dist/scripts/generate.js"
+    "generate": "node ./dist/scripts/generate.js",
+    "setup": "node ./dist/scripts/setup.js"
   },
   "dependencies": {
     "change-case": "^5.4.2",

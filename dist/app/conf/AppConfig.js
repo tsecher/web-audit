@@ -1,5 +1,5 @@
 import fs from 'fs';
-class AppConfigClass {
+export class AppConfigClass {
     config;
     /**
      * Update the config.
@@ -7,10 +7,16 @@ class AppConfigClass {
      * @param {string | object} input
      * @returns {this}
      */
-    setConfig(input) {
+    async setConfig(input) {
         if (typeof input === 'string') {
             if (fs.existsSync(input)) {
-                this.config = JSON.parse(fs.readFileSync(input, 'utf-8'));
+                try {
+                    const data = await import(input);
+                    this.config = data.config;
+                }
+                catch (err) {
+                    this.config = {};
+                }
             }
             else {
                 this.config = {};
@@ -42,4 +48,4 @@ class AppConfigClass {
     }
 }
 export const AppConfig = new AppConfigClass();
-export const AppConfigFileName = 'web-audit.config.json';
+export const AppConfigFileName = 'web-audit.config.js';

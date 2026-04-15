@@ -6,15 +6,15 @@ import {CrawlerGenerator} from '##/crawlers/generator/CrawlerGenerator';
 
 export class CrawlerPackageGenerator extends CrawlerGenerator {
 
-  /**
-   * {@inheritdoc}
-   */
-  protected async create(data: any) {
-    const packageName = `web-audit-crawler-${data.snake_name.split('_').join('-')}`;
-    data.path = path.join(data.path, packageName);
+    /**
+     * {@inheritdoc}
+     */
+    protected async create(data: any) {
+        const packageName = `web-audit-crawler-${data.snake_name.split('_').join('-')}`;
+        data.path = path.join(data.path, packageName);
 
-    await super.create(data);
+        await super.create(data);
 
-    await generateFile(`crawlers/package/package.json`, `${data.path}/package.json`, data);
-  }
+        await generateFile(`crawlers/package/package.json`, `${data.path}/package.json`, data);
+    }
 }

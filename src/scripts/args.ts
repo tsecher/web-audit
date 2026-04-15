@@ -30,49 +30,49 @@ const params: any = yargs(hideBin(process.argv)).argv;
  * @returns {URL[]}
  */
 async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<any> {
-  let selected: URL[] = [];
-  if (params.urls && typeof params.urls === 'string') {
-    const urls = params.urls.split(',');
-    selected = urls
-      .map((url: any) => {
-        try {
-          return new URL(url);
-        } catch (error) {
-          return false;
-        }
-      })
-      .filter((url: any) => url);
-  }
-
-  // Manual
-  if (!selected.length) {
-    let manual: any = {};
-    let value = '';
-
-    do {
-      manual = await inquirer.prompt([{
-        type: 'input',
-        name: 'urls',
-        message: `URLs ? (leave empty to stop)`,
-      }]);
-
-      value = manual.urls;
-
-      try {
-        if (value.trim().length > 0) {
-          selected.push(new URL(value));
-        }
-      } catch (error) {
-        logger.error(`Bad URL format : ${value}`);
-      }
+    let selected: URL[] = [];
+    if (params.urls && typeof params.urls === 'string') {
+        const urls = params.urls.split(',');
+        selected = urls
+            .map((url: any) => {
+                try {
+                    return new URL(url);
+                } catch (error) {
+                    return false;
+                }
+            })
+            .filter((url: any) => url);
     }
-    while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
-  }
 
-  return {
-    data: selected,
-    shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
-  };
+    // Manual
+    if (!selected.length) {
+        let manual: any = {};
+        let value = '';
+
+        do {
+            manual = await inquirer.prompt([{
+                type: 'input',
+                name: 'urls',
+                message: `URLs ? (leave empty to stop)`,
+            }]);
+
+            value = manual.urls;
+
+            try {
+                if (value.trim().length > 0) {
+                    selected.push(new URL(value));
+                }
+            } catch (error) {
+                logger.error(`Bad URL format : ${value}`);
+            }
+        }
+        while (required && value.trim().length > 0); // eslint-disable-line no-unmodified-loop-condition
+    }
+
+    return {
+        data: selected,
+        shortcut: selected.length ? `--urls=${selected.map((url) => url.toString()).join()}` : '',
+    };
 }
 
 /**
@@ -81,36 +81,36 @@ async function getUrlsArgs(required: boolean, logger: LoggerInterface): Promise<
  * @returns {ModuleInterface}
  */
 async function getModules(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allModules: ModuleInterface[] = await ModuleFinder.getModules();
+    const allModules: ModuleInterface[] = await ModuleFinder.getModules();
 
-  let selected: ModuleInterface[] = [];
-  if (params.modules && typeof params.modules === 'string') {
-    const names = params.modules.split(',');
-    selected = allModules.filter((module) => names.indexOf(module.id) > -1);
-  }
+    let selected: ModuleInterface[] = [];
+    if (params.modules && typeof params.modules === 'string') {
+        const names = params.modules.split(',');
+        selected = allModules.filter((module) => names.indexOf(module.id) > -1);
+    }
 
-  // Manual
-  if (required && !selected.length) {
-    const manual = await inquirer.prompt([{
-      type: 'checkbox',
-      name: 'modules',
-      message: `Modules ?`,
-      default: allModules,
-      choices: allModules.map((module) => {
-        return {
-          name: module.name,
-          value: module,
-        };
-      }),
-    }]);
+    // Manual
+    if (required && !selected.length) {
+        const manual = await inquirer.prompt([{
+            type: 'checkbox',
+            name: 'modules',
+            message: `Modules ?`,
+            default: allModules,
+            choices: allModules.map((module) => {
+                return {
+                    name: module.name,
+                    value: module,
+                };
+            }),
+        }]);
 
-    selected = manual.modules;
-  }
+        selected = manual.modules;
+    }
 
-  return {
-    data: selected,
-    shortcut: selected.length ? `--modules=${selected.map((module) => module.id).join()}` : '',
-  };
+    return {
+        data: selected,
+        shortcut: selected.length ? `--modules=${selected.map((module) => module.id).join()}` : '',
+    };
 }
 
 
@@ -120,44 +120,44 @@ async function getModules(required: boolean, logger: LoggerInterface): Promise<a
  * @returns {URL[]}
  */
 async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise<any> {
-  let urlsData: any = await getUrlsArgs(false, logger);
+    let urlsData: any = await getUrlsArgs(false, logger);
 
-  if (required && !urlsData.data?.length) {
+    if (required && !urlsData.data?.length) {
 
-    let file = params.file || '';
-    let answer: any = {file: file};
-    while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
-      answer = await inquirer.prompt([{
-        type: 'text',
-        name: 'file',
-        message: `File path (relative to ${process.cwd()})`,
-      }]);
+        let file = params.file || '';
+        let answer: any = {file: file};
+        while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
+            answer = await inquirer.prompt([{
+                type: 'text',
+                name: 'file',
+                message: `File path (relative to ${process.cwd()})`,
+            }]);
 
-      file = path.resolve(process.cwd(), answer.file);
+            file = path.resolve(process.cwd(), answer.file);
+        }
+
+        // read urls.
+        const urls: URL[] = [];
+        fs.readFileSync(file, 'utf-8')
+            .split('\n')
+            .forEach((row: string) => {
+                const cell = row.split(CSVStorage.SEPARATOR)[0].trim();
+                const value: string = cell[0] === '"' ? cell.slice(1, -1) : cell;
+
+                try {
+                    urls.push(new URL(value));
+                } catch (error) {
+                    // Mute error.
+                }
+            });
+
+        urlsData = {
+            data: urls,
+            shortcut: `--file=${answer.file}`,
+        };
     }
 
-    // read urls.
-    const urls: URL[] = [];
-    fs.readFileSync(file, 'utf-8')
-      .split('\n')
-      .forEach((row: string) => {
-        const cell = row.split(CSVStorage.SEPARATOR)[0].trim();
-        const value: string = cell[0] === '"' ? cell.slice(1, -1) : cell;
-
-        try {
-          urls.push(new URL(value));
-        } catch (error) {
-          // Mute error.
-        }
-      });
-
-    urlsData = {
-      data: urls,
-      shortcut: `--file=${answer.file}`,
-    };
-  }
-
-  return urlsData;
+    return urlsData;
 }
 
 /**
@@ -168,24 +168,24 @@ async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise
  * @returns {Promise<any>}
  */
 async function getVersionArgs(required: boolean, logger: LoggerInterface): Promise<any> {
-  let version = params.v;
+    let version = params.v;
 
-  if (required && !params.v) {
+    if (required && !params.v) {
 
-    const answer = await inquirer.prompt([{
-      type: 'text',
-      name: 'version',
-      message: `Version ?`,
-    }]);
+        const answer = await inquirer.prompt([{
+            type: 'text',
+            name: 'version',
+            message: `Version ?`,
+        }]);
 
-    const date = new Date();
-    version = answer.version.length ? answer.version : `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
-  }
+        const date = new Date();
+        version = answer.version.length ? answer.version : `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}-${`0${date.getDate()}`.slice(-2)}-${date.getHours()}-${date.getMinutes()}`;
+    }
 
-  return {
-    data: version,
-    shortcut: `--v=${version}`,
-  };
+    return {
+        data: version,
+        shortcut: `--v=${version}`,
+    };
 }
 
 
@@ -195,34 +195,34 @@ async function getVersionArgs(required: boolean, logger: LoggerInterface): Promi
  * @returns {ModuleInterface}
  */
 async function getJourney(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allJourneys: JourneyInterface[] = await JourneyFinder.getJourneys();
+    const allJourneys: JourneyInterface[] = await JourneyFinder.getJourneys();
 
-  let selected: JourneyInterface | null = null;
-  if (params.journey && typeof params.journey === 'string') {
-    selected = allJourneys.filter((journey) => params.journey === journey.id)[0];
-  }
+    let selected: JourneyInterface | null = null;
+    if (params.journey && typeof params.journey === 'string') {
+        selected = allJourneys.filter((journey) => params.journey === journey.id)[0];
+    }
 
-  // Manual
-  if (required && !selected) {
-    const manual = await inquirer.prompt([{
-      type: 'list',
-      name: 'journey',
-      message: `Journey ?`,
-      choices: allJourneys.map((journey) => {
-        return {
-          name: journey.name,
-          value: journey,
-        };
-      }),
-    }]);
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+            type: 'list',
+            name: 'journey',
+            message: `Journey ?`,
+            choices: allJourneys.map((journey) => {
+                return {
+                    name: journey.name,
+                    value: journey,
+                };
+            }),
+        }]);
 
-    selected = manual.journey;
-  }
+        selected = manual.journey;
+    }
 
-  return {
-    data: selected,
-    shortcut: selected ? `--journey=${selected.id}` : '',
-  };
+    return {
+        data: selected,
+        shortcut: selected ? `--journey=${selected.id}` : '',
+    };
 }
 
 
@@ -232,34 +232,34 @@ async function getJourney(required: boolean, logger: LoggerInterface): Promise<a
  * @returns {any}
  */
 async function getCrawler(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allCrawlers: any[] = await CrawlerFinder.getCrawler();
+    const allCrawlers: any[] = await CrawlerFinder.getCrawler();
 
-  let selected: JourneyInterface | null = null;
-  if (params.crawler && typeof params.crawler === 'string') {
-    selected = allCrawlers.filter((crawler) => params.crawler === crawler.id)[0];
-  }
+    let selected: JourneyInterface | null = null;
+    if (params.crawler && typeof params.crawler === 'string') {
+        selected = allCrawlers.filter((crawler) => params.crawler === crawler.id)[0];
+    }
 
-  // Manual
-  if (required && !selected) {
-    const manual = await inquirer.prompt([{
-      type: 'list',
-      name: 'crawler',
-      message: `Crawler ?`,
-      choices: allCrawlers.map((crawler) => {
-        return {
-          name: crawler.label,
-          value: crawler,
-        };
-      }),
-    }]);
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+            type: 'list',
+            name: 'crawler',
+            message: `Crawler ?`,
+            choices: allCrawlers.map((crawler) => {
+                return {
+                    name: crawler.label,
+                    value: crawler,
+                };
+            }),
+        }]);
 
-    selected = manual.crawler;
-  }
+        selected = manual.crawler;
+    }
 
-  return {
-    data: selected,
-    shortcut: selected ? `--crawler=${selected.id}` : '',
-  };
+    return {
+        data: selected,
+        shortcut: selected ? `--crawler=${selected.id}` : '',
+    };
 }
 
 
@@ -269,34 +269,34 @@ async function getCrawler(required: boolean, logger: LoggerInterface): Promise<a
  * @returns {any}
  */
 async function getStorage(required: boolean, logger: LoggerInterface): Promise<any> {
-  const allStorages: any[] = await StorageFinder.getStorage();
+    const allStorages: any[] = await StorageFinder.getStorage();
 
-  let selected: StorageInterface | null = null;
-  if (params.storage && typeof params.storage === 'string') {
-    selected = allStorages.filter((storage) => params.storage === storage.id)[0];
-  }
+    let selected: StorageInterface | null = null;
+    if (params.storage && typeof params.storage === 'string') {
+        selected = allStorages.filter((storage) => params.storage === storage.id)[0];
+    }
 
-  // Manual
-  if (required && !selected) {
-    const manual = await inquirer.prompt([{
-      type: 'list',
-      name: 'storage',
-      message: `Storage ?`,
-      choices: allStorages.map((storage) => {
-        return {
-          name: storage.name,
-          value: storage,
-        };
-      }),
-    }]);
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+            type: 'list',
+            name: 'storage',
+            message: `Storage ?`,
+            choices: allStorages.map((storage) => {
+                return {
+                    name: storage.name,
+                    value: storage,
+                };
+            }),
+        }]);
 
-    selected = manual.storage;
-  }
+        selected = manual.storage;
+    }
 
-  return {
-    data: selected,
-    shortcut: selected ? `--storage=${selected.id}` : '',
-  };
+    return {
+        data: selected,
+        shortcut: selected ? `--storage=${selected.id}` : '',
+    };
 }
 
 
@@ -306,34 +306,34 @@ async function getStorage(required: boolean, logger: LoggerInterface): Promise<a
  * @returns {any}
  */
 async function getLogger(required: boolean): Promise<any> {
-  const allLoggers: any[] = await LoggerFinder.getLogger();
+    const allLoggers: any[] = await LoggerFinder.getLogger();
 
-  let selected: LoggerInterface | null = null;
-  if (params.logger && typeof params.logger === 'string') {
-    selected = allLoggers.filter((logger) => params.logger === logger.id)[0];
-  }
+    let selected: LoggerInterface | null = null;
+    if (params.logger && typeof params.logger === 'string') {
+        selected = allLoggers.filter((logger) => params.logger === logger.id)[0];
+    }
 
-  // Manual
-  if (required && !selected) {
-    const manual = await inquirer.prompt([{
-      type: 'list',
-      name: 'logger',
-      message: `Logger ?`,
-      choices: allLoggers.map((logger) => {
-        return {
-          name: logger.name,
-          value: logger,
-        };
-      }),
-    }]);
+    // Manual
+    if (required && !selected) {
+        const manual = await inquirer.prompt([{
+            type: 'list',
+            name: 'logger',
+            message: `Logger ?`,
+            choices: allLoggers.map((logger) => {
+                return {
+                    name: logger.name,
+                    value: logger,
+                };
+            }),
+        }]);
 
-    selected = manual.logger;
-  }
+        selected = manual.logger;
+    }
 
-  return {
-    data: selected,
-    shortcut: selected ? `--logger=${selected.id}` : '',
-  };
+    return {
+        data: selected,
+        shortcut: selected ? `--logger=${selected.id}` : '',
+    };
 }
 
 /**
@@ -343,26 +343,26 @@ async function getLogger(required: boolean): Promise<any> {
  */
 export async function getArgs(required: string[]) {
 
-  const loggerData = await getLogger(required.indexOf('version') > -1);
-  const logger: LoggerInterface = loggerData.data;
+    const loggerData = await getLogger(required.indexOf('version') > -1);
+    const logger: LoggerInterface = loggerData.data;
 
-  const args: any = {};
-  args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
-  args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
-  args.modules = await getModules(required.indexOf('modules') > -1, logger);
-  args.journey = await getJourney(required.indexOf('journey') > -1, logger);
-  args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
-  args.storage = await getStorage(required.indexOf('storage') > -1, logger);
-  args.logger = loggerData;
+    const args: any = {};
+    args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
+    args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
+    args.modules = await getModules(required.indexOf('modules') > -1, logger);
+    args.journey = await getJourney(required.indexOf('journey') > -1, logger);
+    args.crawler = await getCrawler(required.indexOf('crawler') > -1, logger);
+    args.storage = await getStorage(required.indexOf('storage') > -1, logger);
+    args.logger = loggerData;
 
 
-  logger.warning(`Shortcut: `);
-  logger.warning(Object.values(args).map((value: any) => value.shortcut).join(' '));
+    logger.warning(`Shortcut: `);
+    logger.warning(Object.values(args).map((value: any) => value.shortcut).join(' '));
 
-  const result: any = {};
-  Object.keys(args).forEach((key: any) => {
-    result[key] = args[key].data;
-  });
+    const result: any = {};
+    Object.keys(args).forEach((key: any) => {
+        result[key] = args[key].data;
+    });
 
-  return result;
+    return result;
 }

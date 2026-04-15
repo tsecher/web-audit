@@ -7,43 +7,45 @@ import {WebAuditContextClass} from '##/core/WebAuditContext';
  */
 export abstract class AbstractDomainModule implements ModuleInterface {
 
-  private cache: any = {};
+    private cache: any = {};
 
-  abstract get id(): string;
+    abstract get id(): string;
 
-  abstract get name(): string;
+    abstract get name(): string;
 
-  get type(): string {
-    return MODULE_TYPES.BEFORE;
-  }
-
-  abstract init(context: WebAuditContextClass): void;
-
-  abstract analyseDomain(url: UrlWrapper): Promise<boolean>;
-
-  abstract finish(): void;
-
-  async analyse(url: UrlWrapper) {
-    if (this.isAnalysableDomain(url.url.hostname)) {
-      return this.analyseDomain(url);
+    get type(): string {
+        return MODULE_TYPES.BEFORE;
     }
-    return true;
-  }
 
-  /**
-   * Return true if domain can be analysed.
-   *
-   * @param {string} domain
-   * @returns {boolean}
-   */
-  isAnalysableDomain(domain: string): boolean {
-    const date = new Date().getTime() + 86400000;
-    if (this.cache[domain] && this.cache[domain] < date) {
-      return false;
-    } else {
-      this.cache[domain] = date;
+    abstract init(context: WebAuditContextClass): void;
+
+    abstract analyseDomain(url: UrlWrapper): Promise<boolean>;
+
+    abstract finish(): void;
+
+    abstract getSchema(): any;
+
+    async analyse(url: UrlWrapper) {
+        if (this.isAnalysableDomain(url.url.hostname)) {
+            return this.analyseDomain(url);
+        }
+        return true;
     }
-    return true;
-  }
+
+    /**
+     * Return true if domain can be analysed.
+     *
+     * @param {string} domain
+     * @returns {boolean}
+     */
+    isAnalysableDomain(domain: string): boolean {
+        const date = new Date().getTime() + 86400000;
+        if (this.cache[domain] && this.cache[domain] < date) {
+            return false;
+        } else {
+            this.cache[domain] = date;
+        }
+        return true;
+    }
 
 }

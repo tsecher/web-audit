@@ -68,7 +68,7 @@ export default class CSVStorage {
      * Store file.
      */
     file(stored, input, context) {
-        const output = path.join(this.dirPath, module.id, 'files', String(context?.version || 'undefined'), input);
+        const output = path.join(this.dirPath, stored?.id || '', 'files', String(context?.version || 'undefined'), input);
         fs.mkdirSync(path.dirname(output), { recursive: true });
         fs.renameSync(input, output);
     }

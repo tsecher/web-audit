@@ -4,50 +4,50 @@ import {WebAuditContextClass} from '##/core/WebAuditContext';
 
 export class WebAuditEventClass {
 
-  private _context: WebAuditContextClass | undefined;
+    private _context: WebAuditContextClass | undefined;
 
-  constructor(
-    protected event = new events.EventEmitter(),
-  ) {
-  }
+    constructor(
+        protected event = new events.EventEmitter(),
+    ) {
+    }
 
-  get context(): WebAuditContextClass | undefined {
-    return this._context;
-  }
+    get context(): WebAuditContextClass | undefined {
+        return this._context;
+    }
 
-  set context(value: WebAuditContextClass | undefined) {
-    this._context = value;
-  }
+    set context(value: WebAuditContextClass | undefined) {
+        this._context = value;
+    }
 
-  /**
-   * Emit event;
-   *
-   * @param {string} eventName
-   * @param args
-   */
-  emit(eventName: string, args: any): WebAuditEventClass {
-    this.event.emit(
-      eventName,
-      {
-        context: this._context || {},
-        config: this._context?.config,
-        data: args,
-      },
-    );
+    /**
+     * Emit event;
+     *
+     * @param {string} eventName
+     * @param args
+     */
+    emit(eventName: string, args: any): WebAuditEventClass {
+        this.event.emit(
+            eventName,
+            {
+                context: this._context || {},
+                config: this._context?.config,
+                data: args,
+            },
+        );
 
-    return this;
-  }
+        return this;
+    }
 
-  /**
-   * Listen event.
-   *
-   * @param {string} eventName
-   * @param cb
-   * @returns {WebAuditEventClass}
-   */
-  on(eventName: string, cb: any): WebAuditEventClass {
-    this.event.on(eventName, cb);
+    /**
+     * Listen event.
+     *
+     * @param {string} eventName
+     * @param cb
+     * @returns {WebAuditEventClass}
+     */
+    on(eventName: string, cb: any): WebAuditEventClass {
+        this.event.on(eventName, cb);
 
-    return this;
-  }
+        return this;
+    }
 }

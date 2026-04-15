@@ -6,3 +6,4 @@
 config.json
 yarn-error.log
 web-audit.config.json
+web-audit.config.js
