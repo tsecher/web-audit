@@ -3,7 +3,7 @@ import path from 'path';
 
 import {AppConfig} from '##/app/conf/AppConfig';
 import {JourneyInterface} from '##/journey/JourneyInterface';
-import DefaultPuppeteerJourney from '##/journey/DefaultPuppeteerJourney';
+import ScrollToBottomJourney from '##/journey/ScrollToBottomJourney';
 import {WebAuditCrawler} from '##/crawlers/Crawler';
 
 /**
@@ -34,7 +34,7 @@ class JourneyFinderClass {
      */
     protected getEmbedJourneys(): JourneyInterface[] {
         return [
-            new DefaultPuppeteerJourney(),
+            new ScrollToBottomJourney(),
         ];
     }
 
@@ -46,7 +46,7 @@ class JourneyFinderClass {
     protected async initJourneys() {
         const journeys: any = {};
 
-        const defaultJourney = new DefaultPuppeteerJourney();
+        const defaultJourney = new ScrollToBottomJourney();
         journeys[defaultJourney.id] = defaultJourney;
 
         (await this.getJourneysFromConfig())

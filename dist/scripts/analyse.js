@@ -5,7 +5,7 @@ import { AppConfig, AppConfigFileName } from '##/app/conf/AppConfig';
 import { WebAuditLogger } from '##/loggers/Logger';
 import { getArgs } from '##/scripts/args';
 // Init config.
-AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
+await AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
 /**
  * Launch analyse.
  *

@@ -8,7 +8,7 @@ import {getArgs} from '##/scripts/args';
 
 
 // Init config.
-AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
+await AppConfig.setConfig(path.resolve(process.cwd(), AppConfigFileName));
 
 /**
  * Launch analyse.

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { AppConfig } from '##/app/conf/AppConfig';
-import DefaultPuppeteerJourney from '##/journey/DefaultPuppeteerJourney';
+import ScrollToBottomJourney from '##/journey/ScrollToBottomJourney';
 /**
  * Find journey according to configuration file.
  */
@@ -26,7 +26,7 @@ class JourneyFinderClass {
      */
     getEmbedJourneys() {
         return [
-            new DefaultPuppeteerJourney(),
+            new ScrollToBottomJourney(),
         ];
     }
     /**
@@ -36,7 +36,7 @@ class JourneyFinderClass {
      */
     async initJourneys() {
         const journeys = {};
-        const defaultJourney = new DefaultPuppeteerJourney();
+        const defaultJourney = new ScrollToBottomJourney();
         journeys[defaultJourney.id] = defaultJourney;
         (await this.getJourneysFromConfig())
             .map((journey) => {
