@@ -50,6 +50,36 @@ export class AppConfigClass {
             throw new Error(`No config file defined. Please use AppConfig.setConfig(configFilePath)`);
         }
     }
+
+    /**
+     * Add config to default one.
+     *
+     * @param conf
+     */
+    public addConfig(conf: any): void {
+        if (Object.keys(conf).length) {
+            this.deepMerge(this.config, conf);
+        }
+    }
+
+    private deepMerge(destination: any, source: any) {
+        Object.keys(source).forEach(key => {
+            if (typeof destination[key] !== 'undefined') {
+                if (this.isObject(destination[key]) && this.isObject(source[key])) {
+                    this.deepMerge(destination[key], source[key]);
+                    return;
+                }
+            }
+
+            if (!this.isObject(destination[key])){
+                destination[key] = source[key]
+            }
+        })
+    }
+
+    private isObject(item: any) {
+        return typeof item === 'object' && item !== null
+    }
 }
 
 export const AppConfig: AppConfigClass = new AppConfigClass();

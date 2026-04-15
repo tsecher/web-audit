@@ -12,6 +12,7 @@ import { JourneyFinder } from '##/app/utils/AppJourneyFinder';
 import { CrawlerFinder } from '##/app/utils/AppCrawlerFinder';
 import { StorageFinder } from '##/app/utils/AppStorageFinder';
 import { LoggerFinder } from '##/app/utils/AppLoggerFinder';
+import { AppConfig } from "##/app/conf/AppConfig";
 // import prompts from 'prompts';
 const params = yargs(hideBin(process.argv)).argv;
 /**
@@ -279,15 +280,44 @@ async function getLogger(required) {
         shortcut: selected ? `--logger=${selected.id}` : '',
     };
 }
+async function getConfig(required, logger) {
+    let configFilePath = '';
+    if (params.config && typeof params.config === 'string') {
+        configFilePath = params.config;
+    }
+    // Manual
+    if (required && !configFilePath.length) {
+        const answer = await inquirer.prompt([{
+                type: 'text',
+                name: 'config',
+                message: `Config file path (relative to ${process.cwd()})`,
+            }]);
+        configFilePath = answer.config;
+    }
+    if (configFilePath.length && !fs.existsSync(configFilePath)) {
+        return getConfig(required, logger);
+    }
+    if (configFilePath.length) {
+        // Init conf.
+        const confFile = await import(path.join(process.cwd(), configFilePath));
+        const conf = confFile.config;
+        AppConfig.addConfig(conf);
+    }
+    return {
+        data: AppConfig.getConfig(),
+        shortcut: `--config=${configFilePath}`,
+    };
+}
 /**
  * Return user args.
  *
  * @returns {{urls: URL[]}}
  */
 export async function getArgs(required) {
-    const loggerData = await getLogger(required.indexOf('version') > -1);
+    const loggerData = await getLogger(true);
     const logger = loggerData.data;
     const args = {};
+    args.config = await getConfig(true, logger);
     args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
     args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
     args.modules = await getModules(required.indexOf('modules') > -1, logger);

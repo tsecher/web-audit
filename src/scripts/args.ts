@@ -18,6 +18,7 @@ import {CrawlerFinder} from '##/app/utils/AppCrawlerFinder';
 import {StorageFinder} from '##/app/utils/AppStorageFinder';
 import {StorageInterface} from '##/storage/Storage';
 import {LoggerFinder} from '##/app/utils/AppLoggerFinder';
+import {AppConfig, AppConfigFileName} from "##/app/conf/AppConfig";
 
 
 // import prompts from 'prompts';
@@ -336,6 +337,40 @@ async function getLogger(required: boolean): Promise<any> {
     };
 }
 
+async function getConfig(required: boolean, logger: LoggerInterface): Promise<any> {
+
+    let configFilePath: string = '';
+    if (params.config && typeof params.config === 'string') {
+        configFilePath = params.config
+    }
+    // Manual
+    if (required && !configFilePath.length) {
+        const answer = await inquirer.prompt([{
+            type: 'text',
+            name: 'config',
+            message: `Config file path (relative to ${process.cwd()})`,
+        }]);
+
+        configFilePath = answer.config;
+    }
+
+    if (configFilePath.length && !fs.existsSync(configFilePath)) {
+        return getConfig(required, logger);
+    }
+
+    if (configFilePath.length) {
+        // Init conf.
+        const confFile = await import(path.join(process.cwd(), configFilePath));
+        const conf = confFile.config;
+        AppConfig.addConfig(conf);
+    }
+
+    return {
+        data: AppConfig.getConfig(),
+        shortcut: `--config=${configFilePath}`,
+    };
+}
+
 /**
  * Return user args.
  *
@@ -343,10 +378,12 @@ async function getLogger(required: boolean): Promise<any> {
  */
 export async function getArgs(required: string[]) {
 
-    const loggerData = await getLogger(required.indexOf('version') > -1);
+    const loggerData = await getLogger(true);
     const logger: LoggerInterface = loggerData.data;
 
+
     const args: any = {};
+    args.config = await getConfig(true, logger);
     args.urls = required.indexOf('urls') > -1 ? await getUrlsArgs(required.indexOf('urls') > -1, logger) : await getFilesArgs(required.indexOf('urlsFiles') > -1, logger);
     args.version = await getVersionArgs(required.indexOf('version') > -1, logger);
     args.modules = await getModules(required.indexOf('modules') > -1, logger);
