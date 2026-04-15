@@ -313,7 +313,10 @@ export class WebAuditCrawler {
      * @private
      */
     isUserEligible(url) {
-        return this.options.isEligibleUrl ? this.options.isEligibleUrl(url, this) : true;
+        if (this.context.config.AppConfig.getConfig().crawler.isEligibleUrl) {
+            return this.context.config.AppConfig.getConfig().crawler.isEligibleUrl(url, this, this.context);
+        }
+        return true;
     }
     /**
      * To readable urls.

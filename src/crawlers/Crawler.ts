@@ -12,7 +12,6 @@ export interface WebAuditCrawlerType {
     crawlerOptions?: any;
     allowedStatus?: number[];
     followSearchParams?: boolean;
-    isEligibleUrl?: Function;
     uniqueParams?: string[];
 }
 
@@ -391,7 +390,10 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface, StoredInterfac
      * @private
      */
     private isUserEligible(url: URL) {
-        return this.options.isEligibleUrl ? this.options.isEligibleUrl(url, this) : true;
+        if (this.context.config.AppConfig.getConfig().crawler.isEligibleUrl) {
+            return this.context.config.AppConfig.getConfig().crawler.isEligibleUrl(url, this, this.context)
+        }
+        return true;
     }
 
     /**
