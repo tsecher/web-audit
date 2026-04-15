@@ -3,7 +3,9 @@ export const config = {
 		// 'node_modules/web-audit-module-ecoindex/src/modules/EcoIndexModule.js',
 	],
 	"crawlers": [],
-	"journeys": [],
+	"journeys": [
+	    // 'node_modules/web_audit/dist/journey/LandingJourney.js',
+	],
 	"storages": [],
 	"csv_storage": {
 		"directory": "./analyses/"

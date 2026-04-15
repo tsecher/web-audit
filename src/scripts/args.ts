@@ -339,12 +339,13 @@ async function getLogger(required: boolean): Promise<any> {
 
 async function getConfig(required: boolean, logger: LoggerInterface): Promise<any> {
 
-    let configFilePath: string = '';
+    let configFilePath: string = 'default';
     if (params.config && typeof params.config === 'string') {
         configFilePath = params.config
     }
+
     // Manual
-    if (required && !configFilePath.length) {
+    if (required && configFilePath !== 'default') {
         const answer = await inquirer.prompt([{
             type: 'text',
             name: 'config',
@@ -352,6 +353,10 @@ async function getConfig(required: boolean, logger: LoggerInterface): Promise<an
         }]);
 
         configFilePath = answer.config;
+    }
+
+    if (configFilePath === 'default') {
+        configFilePath = AppConfigFileName
     }
 
     if (configFilePath.length && !fs.existsSync(configFilePath)) {

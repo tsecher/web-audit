@@ -12,7 +12,7 @@ import { JourneyFinder } from '##/app/utils/AppJourneyFinder';
 import { CrawlerFinder } from '##/app/utils/AppCrawlerFinder';
 import { StorageFinder } from '##/app/utils/AppStorageFinder';
 import { LoggerFinder } from '##/app/utils/AppLoggerFinder';
-import { AppConfig } from "##/app/conf/AppConfig";
+import { AppConfig, AppConfigFileName } from "##/app/conf/AppConfig";
 // import prompts from 'prompts';
 const params = yargs(hideBin(process.argv)).argv;
 /**
@@ -281,18 +281,21 @@ async function getLogger(required) {
     };
 }
 async function getConfig(required, logger) {
-    let configFilePath = '';
+    let configFilePath = 'default';
     if (params.config && typeof params.config === 'string') {
         configFilePath = params.config;
     }
     // Manual
-    if (required && !configFilePath.length) {
+    if (required && configFilePath !== 'default') {
         const answer = await inquirer.prompt([{
                 type: 'text',
                 name: 'config',
                 message: `Config file path (relative to ${process.cwd()})`,
             }]);
         configFilePath = answer.config;
+    }
+    if (configFilePath === 'default') {
+        configFilePath = AppConfigFileName;
     }
     if (configFilePath.length && !fs.existsSync(configFilePath)) {
         return getConfig(required, logger);
