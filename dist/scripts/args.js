@@ -281,16 +281,16 @@ async function getLogger(required) {
     };
 }
 async function getConfig(required, logger) {
-    let configFilePath = 'default';
-    if (params.config && typeof params.config === 'string') {
+    let configFilePath = '';
+    if (params.config && typeof params.config === 'string' && params.config.length) {
         configFilePath = params.config;
     }
-    // Manual
-    if (required && configFilePath !== 'default') {
+    else {
         const answer = await inquirer.prompt([{
                 type: 'text',
                 name: 'config',
                 message: `Config file path (relative to ${process.cwd()})`,
+                default: 'default',
             }]);
         configFilePath = answer.config;
     }

@@ -390,7 +390,7 @@ export class WebAuditCrawler implements WebAuditCrawlerInterface, StoredInterfac
      * @private
      */
     private isUserEligible(url: URL) {
-        if (this.context.config.AppConfig.getConfig().crawler.isEligibleUrl) {
+        if (typeof this.context.config.AppConfig.getConfig().crawler?.isEligibleUrl !== 'undefined') {
             return this.context.config.AppConfig.getConfig().crawler.isEligibleUrl(url, this, this.context)
         }
         return true;

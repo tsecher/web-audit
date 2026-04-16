@@ -70,7 +70,7 @@ export class AppConfigClass {
         });
     }
     isObject(item) {
-        return typeof item === 'object' && item !== null;
+        return typeof item === 'object' && item !== null && !Array.isArray(item);
     }
 }
 export const AppConfig = new AppConfigClass();

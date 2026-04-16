@@ -339,17 +339,15 @@ async function getLogger(required: boolean): Promise<any> {
 
 async function getConfig(required: boolean, logger: LoggerInterface): Promise<any> {
 
-    let configFilePath: string = 'default';
-    if (params.config && typeof params.config === 'string') {
+    let configFilePath: string = '';
+    if (params.config && typeof params.config === 'string' && params.config.length) {
         configFilePath = params.config
-    }
-
-    // Manual
-    if (required && configFilePath !== 'default') {
+    } else {
         const answer = await inquirer.prompt([{
             type: 'text',
             name: 'config',
             message: `Config file path (relative to ${process.cwd()})`,
+            default: 'default',
         }]);
 
         configFilePath = answer.config;

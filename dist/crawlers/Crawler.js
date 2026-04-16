@@ -313,7 +313,7 @@ export class WebAuditCrawler {
      * @private
      */
     isUserEligible(url) {
-        if (this.context.config.AppConfig.getConfig().crawler.isEligibleUrl) {
+        if (typeof this.context.config.AppConfig.getConfig().crawler?.isEligibleUrl !== 'undefined') {
             return this.context.config.AppConfig.getConfig().crawler.isEligibleUrl(url, this, this.context);
         }
         return true;

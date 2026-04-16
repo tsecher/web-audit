@@ -78,7 +78,7 @@ export class AppConfigClass {
     }
 
     private isObject(item: any) {
-        return typeof item === 'object' && item !== null
+        return typeof item === 'object' && item !== null && !Array.isArray(item);
     }
 }
 

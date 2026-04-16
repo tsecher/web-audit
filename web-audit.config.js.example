@@ -1,13 +1,13 @@
 export const config = {
-	"modules": [
+	modules: [
 		// 'node_modules/web-audit-module-ecoindex/src/modules/EcoIndexModule.js',
 	],
-	"crawlers": [],
-	"journeys": [
+	crawlers: [],
+	journeys: [
 	    // 'node_modules/web_audit/dist/journey/LandingJourney.js',
 	],
-	"storages": [],
-	"csv_storage": {
-		"directory": "./analyses/"
+	storages: [],
+	csv_storage: {
+		directory: "./analyses/"
 	},
 }
