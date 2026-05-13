@@ -121,10 +121,12 @@ async function getModules(required: boolean, logger: LoggerInterface): Promise<a
  * @returns {URL[]}
  */
 async function getFilesArgs(required: boolean, logger: LoggerInterface): Promise<any> {
-    let urlsData: any = await getUrlsArgs(false, logger);
-
-    if (required && !urlsData.data?.length) {
-
+    let urlsData:any;
+    if (!params.file){
+        urlsData = await getUrlsArgs(false, logger);    
+    }
+    
+    if (required && !urlsData?.data?.length) {
         let file = params.file || '';
         let answer: any = {file: file};
         while (!fs.existsSync(file) || path.extname(file) !== '.csv') {

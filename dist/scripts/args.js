@@ -100,8 +100,11 @@ async function getModules(required, logger) {
  * @returns {URL[]}
  */
 async function getFilesArgs(required, logger) {
-    let urlsData = await getUrlsArgs(false, logger);
-    if (required && !urlsData.data?.length) {
+    let urlsData;
+    if (!params.file) {
+        urlsData = await getUrlsArgs(false, logger);
+    }
+    if (required && !urlsData?.data?.length) {
         let file = params.file || '';
         let answer = { file: file };
         while (!fs.existsSync(file) || path.extname(file) !== '.csv') {
