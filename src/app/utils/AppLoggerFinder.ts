@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import {AppConfig} from '##/app/conf/AppConfig';
-import {LoggerClass, LoggerInterface, WebAuditLogger} from '##/loggers/Logger';
+import {LoggerInterface, WebAuditLogger} from '##/loggers/Logger';
 
 /**
  * Find logger according to configuration file.

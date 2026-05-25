@@ -1,6 +1,5 @@
 import {StorageInterface} from '##/storage/Storage';
 import {WebAuditContextClass} from '##/core/WebAuditContext';
-import {ModuleInterface} from "##/modules/ModuleInterface";
 import {StoredInterface} from "##/storage/StoredInterface";
 
 /**

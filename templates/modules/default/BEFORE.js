@@ -35,10 +35,7 @@ export default class <%= CamelName; %>Module extends AbstractDomainModule {
 		this.context = context;
 
 		// Install store.
-		this.context.config.storage?.installStore('<%= snake_name; %>', this.context, {
-			url: 'URL',
-			// @TODO: Build storage.
-		});
+		this.context.config.storage?.installSchema(this, this.context);;
 
 		// Emit.
 		this.context.eventBus.emit(<%= CamelName; %>ModuleEvents.create<%= CamelName; %>Module, {module: this});

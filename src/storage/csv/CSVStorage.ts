@@ -99,7 +99,7 @@ export default class CSVStorage implements StorageInterface {
      * @param id
      * @private
      */
-    private getCSVValues(data: Object, id?: string): any {
+    protected getCSVValues(data: Object, id?: string): any {
         const values = this.getStringifiedValues(data);
         return this.getStructuredValues(values, id);
     }
@@ -111,7 +111,7 @@ export default class CSVStorage implements StorageInterface {
      * @param id
      * @private
      */
-    private getCSVLine(data: any, id?: string): string {
+    protected getCSVLine(data: any, id?: string): string {
         return `${this.getCSVValues(data, id).join(CSVStorage.SEPARATOR)}\r\n`;
     }
 
@@ -122,7 +122,7 @@ export default class CSVStorage implements StorageInterface {
      * @param context
      * @private
      */
-    private getFilePath(id: string, context: WebAuditContextClass) {
+    protected getFilePath(id: string, context: WebAuditContextClass) {
         return path.join(this.dirPath, String(context.version), `${id}.csv`);
     }
 
@@ -133,7 +133,7 @@ export default class CSVStorage implements StorageInterface {
      * @param id
      * @private
      */
-    private getStructuredValues(data: any, id?: string): any {
+    protected getStructuredValues(data: any, id?: string): any {
         if (!id || !this.structures[id]) {
             return Object.values(data);
         }
@@ -152,28 +152,36 @@ export default class CSVStorage implements StorageInterface {
      * @param data
      * @private
      */
-    private getStringifiedValues(data: any): any {
+    protected getStringifiedValues(data: any): any {
         const values: any = {};
-        Object.keys(data).forEach((key: string) => {
-            let value = data[key];
-            switch (typeof value) {
-                case 'number':
-                    value = value.toString();
-                    break;
-                case 'undefined':
-                    break;
-                default:
-                    value = value?.toString() || JSON.stringify(value);
-            }
-            values[key] = (value || '').split('\r\n')
-                .join('')
-                .split('\r')
-                .join('')
-                .split('\n')
-                .join('');
-        });
+        Object.keys(data).forEach((key: string) => {values[key] = this.getStringifiedValue(key, data[key], data)});
 
         return values;
+    }
+
+    /**
+     * Stringify a value.
+     * @param key 
+     * @param value 
+     * @param data 
+     * @returns 
+     */
+    protected getStringifiedValue(key:string, value:any, data:any):string{
+        switch (typeof value) {
+            case 'number':
+                value = value.toString();
+                break;
+            case 'undefined':
+                break;
+            default:
+                value = value?.toString() || JSON.stringify(value);
+        }
+        return (value || '').split('\r\n')
+            .join('')
+            .split('\r')
+            .join('')
+            .split('\n')
+            .join('');
     }
 
     /**

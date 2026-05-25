@@ -33,11 +33,7 @@ export default class <%= CamelName; %>Module extends AbstractPuppeteerJourneyMod
 	async init(context) {
 		this.context = context;
 		// Install <%= readable_name; %> store.
-		this.context.config.storage?.installStore('<%= snake_name; %>', this.context, {
-			url: 'Url',
-			context: 'Context',
-			// @TODO: Define storage
-		});
+		this.context.config.storage?..installSchema(this, this.context);;
 
 		// Emit.
 		this.context.eventBus.emit(<%= CamelName; %>ModuleEvents.create<%= CamelName; %>Module, {module: this});

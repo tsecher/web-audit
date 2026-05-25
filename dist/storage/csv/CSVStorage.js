@@ -128,25 +128,32 @@ export default class CSVStorage {
      */
     getStringifiedValues(data) {
         const values = {};
-        Object.keys(data).forEach((key) => {
-            let value = data[key];
-            switch (typeof value) {
-                case 'number':
-                    value = value.toString();
-                    break;
-                case 'undefined':
-                    break;
-                default:
-                    value = value?.toString() || JSON.stringify(value);
-            }
-            values[key] = (value || '').split('\r\n')
-                .join('')
-                .split('\r')
-                .join('')
-                .split('\n')
-                .join('');
-        });
+        Object.keys(data).forEach((key) => { values[key] = this.getStringifiedValue(key, data[key], data); });
         return values;
+    }
+    /**
+     * Stringify a value.
+     * @param key
+     * @param value
+     * @param data
+     * @returns
+     */
+    getStringifiedValue(key, value, data) {
+        switch (typeof value) {
+            case 'number':
+                value = value.toString();
+                break;
+            case 'undefined':
+                break;
+            default:
+                value = value?.toString() || JSON.stringify(value);
+        }
+        return (value || '').split('\r\n')
+            .join('')
+            .split('\r')
+            .join('')
+            .split('\n')
+            .join('');
     }
     /**
      * Return the group base path.
