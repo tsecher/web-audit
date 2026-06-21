@@ -1,9 +1,10 @@
 import { ModuleInterface } from "##/modules/ModuleInterface";
-import { Context } from "node:vm";
+import { WebAuditContextClass } from "##/core/WebAuditContext";
+
 
 class TargetHandler {
 
-    public getStructureLabels(stored: ModuleInterface, group_id: string, context: Context) {
+    public getStructureLabels(stored: ModuleInterface, group_id: string, context: WebAuditContextClass) {
         const headLine = {};
         Object.entries(stored.getSchema().structure[group_id].structure)
         .forEach(([field, structure]) => {
@@ -66,7 +67,7 @@ class TargetHandler {
         return `configTarget`;
     }
 
-    parseErrorData(stored:ModuleInterface, group_id:string, context: Context, data:any){
+    parseErrorData(stored:ModuleInterface, group_id:string, context: WebAuditContextClass, data:any){
         const result = {
             lineError: false,
             data: {...data},
@@ -85,7 +86,7 @@ class TargetHandler {
         return result;
     }
 
-    matchTarget(context: Context, module: ModuleInterface, group_id: string, field:string, value:any ) {
+    matchTarget(context: WebAuditContextClass, module: ModuleInterface, group_id: string, field:string, value:any ) {
         if(typeof module.getSchema == "function"){
 
             // Get schema.
