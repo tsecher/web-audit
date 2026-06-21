@@ -19,6 +19,10 @@ export interface LoggerInterface {
      */
     get id(): string;
 
+    /**
+     * Prepare logger.
+     */
+    prepare(): void;
 
     /**
      * Log a message.
@@ -81,6 +85,9 @@ export class LoggerClass implements LoggerInterface {
 
     get name(): string {
         return 'Console';
+    }
+
+    prepare(): void{
     }
 
     error(data: any, id?: string): void {

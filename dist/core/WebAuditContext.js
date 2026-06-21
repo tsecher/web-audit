@@ -28,6 +28,10 @@ export class WebAuditContextClass {
         this._version = version;
         return this;
     }
+    prepare() {
+        this.config.logger.prepare();
+        this.config.storage.prepare();
+    }
     get id() {
         return this._id;
     }

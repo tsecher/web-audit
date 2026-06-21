@@ -9,6 +9,8 @@ export class LoggerClass {
     get name() {
         return 'Console';
     }
+    prepare() {
+    }
     error(data, id) {
         this.log(data, id, colors.red);
     }

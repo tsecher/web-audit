@@ -7,6 +7,8 @@ export interface StorageInterface {
 
     get id(): string;
 
+    prepare(): void;
+
     init(urls: URL[], version: string): void;
 
     installSchema(stored: StoredInterface, context: WebAuditContextClass): void;
