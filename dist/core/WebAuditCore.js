@@ -20,7 +20,8 @@ export class WebAuditCoreClass {
     async crawlWebsite(CrawlerClass, baseUrlWrapper, journey, options = {}) {
         // Define context.
         this.context.setId('Crawl')
-            .setUrl(baseUrlWrapper.url);
+            .setUrl(baseUrlWrapper.url)
+            .prepare();
         // Crawl domain.
         options.baseUrl = baseUrlWrapper.url;
         const crawler = new CrawlerClass(this.context, baseUrlWrapper, options);
@@ -38,7 +39,8 @@ export class WebAuditCoreClass {
         // Define context.
         this.context.setId('Analyse')
             .setUrl()
-            .setData();
+            .setData()
+            .prepare();
         const modulesTypes = {};
         // Init and sort modules by types (puppeteer or default).
         for (const module of modules) {
