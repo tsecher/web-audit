@@ -11,6 +11,9 @@ class <%= CamelName; %>Class {
 		return '<%= readable_name; %>';
 	}
 
+    prepare(context) {
+    }
+
 	error(data, id) {
 		this.log(data, id);
 	}

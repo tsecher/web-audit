@@ -24,6 +24,11 @@ export default class CSVStorage {
     get name() {
         return 'CSV';
     }
+    /**
+     * {@inheritdoc}
+     */
+    prepare(context) {
+    }
     init(urls, version) {
         this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
     }

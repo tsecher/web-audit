@@ -7,7 +7,7 @@ export interface StorageInterface {
 
     get id(): string;
 
-    prepare(): void;
+    prepare(context: WebAuditContextClass): void;
 
     init(urls: URL[], version: string): void;
 

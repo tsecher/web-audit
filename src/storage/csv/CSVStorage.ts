@@ -36,6 +36,12 @@ export default class CSVStorage implements StorageInterface {
         return 'CSV';
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    prepare(context: WebAuditContextClass): void {
+    }
+
     init(urls: URL[], version: string) {
         this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
     }

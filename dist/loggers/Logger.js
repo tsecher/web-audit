@@ -9,7 +9,10 @@ export class LoggerClass {
     get name() {
         return 'Console';
     }
-    prepare() {
+    /**
+     * {@inheritdoc}
+     */
+    prepare(context) {
     }
     error(data, id) {
         this.log(data, id, colors.red);

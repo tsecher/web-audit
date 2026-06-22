@@ -29,8 +29,8 @@ export class WebAuditContextClass {
         return this;
     }
     prepare() {
-        this.config.logger.prepare();
-        this.config.storage.prepare();
+        this.config.logger.prepare(this);
+        this.config.storage.prepare(this);
     }
     get id() {
         return this._id;

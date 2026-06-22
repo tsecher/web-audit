@@ -38,8 +38,8 @@ export class WebAuditContextClass {
     }
 
     prepare():void{
-        this.config.logger.prepare();
-        this.config.storage.prepare();
+        this.config.logger.prepare(this);
+        this.config.storage.prepare(this);
     }
 
     get id(): string | undefined {

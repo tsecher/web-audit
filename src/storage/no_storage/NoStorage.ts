@@ -24,6 +24,12 @@ export default class NoStorage implements StorageInterface {
     /**
      * {@inheritdoc}
      */
+    prepare(context: WebAuditContextClass): void {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     init(urls: URL[], version: string) {
     }
 

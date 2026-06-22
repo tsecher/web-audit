@@ -1,3 +1,4 @@
+import { WebAuditContextClass } from '##/core/WebAuditContext';
 import colors from 'colors';
 
 /**
@@ -22,7 +23,7 @@ export interface LoggerInterface {
     /**
      * Prepare logger.
      */
-    prepare(): void;
+    prepare(context: WebAuditContextClass): void;
 
     /**
      * Log a message.
@@ -87,9 +88,12 @@ export class LoggerClass implements LoggerInterface {
         return 'Console';
     }
 
-    prepare(): void{
+    /**
+     * {@inheritdoc}
+     */
+    prepare(context: WebAuditContextClass): void {
     }
-
+    
     error(data: any, id?: string): void {
         this.log(data, id, colors.red);
     }
