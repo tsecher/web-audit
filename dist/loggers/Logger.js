@@ -1,4 +1,5 @@
 import colors from 'colors';
+import Table from 'cli-table3';
 /**
  * Logger class.
  */
@@ -32,8 +33,13 @@ export class LoggerClass {
     }
     result(name, values, id) {
         this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
-        console.table({ values }, Object.keys(values)
-            .filter((item) => item !== 'url'));
+        const table = new Table({
+            head: Object.keys(values),
+        });
+        table.push(Object.values(values));
+        console.log(table);
+        // console.table({values}, Object.keys(values)
+        //     .filter((item) => item !== 'url'));
     }
     /**
      * {@inheritdoc}

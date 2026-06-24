@@ -1,5 +1,6 @@
 import { WebAuditContextClass } from '##/core/WebAuditContext';
 import colors from 'colors';
+import Table from 'cli-table3';
 
 /**
  * Logger Interface.
@@ -117,8 +118,16 @@ export class LoggerClass implements LoggerInterface {
 
     result(name: string, values: any, id?: string): void {
         this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
-        console.table({values}, Object.keys(values)
-            .filter((item) => item !== 'url'));
+
+        const table = new Table({
+               head: Object.keys(values),
+            });
+
+        table.push(Object.values(values));
+        console.log(table);
+        
+        // console.table({values}, Object.keys(values)
+        //     .filter((item) => item !== 'url'));
     }
 
     /**

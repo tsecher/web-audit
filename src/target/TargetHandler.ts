@@ -4,7 +4,26 @@ import { WebAuditContextClass } from "##/core/WebAuditContext";
 
 class TargetHandler {
 
-    public getStructureLabels(stored: ModuleInterface, group_id: string, context: WebAuditContextClass) {
+    getSchemaGroupId(stored: ModuleInterface, result:any){
+        const structure = stored.getSchema().structure;
+        for( let group_id in structure) {
+            if(this.isSameKeys(structure[group_id].structure, result)){
+                return group_id;
+            }
+        }
+
+        return null;
+    }
+
+    isSameKeys(obj1 : any, obj2: any) {
+        const keys1 = Object.keys(obj1).sort();
+        const keys2 = Object.keys(obj2).sort();
+
+        return keys1.length === keys2.length &&
+            keys1.every((key, i) => key === keys2[i]);
+    }
+
+    getStructureLabels(stored: ModuleInterface, group_id: string, context: WebAuditContextClass) {
         const headLine = {};
         Object.entries(stored.getSchema().structure[group_id].structure)
         .forEach(([field, structure]) => {
