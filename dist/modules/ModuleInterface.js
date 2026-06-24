@@ -1,4 +1,6 @@
 export const ModuleEvents = {
+    beforeAllUrlProcess: 'beforeAllURLProcess',
+    afterAllUrlProcess: 'afterAllURLProcess',
     beforeUrlProcess: 'beforeURLProcess',
     afterUrlProcess: 'afterURLProcess',
     beforeAnalyse: 'beforeAnalyse',
