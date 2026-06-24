@@ -63,7 +63,7 @@ export default class <%= CamelName; %>Module extends AbstractDomainModule {
 			});
 			this.context?.eventBus.emit(ModuleEvents.onAnalyseResult, {module: this, url: urlWrapper, result: result});
 
-			this.context?.config?.logger.result(`<%= readable_name; %>`, summary, urlWrapper.url.toString());
+			this.context?.eventBus.emit(ModuleEvents.onAnalyseSummary, {module: this, group_id:`<%= readable_name; %>` , url: urlWrapper, summary: summary});
 			this.context?.config?.storage?.one('<%= snake_name; %>', this.context, result);
 
 			this.context?.eventBus.emit(ModuleEvents.endsComputing, {module: this});

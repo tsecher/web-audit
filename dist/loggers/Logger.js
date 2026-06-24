@@ -1,5 +1,6 @@
 import colors from 'colors';
 import Table from 'cli-table3';
+import { ModuleEvents } from '##/modules/ModuleInterface';
 /**
  * Logger class.
  */
@@ -14,6 +15,9 @@ export class LoggerClass {
      * {@inheritdoc}
      */
     prepare(context) {
+        context.eventBus.on(ModuleEvents.onAnalyseSummary, (data) => {
+            this.result(data.data.group_id, data.data.summary, data.data.url.url.toString());
+        });
     }
     error(data, id) {
         this.log(data, id, colors.red);
@@ -37,7 +41,7 @@ export class LoggerClass {
     }
     table(values) {
         const table = new Table({
-            head: Object.keys(values),
+            head: Object.keys(values).map(value => colors.bold(value)),
         });
         table.push(Object.values(values));
         console.log(table);

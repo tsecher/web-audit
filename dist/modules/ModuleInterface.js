@@ -6,6 +6,7 @@ export const ModuleEvents = {
     beforeAnalyse: 'beforeAnalyse',
     afterAnalyse: 'afterAnalyse',
     onAnalyseResult: 'onAnalyseResult',
+    onAnalyseSummary: 'onAnalyseSummary',
     startsComputing: 'startsComputing',
     endsComputing: 'endsComputing',
 };

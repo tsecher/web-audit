@@ -1,6 +1,7 @@
 import { WebAuditContextClass } from '##/core/WebAuditContext';
 import colors from 'colors';
 import Table from 'cli-table3';
+import { ModuleEvents } from '##/modules/ModuleInterface';
 
 /**
  * Logger Interface.
@@ -93,6 +94,9 @@ export class LoggerClass implements LoggerInterface {
      * {@inheritdoc}
      */
     prepare(context: WebAuditContextClass): void {
+        context.eventBus.on(ModuleEvents.onAnalyseSummary, (data:any) => {
+            this.result(data.data.group_id, data.data.summary, data.data.url.url.toString());
+        });
     }
     
     error(data: any, id?: string): void {
@@ -123,7 +127,7 @@ export class LoggerClass implements LoggerInterface {
 
     table(values:any) {
         const table = new Table({
-               head: Object.keys(values),
+               head: Object.keys(values).map(value => colors.bold(value)),
             });
 
         table.push(Object.values(values));
