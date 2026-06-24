@@ -1,4 +1,20 @@
 class TargetHandler {
+    getSchemaGroupId(stored, data){
+        const structure = stored.getSchema().structure;
+        for(let group_id in structure){
+            if(this.sameKeys(structure[group_id].structure, data)){
+                return group_id;
+            }
+        }
+        return null;
+    }
+    sameKeys(obj1, obj2){
+        const keys1 = Object.keys(obj1).sort();
+        const keys2 = Object.keys(obj2).sort();
+
+        return keys1.length === keys2.length &&
+                keys1.every((key, i) => key === keys2[i]);
+    }
     getStructureLabels(stored, group_id, context) {
         const headLine = {};
         Object.entries(stored.getSchema().structure[group_id].structure)
