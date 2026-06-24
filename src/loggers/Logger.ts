@@ -118,22 +118,22 @@ export class LoggerClass implements LoggerInterface {
 
     result(name: string, values: any, id?: string): void {
         this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
+        this.table(values);
+    }
 
+    table(values:any) {
         const table = new Table({
                head: Object.keys(values),
             });
 
         table.push(Object.values(values));
         console.log(table);
-        
-        // console.table({values}, Object.keys(values)
-        //     .filter((item) => item !== 'url'));
     }
 
     /**
      * {@inheritdoc}
      */
-    private log(data: any, id?: string, color?: Function): void {
+    protected log(data: any, id?: string, color?: Function): void {
         const variables = [];
         if (id) {
             variables.push(`[${id}] `);
