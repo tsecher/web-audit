@@ -62,6 +62,9 @@ export class WebAuditCoreClass {
             await module.init(this.context);
         }
 
+
+        this.context.eventBus.emit(ModuleEvents.beforeAllUrlProcess, {modules: modules, urls: urls, journey: journey, context: this.context});
+
         // Analyse before modules.
         await this.analyseModules(modulesTypes[MODULE_TYPES.BEFORE], urls);
 
@@ -81,6 +84,8 @@ export class WebAuditCoreClass {
         for (const module of modules) {
             await module.finish();
         }
+
+        this.context.eventBus.emit(ModuleEvents.afterAllUrlProcess, {modules: modules, urls: urls, journey: journey, context: this.context});
     }
 
     /**

@@ -3,6 +3,8 @@ import {UrlWrapper} from '../core/UrlWrapper';
 import {StoredInterface} from "##/storage/StoredInterface";
 
 export const ModuleEvents = {
+    beforeAllUrlProcess: 'beforeAllURLProcess',
+    afterAllUrlProcess: 'afterAllURLProcess',
     beforeUrlProcess: 'beforeURLProcess',
     afterUrlProcess: 'afterURLProcess',
     beforeAnalyse: 'beforeAnalyse',
