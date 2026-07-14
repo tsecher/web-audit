@@ -115,7 +115,12 @@ class TargetHandler {
             }
 
             // Config definition.
-            const definition = context.config.AppConfig.config.targets?.[module.id]?.[group_id]?.[field] || null;
+            const groupDef = context.config.AppConfig.config.targets?.[module.id]?.[group_id];
+            if(!groupDef) {
+                return;
+            }
+
+            const definition = groupDef[field] || null;
 
             // Config is function.
             if(typeof definition === 'function') {
