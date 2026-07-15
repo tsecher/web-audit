@@ -122,7 +122,7 @@ export class AbstractPuppeteerJourney extends AbstractEventsClass {
                 ...this.eventData,
                 ...{
                     step: this.step,
-                    name: name,
+                    name: this.currentContextName,
                 },
             };
             await this.trigger(PuppeteerJourneyEvents.JOURNEY_END_CONTEXT, eventData);
