@@ -46,7 +46,7 @@ export default class <%= CamelName; %>Module extends AbstractPuppeteerJourneyMod
 		journey.on(PuppeteerJourneyEvents.JOURNEY_START, async (data) => {
 		    // @TODO : Add journey events.
 		});
-		journey.on(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, async (data) => {
+		journey.on(PuppeteerJourneyEvents.JOURNEY_END_CONTEXT, async (data) => {
 		    this.contextsData[data.name] = this.getContextData(data);
 		});
 	}

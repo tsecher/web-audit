@@ -131,7 +131,7 @@ export class LoggerClass implements LoggerInterface {
             });
 
         table.push(Object.values(values));
-        console.log(table);
+        console.log(table.toString());
     }
 
     /**
