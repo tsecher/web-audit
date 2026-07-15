@@ -1,6 +1,7 @@
 import colors from 'colors';
 import Table from 'cli-table3';
 import { ModuleEvents } from '##/modules/ModuleInterface';
+import targetHandler from '##/target/TargetHandler';
 /**
  * Logger class.
  */
@@ -16,8 +17,25 @@ export class LoggerClass {
      */
     prepare(context) {
         context.eventBus.on(ModuleEvents.onAnalyseSummary, (data) => {
-            this.result(data.data.group_id, data.data.summary, data.data.url.url.toString());
+            const stored = data.data?.module || null;
+            const summary = data.data.summary || null;
+            const group_id = data.data.group_id || null;
+            if (stored && summary) {
+                this.onAnalyse(stored, group_id, context, summary);
+            }
         });
+    }
+    onAnalyse(stored, group_id, context, result) {
+        const parsedData = targetHandler.parseErrorData(stored, group_id, context, result);
+        console.log(result);
+        process.exit();
+        const summary = {};
+        const labels = targetHandler.getStructureLabels(stored, group_id, context);
+        Object.entries(parsedData.data).forEach(([id, data]) => {
+            let value = data.value;
+            summary[labels[id]] = data.value;
+        });
+        this.result(group_id, summary, result.url);
     }
     error(data, id) {
         this.log(data, id, colors.red);
@@ -44,7 +62,7 @@ export class LoggerClass {
             head: Object.keys(values).map(value => colors.bold(value)),
         });
         table.push(Object.values(values));
-        console.log(table);
+        console.log(table.toString());
     }
     /**
      * {@inheritdoc}

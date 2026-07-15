@@ -1,7 +1,8 @@
 import { WebAuditContextClass } from '##/core/WebAuditContext';
 import colors from 'colors';
 import Table from 'cli-table3';
-import { ModuleEvents } from '##/modules/ModuleInterface';
+import { ModuleEvents, ModuleInterface } from '##/modules/ModuleInterface';
+import targetHandler from '##/target/TargetHandler';
 
 /**
  * Logger Interface.
@@ -90,14 +91,39 @@ export class LoggerClass implements LoggerInterface {
         return 'Console';
     }
 
+   
     /**
      * {@inheritdoc}
      */
-    prepare(context: WebAuditContextClass): void {
-        context.eventBus.on(ModuleEvents.onAnalyseSummary, (data:any) => {
-            this.result(data.data.group_id, data.data.summary, data.data.url.url.toString());
+    prepare(context: WebAuditContextClass) {
+        context.eventBus.on(ModuleEvents.onAnalyseSummary, (data) => {
+            const stored = data.data?.module || null;
+			const summary = data.data.summary || null;
+			const group_id = data.data.group_id || null;
+			
+			
+			if (stored && summary) {
+				this.onAnalyse(stored, group_id, context, summary);
+			}
         });
     }
+
+    onAnalyse(stored:ModuleInterface, group_id: string, context: WebAuditContextClass, result:any) {
+		const parsedData = targetHandler.parseErrorData(stored, group_id, context, result);
+
+        console.log(result);
+        process.exit();
+		
+        const summary = {};
+        const labels = targetHandler.getStructureLabels(stored, group_id, context);
+
+        Object.entries(parsedData.data).forEach( ([id, data]) => {
+            let value = data.value;
+            summary[ labels[id] ] = data.value;
+        });
+
+        this.result(group_id, summary, result.url);
+	}
     
     error(data: any, id?: string): void {
         this.log(data, id, colors.red);
