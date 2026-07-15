@@ -153,7 +153,7 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
                 ...this.eventData,
                 ...{
                     step: this.step,
-                    name: name,
+                    name: this.currentContextName,
                 },
             };
             await this.trigger(PuppeteerJourneyEvents.JOURNEY_END_CONTEXT, eventData);
