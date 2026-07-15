@@ -25,6 +25,8 @@ export default class <%= CamelName; %>Journey extends DefaultPuppeteerJourney {
 	async journey(wrapper, urlWrapper) {
 		const wait = 1000;
 
+		await this.triggerNewContext('Visit and scroll');
+
 		await this.addStep(`Go to ${urlWrapper.url.toString()}`, async () => {
 			await wrapper.goto(urlWrapper.url.toString());
 		});
@@ -41,6 +43,6 @@ export default class <%= CamelName; %>Journey extends DefaultPuppeteerJourney {
 			await wrapper.wait(3 * wait);
 		});
 
-		await this.triggerNewContext('Visit and scroll');
+		await this.triggerEndContext();
 	}
 }

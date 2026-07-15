@@ -27,9 +27,10 @@ export default class LandingJourney extends AbstractPuppeteerJourney {
      * {@inheritdoc}
      */
     async journey(wrapper, url) {
+        await this.triggerNewContext('Visit');
         await this.addStep(`Go to ${url.url.toString()}`, async () => {
             await wrapper.goto(url.url.toString());
         });
-        await this.triggerNewContext('Visit');
+        await this.triggerEndContext();
     }
 }
