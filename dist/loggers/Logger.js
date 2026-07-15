@@ -27,12 +27,9 @@ export class LoggerClass {
     }
     onAnalyse(stored, group_id, context, result) {
         const parsedData = targetHandler.parseErrorData(stored, group_id, context, result);
-        console.log(result);
-        process.exit();
         const summary = {};
         const labels = targetHandler.getStructureLabels(stored, group_id, context);
         Object.entries(parsedData.data).forEach(([id, data]) => {
-            let value = data.value;
             summary[labels[id]] = data.value;
         });
         this.result(group_id, summary, result.url);

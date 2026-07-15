@@ -110,15 +110,11 @@ export class LoggerClass implements LoggerInterface {
 
     onAnalyse(stored:ModuleInterface, group_id: string, context: WebAuditContextClass, result:any) {
 		const parsedData = targetHandler.parseErrorData(stored, group_id, context, result);
-
-        console.log(result);
-        process.exit();
 		
         const summary = {};
         const labels = targetHandler.getStructureLabels(stored, group_id, context);
 
         Object.entries(parsedData.data).forEach( ([id, data]) => {
-            let value = data.value;
             summary[ labels[id] ] = data.value;
         });
 
