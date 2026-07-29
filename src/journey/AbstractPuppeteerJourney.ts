@@ -13,6 +13,7 @@ export const PuppeteerJourneyEvents = {
     JOURNEY_START: 'Journey start',
     JOURNEY_END: 'Journey end',
     JOURNEY_NEW_CONTEXT: 'Journey new context',
+    JOURNEY_END_CONTEXT: 'Journey end context',
     JOURNEY_ERROR: 'Journey error',
     JOURNEY_CLOSE: 'Journey close',
     JOURNEY_BEFORE_STEP: 'Before step',
@@ -35,6 +36,8 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
     private eventData: any;
 
     private _context: WebAuditContextClass | undefined;
+
+    private currentContextName: string | undefined;
 
     /**
      * Constructor.
@@ -131,6 +134,7 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
      * @returns {Promise<void>}
      */
     async triggerNewContext(name: string) {
+        this.triggerEndContext();
         this._checkStep();
         const eventData: any = {
             ...this.eventData,
@@ -139,7 +143,21 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
                 name: name,
             },
         };
+        this.currentContextName = name;
         await this.trigger(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, eventData);
+    }
+
+    async triggerEndContext() {
+        if(this.currentContextName) {
+            const eventData: any = {
+                ...this.eventData,
+                ...{
+                    step: this.step,
+                    name: this.currentContextName,
+                },
+            };
+            await this.trigger(PuppeteerJourneyEvents.JOURNEY_END_CONTEXT, eventData);
+        }
     }
 
     /**

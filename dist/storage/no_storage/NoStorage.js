@@ -17,6 +17,11 @@ export default class NoStorage {
     /**
      * {@inheritdoc}
      */
+    prepare(context) {
+    }
+    /**
+     * {@inheritdoc}
+     */
     init(urls, version) {
     }
     /**

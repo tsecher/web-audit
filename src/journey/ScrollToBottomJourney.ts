@@ -39,6 +39,8 @@ export default class ScrollToBottomJourney extends AbstractPuppeteerJourney {
     async journey(wrapper: PageWrapper, url: UrlWrapper): Promise<void> {
         const wait = 1000;
 
+        await this.triggerNewContext('Visit and scroll');
+
         await this.addStep(`Go to ${url.url.toString()}`, async () => {
             await wrapper.goto(url.url.toString());
         });
@@ -55,7 +57,7 @@ export default class ScrollToBottomJourney extends AbstractPuppeteerJourney {
             await wrapper.wait(3 * wait);
         });
 
-        await this.triggerNewContext('Visit and scroll');
+        await this.triggerEndContext();
     }
 
 }

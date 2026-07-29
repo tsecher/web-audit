@@ -20,6 +20,12 @@ class <%= CamelName; %>StorageClass {
     /**
      * {@inheritdoc}
      */
+    prepare(context) {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     init(urls, version) {
     }
     /**

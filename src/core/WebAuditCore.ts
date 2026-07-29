@@ -27,7 +27,8 @@ export class WebAuditCoreClass {
     public async crawlWebsite(CrawlerClass: any, baseUrlWrapper: UrlWrapper, journey: JourneyInterface, options: any = {}): Promise<void> {
         // Define context.
         this.context.setId('Crawl')
-            .setUrl(baseUrlWrapper.url);
+            .setUrl(baseUrlWrapper.url)
+            .prepare();
 
         // Crawl domain.
         options.baseUrl = baseUrlWrapper.url;
@@ -48,7 +49,8 @@ export class WebAuditCoreClass {
         // Define context.
         this.context.setId('Analyse')
             .setUrl()
-            .setData();
+            .setData()
+            .prepare();
 
         const modulesTypes: any = {};
 
@@ -59,6 +61,9 @@ export class WebAuditCoreClass {
 
             await module.init(this.context);
         }
+
+
+        this.context.eventBus.emit(ModuleEvents.beforeAllUrlProcess, {modules: modules, urls: urls, journey: journey, context: this.context});
 
         // Analyse before modules.
         await this.analyseModules(modulesTypes[MODULE_TYPES.BEFORE], urls);
@@ -79,6 +84,8 @@ export class WebAuditCoreClass {
         for (const module of modules) {
             await module.finish();
         }
+
+        this.context.eventBus.emit(ModuleEvents.afterAllUrlProcess, {modules: modules, urls: urls, journey: journey, context: this.context});
     }
 
     /**

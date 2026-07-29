@@ -11,6 +11,12 @@ class <%= CamelName; %>Class {
 		return '<%= readable_name; %>';
 	}
 
+    prepare(context) {
+		context.eventBus.on(ModuleEvents.onAnalyseSummary, (data) => {
+			this.result(data.data.group_id, data.data.summary, data.data.url.url.toString());
+		});
+    }
+
 	error(data, id) {
 		this.log(data, id);
 	}
@@ -31,6 +37,17 @@ class <%= CamelName; %>Class {
 		this.log(`${`[${name}] : `}`, id);
 		console.table({ values }, Object.keys(values)
 			.filter((item) => item !== 'url'));
+	}
+	result(name, values, id) {
+		this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
+		this.table(values);
+	}
+	table(values) {
+		const table = new Table({
+			head: Object.keys(values).map(value => colors.bold(value)),
+		});
+		table.push(Object.values(values));
+		console.log(table);
 	}
 
 	/**

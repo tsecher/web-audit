@@ -1,4 +1,8 @@
+import { WebAuditContextClass } from '##/core/WebAuditContext';
 import colors from 'colors';
+import Table from 'cli-table3';
+import { ModuleEvents, ModuleInterface } from '##/modules/ModuleInterface';
+import targetHandler from '##/target/TargetHandler';
 
 /**
  * Logger Interface.
@@ -19,6 +23,10 @@ export interface LoggerInterface {
      */
     get id(): string;
 
+    /**
+     * Prepare logger.
+     */
+    prepare(context: WebAuditContextClass): void;
 
     /**
      * Log a message.
@@ -83,6 +91,36 @@ export class LoggerClass implements LoggerInterface {
         return 'Console';
     }
 
+   
+    /**
+     * {@inheritdoc}
+     */
+    prepare(context: WebAuditContextClass) {
+        context.eventBus.on(ModuleEvents.onAnalyseSummary, (data) => {
+            const stored = data.data?.module || null;
+			const summary = data.data.summary || null;
+			const group_id = data.data.group_id || null;
+			
+			
+			if (stored && summary) {
+				this.onAnalyse(stored, group_id, context, summary);
+			}
+        });
+    }
+
+    onAnalyse(stored:ModuleInterface, group_id: string, context: WebAuditContextClass, result:any) {
+		const parsedData = targetHandler.parseErrorData(stored, group_id, context, result);
+		
+        const summary = {};
+        const labels = targetHandler.getStructureLabels(stored, group_id, context);
+
+        Object.entries(labels).forEach(([id, data]) => {
+            summary[labels[id]] = parsedData.data[id].value;
+        });
+
+        this.result(group_id, summary, result.url);
+	}
+    
     error(data: any, id?: string): void {
         this.log(data, id, colors.red);
     }
@@ -106,14 +144,22 @@ export class LoggerClass implements LoggerInterface {
 
     result(name: string, values: any, id?: string): void {
         this.log(`${colors.bgGreen(`[${name}] : `)}`, id);
-        console.table({values}, Object.keys(values)
-            .filter((item) => item !== 'url'));
+        this.table(values);
+    }
+
+    table(values:any) {
+        const table = new Table({
+               head: Object.keys(values).map(value => colors.bold(value)),
+            });
+
+        table.push(Object.values(values));
+        console.log(table.toString());
     }
 
     /**
      * {@inheritdoc}
      */
-    private log(data: any, id?: string, color?: Function): void {
+    protected log(data: any, id?: string, color?: Function): void {
         const variables = [];
         if (id) {
             variables.push(`[${id}] `);

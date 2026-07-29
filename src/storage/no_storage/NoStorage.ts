@@ -1,6 +1,5 @@
 import {StorageInterface} from '##/storage/Storage';
 import {WebAuditContextClass} from '##/core/WebAuditContext';
-import {ModuleInterface} from "##/modules/ModuleInterface";
 import {StoredInterface} from "##/storage/StoredInterface";
 
 /**
@@ -20,6 +19,12 @@ export default class NoStorage implements StorageInterface {
      */
     get name(): string {
         return 'No storage';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    prepare(context: WebAuditContextClass): void {
     }
 
     /**

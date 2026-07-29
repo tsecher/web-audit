@@ -8,6 +8,7 @@ export const PuppeteerJourneyEvents = {
     JOURNEY_START: 'Journey start',
     JOURNEY_END: 'Journey end',
     JOURNEY_NEW_CONTEXT: 'Journey new context',
+    JOURNEY_END_CONTEXT: 'Journey end context',
     JOURNEY_ERROR: 'Journey error',
     JOURNEY_CLOSE: 'Journey close',
     JOURNEY_BEFORE_STEP: 'Before step',
@@ -21,6 +22,7 @@ export class AbstractPuppeteerJourney extends AbstractEventsClass {
     step = 0;
     eventData;
     _context;
+    currentContextName;
     /**
      * Constructor.
      */
@@ -102,6 +104,7 @@ export class AbstractPuppeteerJourney extends AbstractEventsClass {
      * @returns {Promise<void>}
      */
     async triggerNewContext(name) {
+        this.triggerEndContext();
         this._checkStep();
         const eventData = {
             ...this.eventData,
@@ -110,7 +113,20 @@ export class AbstractPuppeteerJourney extends AbstractEventsClass {
                 name: name,
             },
         };
+        this.currentContextName = name;
         await this.trigger(PuppeteerJourneyEvents.JOURNEY_NEW_CONTEXT, eventData);
+    }
+    async triggerEndContext() {
+        if (this.currentContextName) {
+            const eventData = {
+                ...this.eventData,
+                ...{
+                    step: this.step,
+                    name: this.currentContextName,
+                },
+            };
+            await this.trigger(PuppeteerJourneyEvents.JOURNEY_END_CONTEXT, eventData);
+        }
     }
     /**
      * Check if journey can still run.

@@ -32,11 +32,7 @@ export default class <%= CamelName; %>Module extends AbstractPuppeteerJourneyMod
 	async init(context) {
 		this.context = context;
 		// Install <%= readable_name; %> store.
-		this.context.config.storage?.installStore('<%= snake_name; %>', this.context, {
-			url: 'Url',
-			context: 'Context',
-			// @TODO: Define storage
-		});
+		this.context.config.storage?.installSchema(this, this.context);
 
 		// Emit.
 		this.context.eventBus.emit(<%= CamelName; %>ModuleEvents.create<%= CamelName; %>Module, {module: this});
@@ -78,7 +74,7 @@ export default class <%= CamelName; %>Module extends AbstractPuppeteerJourneyMod
 			// @TODO: Add summary
 		};
 		this.context?.eventBus.emit(<%= CamelName; %>ModuleEvents.onResult, eventData);
-		this.context?.config?.logger.result(`<%= readable_name; %>`, eventData.result, urlWrapper.url.toString());
+		this.context?.eventBus.emit(ModuleEvents.onAnalyseSummary, {module: this, group_id:`<%= readable_name; %>` , url: urlWrapper, summary: eventData.result});
 		this.context?.config?.storage?.add('<%= snake_name; %>', this.context, eventData.result);
 		this.context?.eventBus.emit(ModuleEvents.afterAnalyse, eventData);
 		this.context?.eventBus.emit(<%= CamelName; %>ModuleEvents.afterAnalyse, eventData);
