@@ -1,6 +1,9 @@
 /**
  * <%= CamelName; %> class.
  */
+import {StoredInterface} from "../../../src/storage/StoredInterface.ts";
+import {WebAuditContextClass} from "../../../src/core/WebAuditContext.ts";
+
 class <%= CamelName; %>StorageClass {
 
     /**
@@ -46,7 +49,7 @@ class <%= CamelName; %>StorageClass {
     /**
      * Add file.
      */
-    file(module, input, context) {
+    file(module, data, file_name, context) {
     }
 }
 

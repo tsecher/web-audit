@@ -10,4 +10,14 @@ export const config = {
 	csv_storage: {
 		directory: "./analyses/"
 	},
+	//browser: {
+    //	browserArgs: [
+    //		'--no-sandbox',
+    //		'--ignore-certificate-errors',
+    //	],
+    //	viewport: {
+    //        width: 1920, height: 1080, isMobile: false,
+    //    },
+    //    timeout: 180000,
+    //},
 }

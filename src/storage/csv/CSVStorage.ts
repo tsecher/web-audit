@@ -92,10 +92,11 @@ export default class CSVStorage implements StorageInterface {
     /**
      * Store file.
      */
-    file(stored: StoredInterface | null, input: string, context: WebAuditContextClass): void {
-        const output = path.join(this.dirPath, stored?.id || '', 'files', String(context?.version || 'undefined'), input);
-        fs.mkdirSync(path.dirname(output), {recursive: true});
-        fs.renameSync(input, output);
+    file(stored: StoredInterface | null, data: string, file_name: string, context: WebAuditContextClass): void {
+        const group_path = this.getGroupPath(stored, file_name);
+        const file_path = this.getFilePath(group_path, context, '');
+        fs.mkdirSync(path.dirname(file_path), { recursive: true });
+        fs.writeFileSync(this.getFilePath(group_path, context, ''), data);
     }
 
     /**
@@ -128,8 +129,8 @@ export default class CSVStorage implements StorageInterface {
      * @param context
      * @private
      */
-    protected getFilePath(id: string, context: WebAuditContextClass) {
-        return path.join(this.dirPath, String(context.version), `${id}.csv`);
+    protected getFilePath(id: string, context: WebAuditContextClass, extension: string = `.csv`) {
+        return path.join(this.dirPath, String(context.version), `${id}${extension}`);
     }
 
     /**
@@ -160,19 +161,21 @@ export default class CSVStorage implements StorageInterface {
      */
     protected getStringifiedValues(data: any): any {
         const values: any = {};
-        Object.keys(data).forEach((key: string) => {values[key] = this.getStringifiedValue(key, data[key], data)});
+        Object.keys(data).forEach((key: string) => {
+            values[key] = this.getStringifiedValue(key, data[key], data)
+        });
 
         return values;
     }
 
     /**
      * Stringify a value.
-     * @param key 
-     * @param value 
-     * @param data 
-     * @returns 
+     * @param key
+     * @param value
+     * @param data
+     * @returns
      */
-    protected getStringifiedValue(key:string, value:any, data:any):string{
+    protected getStringifiedValue(key: string, value: any, data: any): string {
         switch (typeof value) {
             case 'number':
                 value = value.toString();

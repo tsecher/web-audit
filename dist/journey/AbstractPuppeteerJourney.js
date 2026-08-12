@@ -104,7 +104,6 @@ export class AbstractPuppeteerJourney extends AbstractEventsClass {
      * @returns {Promise<void>}
      */
     async triggerNewContext(name) {
-        this.triggerEndContext();
         this._checkStep();
         const eventData = {
             ...this.eventData,

@@ -72,10 +72,11 @@ export default class CSVStorage {
     /**
      * Store file.
      */
-    file(stored, input, context) {
-        const output = path.join(this.dirPath, stored?.id || '', 'files', String(context?.version || 'undefined'), input);
-        fs.mkdirSync(path.dirname(output), { recursive: true });
-        fs.renameSync(input, output);
+    file(stored, data, file_name, context) {
+        const group_path = this.getGroupPath(stored, file_name);
+        const file_path = this.getFilePath(group_path, context, '');
+        fs.mkdirSync(path.dirname(file_path), { recursive: true });
+        fs.writeFileSync(this.getFilePath(group_path, context, ''), data);
     }
     /**
      * Get csv values.
@@ -105,8 +106,8 @@ export default class CSVStorage {
      * @param context
      * @private
      */
-    getFilePath(id, context) {
-        return path.join(this.dirPath, String(context.version), `${id}.csv`);
+    getFilePath(id, context, extension = `.csv`) {
+        return path.join(this.dirPath, String(context.version), `${id}${extension}`);
     }
     /**
      * Get the data structure from head.
@@ -133,7 +134,9 @@ export default class CSVStorage {
      */
     getStringifiedValues(data) {
         const values = {};
-        Object.keys(data).forEach((key) => { values[key] = this.getStringifiedValue(key, data[key], data); });
+        Object.keys(data).forEach((key) => {
+            values[key] = this.getStringifiedValue(key, data[key], data);
+        });
         return values;
     }
     /**

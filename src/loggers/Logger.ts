@@ -91,7 +91,6 @@ export class LoggerClass implements LoggerInterface {
         return 'Console';
     }
 
-   
     /**
      * {@inheritdoc}
      */
@@ -100,8 +99,7 @@ export class LoggerClass implements LoggerInterface {
             const stored = data.data?.module || null;
 			const summary = data.data.summary || null;
 			const group_id = data.data.group_id || null;
-			
-			
+
 			if (stored && summary) {
 				this.onAnalyse(stored, group_id, context, summary);
 			}
@@ -110,17 +108,17 @@ export class LoggerClass implements LoggerInterface {
 
     onAnalyse(stored:ModuleInterface, group_id: string, context: WebAuditContextClass, result:any) {
 		const parsedData = targetHandler.parseErrorData(stored, group_id, context, result);
-		
+
         const summary = {};
         const labels = targetHandler.getStructureLabels(stored, group_id, context);
 
         Object.entries(labels).forEach(([id, data]) => {
-            summary[labels[id]] = parsedData.data[id].value;
+            summary[labels[id]] = parsedData.data[id]?.value;
         });
 
         this.result(group_id, summary, result.url);
 	}
-    
+
     error(data: any, id?: string): void {
         this.log(data, id, colors.red);
     }

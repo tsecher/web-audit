@@ -17,5 +17,5 @@ export interface StorageInterface {
 
     one(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void;
 
-    file(stored: StoredInterface | null, input: string, context: WebAuditContextClass): void;
+    file(stored: StoredInterface | null, data: string, file_name: string, context: WebAuditContextClass): void;
 }

@@ -42,6 +42,6 @@ export default class NoStorage {
     /**
      * Add file.
      */
-    file(stored, input, context) {
+    file(stored, data, file_name, context) {
     }
 }

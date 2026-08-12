@@ -54,7 +54,7 @@ export default class NoStorage implements StorageInterface {
     /**
      * Add file.
      */
-    file(stored: StoredInterface, input: string, context: WebAuditContextClass): void {
+    file(stored: StoredInterface | null, data: string, file_name: string, context: WebAuditContextClass): void {
     }
 
 }

@@ -4,6 +4,7 @@ import puppeteer from 'puppeteer';
 import {scrollPageToBottom} from 'puppeteer-autoscroll-down';
 
 import {WebAuditContextClass} from '##/core/WebAuditContext';
+import {AppConfig} from "##/app/conf/AppConfig";
 
 
 const userAgents = [
@@ -75,6 +76,7 @@ export class PageWrapper {
         this.options = {
             ...DEFAULT_OPTIONS,
             ...options,
+            ...AppConfig.getConfig().browser
         };
     }
 

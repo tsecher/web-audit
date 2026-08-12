@@ -134,7 +134,6 @@ export abstract class AbstractPuppeteerJourney extends AbstractEventsClass imple
      * @returns {Promise<void>}
      */
     async triggerNewContext(name: string) {
-        this.triggerEndContext();
         this._checkStep();
         const eventData: any = {
             ...this.eventData,
