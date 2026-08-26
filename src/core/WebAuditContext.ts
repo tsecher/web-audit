@@ -1,5 +1,6 @@
 import {WebAuditConfigClass} from '##/core/WebAuditConfig';
 import {WebAuditEventClass} from '##/core/WebAuditEvent';
+import {AppConfig} from "##/app/conf/AppConfig";
 
 /**
  * Context.
@@ -37,7 +38,10 @@ export class WebAuditContextClass {
         return this;
     }
 
-    prepare():void{
+    prepare(): void {
+        if (typeof AppConfig.getConfig()?.prepare === "function") {
+            AppConfig.getConfig()?.prepare(this);
+        }
         this.config.logger.prepare(this);
         this.config.storage.prepare(this);
     }

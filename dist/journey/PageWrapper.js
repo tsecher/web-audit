@@ -26,6 +26,18 @@ export const DEFAULT_OPTIONS = {
     timeout: 180000,
 };
 /**
+ * Page events.
+ *
+ * @type {{JOURNEY_START: string, JOURNEY_END: string}}
+ */
+export const PageEvents = {
+    BROWSER_INIT: 'Browser init',
+    BROWSER_CLOSE: 'Browser close',
+    PAGE_NEW_PAGE: 'new page',
+    PAGE_GOTO: 'go to page',
+    PAGE_SNAP: 'page snap',
+};
+/**
  * Puppeteer page wrapper provides page tools for journey.
  */
 export class PageWrapper {
@@ -78,6 +90,7 @@ export class PageWrapper {
                 ignoreDefaultArgs: ['--disable-gpu', '--enable-automation'],
             });
         }
+        this.context?.eventBus?.emit(PageEvents.BROWSER_INIT, { wrapper: this, browser: this.browser });
         return Promise.resolve(this.browser);
     }
     /**
@@ -86,6 +99,7 @@ export class PageWrapper {
      * @returns {Promise<PageWrapper>}
      */
     async close() {
+        this.context?.eventBus?.emit(PageEvents.BROWSER_CLOSE, { wrapper: this, browser: this.browser });
         if (this.browser) {
             await this.browser.close();
             return this;
@@ -102,6 +116,7 @@ export class PageWrapper {
         this._page = await browser.newPage();
         this._page.setUserAgent(userAgents[Math.floor(Math.random() * userAgents.length)]);
         await this._page.setViewport(this.options.viewport);
+        this.context?.eventBus?.emit(PageEvents.PAGE_NEW_PAGE, { wrapper: this, browser: this.browser, page: this._page });
         return this;
     }
     /**
@@ -112,6 +127,7 @@ export class PageWrapper {
      * @returns {Promise<PageWrapper>}
      */
     async goto(url, nextOnError = false) {
+        this.context?.eventBus?.emit(PageEvents.PAGE_GOTO, { wrapper: this, browser: this.browser, url: url, page: this._page });
         if (nextOnError) {
             try {
                 await this._page.goto(url);
@@ -144,6 +160,7 @@ export class PageWrapper {
             // Snapshot.
             await this.page.screenshot({ path: `${screenPath}/${steppedName}.png` });
             this.context.config.storage?.file(null, `${screenPath}/${steppedName}.png`, this.context);
+            this.context?.eventBus?.emit(PageEvents.PAGE_SNAP, { wrapper: this, file: `${screenPath}/${steppedName}.png` });
         }
         return Promise.resolve(this);
     }

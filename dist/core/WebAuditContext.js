@@ -1,3 +1,4 @@
+import { AppConfig } from "##/app/conf/AppConfig";
 /**
  * Context.
  */
@@ -29,6 +30,9 @@ export class WebAuditContextClass {
         return this;
     }
     prepare() {
+        if (typeof AppConfig.getConfig()?.prepare === "function") {
+            AppConfig.getConfig()?.prepare(this);
+        }
         this.config.logger.prepare(this);
         this.config.storage.prepare(this);
     }
