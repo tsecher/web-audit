@@ -8,6 +8,10 @@
   "author": "tsecher <me@thomas-secher.fr>",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "web-audit", 
+    "web_audit"
+  ],
   "bin": {
     "analyse": "bin/analyse.js",
     "crawl": "bin/crawl.js",

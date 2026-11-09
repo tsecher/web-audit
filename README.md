@@ -17,7 +17,7 @@ After setup, web-audit.config.js file is generated. You can specify several conf
 according to modules, crawlers, loggers, storage or whatever needed in here.
 
 By default, web_audit does not provide any module fore audit. You need to install the modules you need
-and list them in this configuration file.
+and list them in this configuration file. You can find a list of plugins here [https://www.npmjs.com/search?q=keywords%3Aweb-audit-plugin](https://www.npmjs.com/search?q=keywords%3Aweb-audit-plugin)
 
 You can specify a specific configuration file that will override the default one (deep merge) for each 
 specific action (analyse or crawl). This is helpfull to provide a specific config for a website.
