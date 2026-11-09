@@ -1,6 +1,6 @@
 {
   "name": "web_audit",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "description": "Web audit tools",
   "main": "dist/index",
   "typings": "dist/index",
@@ -9,7 +9,7 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "web-audit", 
+    "web-audit",
     "web_audit"
   ],
   "bin": {
