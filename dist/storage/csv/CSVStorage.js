@@ -47,7 +47,7 @@ export default class CSVStorage {
                 Object.entries(group.structure).forEach(([data_id, structure]) => {
                     data[data_id] = structure.label;
                 });
-                fs.writeFileSync(filePath, this.getCSVLine(data, group_path));
+                fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
                 this.installData[group_path] = data;
                 this.structures[group_path] = data;
             }
@@ -58,7 +58,8 @@ export default class CSVStorage {
      */
     add(stored, group_id, context, data) {
         const group_path = this.getGroupPath(stored, group_id);
-        fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, group_path));
+        const header = Object.keys(stored.getSchema().structure[group_id].structure);
+        fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, header, group_path));
     }
     /**
      * Replace.
@@ -85,9 +86,12 @@ export default class CSVStorage {
      * @param id
      * @private
      */
-    getCSVValues(data, id) {
-        const values = this.getStringifiedValues(data);
-        return this.getStructuredValues(values, id);
+    getCSVValues(data, header, id) {
+        const values = {};
+        Object.values(header).forEach((key) => {
+            values[key] = this.getStringifiedValue(key, data[key] || '', data);
+        });
+        return values;
     }
     /**
      * Return csv line.
@@ -96,8 +100,8 @@ export default class CSVStorage {
      * @param id
      * @private
      */
-    getCSVLine(data, id) {
-        return `${this.getCSVValues(data, id).join(CSVStorage.SEPARATOR)}\r\n`;
+    getCSVLine(data, header, id) {
+        return `${Object.values(this.getCSVValues(data, header, id)).join(CSVStorage.SEPARATOR)}\r\n`;
     }
     /**
      * Get csv file path.
@@ -108,36 +112,6 @@ export default class CSVStorage {
      */
     getFilePath(id, context, extension = `.csv`) {
         return path.join(this.dirPath, String(context.version), `${id}${extension}`);
-    }
-    /**
-     * Get the data structure from head.
-     *
-     * @param data
-     * @param id
-     * @private
-     */
-    getStructuredValues(data, id) {
-        if (!id || !this.structures[id]) {
-            return Object.values(data);
-        }
-        const values = [];
-        Object.keys(this.structures[id]).forEach((key) => {
-            values.push(data[key] || '');
-        });
-        return values;
-    }
-    /**
-     * Stringify data values.
-     *
-     * @param data
-     * @private
-     */
-    getStringifiedValues(data) {
-        const values = {};
-        Object.keys(data).forEach((key) => {
-            values[key] = this.getStringifiedValue(key, data[key], data);
-        });
-        return values;
     }
     /**
      * Stringify a value.
