@@ -8,6 +8,7 @@ import {WebAuditContextClass} from '##/core/WebAuditContext';
 import {StorageInterface} from '##/storage/Storage';
 import {AppConfig} from '##/app/conf/AppConfig';
 import {StoredInterface} from "##/storage/StoredInterface";
+import { Url } from 'url';
 
 /**
  * store data in
@@ -16,11 +17,11 @@ export default class CSVStorage implements StorageInterface {
 
     static SEPARATOR = ';';
 
-    private dirPath = '';
-
     private structures: any = {};
 
     private installData: any = {};
+
+    private defaultContextUrl: URL | undefined;
 
     /**
      * {@inheritdoc}
@@ -43,7 +44,7 @@ export default class CSVStorage implements StorageInterface {
     }
 
     init(urls: URL[], version: string) {
-        this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
+        this.defaultContextUrl = urls.at(0);
     }
 
     /**
@@ -57,16 +58,8 @@ export default class CSVStorage implements StorageInterface {
                 fs.mkdirSync(path.dirname(filePath), {recursive: true});
             }
 
-            if (!fs.existsSync(filePath)) {
-                const data: any = {};
-                Object.entries(group.structure).forEach(([data_id, structure]: [string, any]) => {
-                    data[data_id] = structure.label;
-                })
-                fs.writeFileSync(filePath, this.getCSVLine(data, group_path));
-
-                this.installData[group_path] = data;
-                this.structures[group_path] = data;
-            }
+    
+            this.createFile(filePath, stored, group_id);
         })
 
     }
@@ -76,7 +69,12 @@ export default class CSVStorage implements StorageInterface {
      */
     add(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void {
         const group_path = this.getGroupPath(stored, group_id);
-        fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, group_path));
+        const header = Object.keys(stored.getSchema().structure[group_id].structure)
+   
+        const filePath = this.getFilePath(group_path, context);
+        
+        this.createFile(filePath, stored, group_id);
+        fs.appendFileSync(filePath, this.getCSVLine(data, header, group_path));
     }
 
     /**
@@ -100,15 +98,44 @@ export default class CSVStorage implements StorageInterface {
     }
 
     /**
+     * Create the file if not exists.
+     * @param filePath the file path
+     * @param stored the stored entity
+     * @param group_id the group id.
+     */
+    protected createFile(filePath: string, stored: StoredInterface, group_id: string) {
+        if (!fs.existsSync(filePath)) {       
+            const data: any = {};
+            const group_path = this.getGroupPath(stored, group_id);
+            const group = stored.getSchema().structure[group_id]; 
+            Object.entries(group.structure).forEach(([data_id, structure]: [string, any]) => {
+                data[data_id] = structure.label;
+            })
+
+            fs.mkdirSync(path.dirname(filePath), { recursive: true});
+            fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
+            
+            if(!this.installData[group_path]){
+                this.installData[group_path] = data;
+                this.structures[group_path] = data;
+            }
+        }
+    }
+
+    /**
      * Get csv values.
      *
      * @param data
      * @param id
      * @private
      */
-    protected getCSVValues(data: Object, id?: string): any {
-        const values = this.getStringifiedValues(data);
-        return this.getStructuredValues(values, id);
+    protected getCSVValues(data: any, header: Object, id?: string): any {
+        const values: any = {};
+        Object.values(header).forEach((key: string) => {
+            values[key] = this.getStringifiedValue(key, data[key] || '', data)
+        });
+
+        return values;
     }
 
     /**
@@ -118,8 +145,8 @@ export default class CSVStorage implements StorageInterface {
      * @param id
      * @private
      */
-    protected getCSVLine(data: any, id?: string): string {
-        return `${this.getCSVValues(data, id).join(CSVStorage.SEPARATOR)}\r\n`;
+    protected getCSVLine(data: any, header: any, id?: string): string {
+        return `${Object.values(this.getCSVValues(data, header, id)).join(CSVStorage.SEPARATOR)}\r\n`;
     }
 
     /**
@@ -130,42 +157,10 @@ export default class CSVStorage implements StorageInterface {
      * @private
      */
     protected getFilePath(id: string, context: WebAuditContextClass, extension: string = `.csv`) {
-        return path.join(this.dirPath, String(context.version), `${id}${extension}`);
-    }
-
-    /**
-     * Get the data structure from head.
-     *
-     * @param data
-     * @param id
-     * @private
-     */
-    protected getStructuredValues(data: any, id?: string): any {
-        if (!id || !this.structures[id]) {
-            return Object.values(data);
-        }
-
-        const values: string[] = [];
-        Object.keys(this.structures[id]).forEach((key: string) => {
-            values.push(data[key] || '');
-        });
-
-        return values;
-    }
-
-    /**
-     * Stringify data values.
-     *
-     * @param data
-     * @private
-     */
-    protected getStringifiedValues(data: any): any {
-        const values: any = {};
-        Object.keys(data).forEach((key: string) => {
-            values[key] = this.getStringifiedValue(key, data[key], data)
-        });
-
-        return values;
+        const contextUrl = context.url || this.defaultContextUrl || new URL('https://default');
+        const dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', contextUrl.hostname);
+    
+        return path.join(dirPath, String(context.version), `${id}${extension}`);
     }
 
     /**
