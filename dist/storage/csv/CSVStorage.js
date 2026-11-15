@@ -9,9 +9,9 @@ import { AppConfig } from '##/app/conf/AppConfig';
  */
 export default class CSVStorage {
     static SEPARATOR = ';';
-    dirPath = '';
     structures = {};
     installData = {};
+    defaultContextUrl;
     /**
      * {@inheritdoc}
      */
@@ -30,7 +30,7 @@ export default class CSVStorage {
     prepare(context) {
     }
     init(urls, version) {
-        this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
+        this.defaultContextUrl = urls.at(0);
     }
     /**
      * Init CSV Store file with schema.
@@ -42,15 +42,7 @@ export default class CSVStorage {
             if (!fs.existsSync(path.dirname(filePath))) {
                 fs.mkdirSync(path.dirname(filePath), { recursive: true });
             }
-            if (!fs.existsSync(filePath)) {
-                const data = {};
-                Object.entries(group.structure).forEach(([data_id, structure]) => {
-                    data[data_id] = structure.label;
-                });
-                fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
-                this.installData[group_path] = data;
-                this.structures[group_path] = data;
-            }
+            this.createFile(filePath, group, group_id);
         });
     }
     /**
@@ -59,7 +51,9 @@ export default class CSVStorage {
     add(stored, group_id, context, data) {
         const group_path = this.getGroupPath(stored, group_id);
         const header = Object.keys(stored.getSchema().structure[group_id].structure);
-        fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, header, group_path));
+        const filePath = this.getFilePath(group_path, context);
+        this.createFile(filePath, stored, group_id);
+        fs.appendFileSync(filePath, this.getCSVLine(data, header, group_path));
     }
     /**
      * Replace.
@@ -78,6 +72,26 @@ export default class CSVStorage {
         const file_path = this.getFilePath(group_path, context, '');
         fs.mkdirSync(path.dirname(file_path), { recursive: true });
         fs.writeFileSync(this.getFilePath(group_path, context, ''), data);
+    }
+    /**
+     * Create the file if not exists.
+     * @param filePath the file path
+     * @param stored the stored entity
+     * @param group_id the group id.
+     */
+    createFile(filePath, stored, group_id) {
+        if (!fs.existsSync(filePath)) {
+            const data = {};
+            const group_path = this.getGroupPath(stored, group_id);
+            const group = stored.getSchema().structure[group_id];
+            Object.entries(group.structure).forEach(([data_id, structure]) => {
+                data[data_id] = structure.label;
+            });
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
+            this.installData[group_path] = data;
+            this.structures[group_path] = data;
+        }
     }
     /**
      * Get csv values.
@@ -111,7 +125,9 @@ export default class CSVStorage {
      * @private
      */
     getFilePath(id, context, extension = `.csv`) {
-        return path.join(this.dirPath, String(context.version), `${id}${extension}`);
+        const contextUrl = context.url || this.defaultContextUrl || new URL('https://default');
+        const dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', contextUrl.hostname);
+        return path.join(dirPath, String(context.version), `${id}${extension}`);
     }
     /**
      * Stringify a value.

@@ -99,6 +99,7 @@ export class WebAuditCoreClass {
     private async analyseModules(modules: ModuleInterface[] = [], urls: UrlWrapper[]) {
         // Parse urls.
         for (const url of urls) {
+            this.context.setUrl(url.url);
             this.context.eventBus.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
 
             for (const module of modules) {
@@ -137,6 +138,7 @@ export class WebAuditCoreClass {
 
             await journey.beforeEach(pageWrapper, url);
 
+            this.context.setUrl(url.url);
             this.context.eventBus.emit(ModuleEvents.beforeUrlProcess, {module: this, url: url});
 
             // Play journey.

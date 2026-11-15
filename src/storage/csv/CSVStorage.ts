@@ -8,6 +8,7 @@ import {WebAuditContextClass} from '##/core/WebAuditContext';
 import {StorageInterface} from '##/storage/Storage';
 import {AppConfig} from '##/app/conf/AppConfig';
 import {StoredInterface} from "##/storage/StoredInterface";
+import { Url } from 'url';
 
 /**
  * store data in
@@ -16,11 +17,11 @@ export default class CSVStorage implements StorageInterface {
 
     static SEPARATOR = ';';
 
-    private dirPath = '';
-
     private structures: any = {};
 
     private installData: any = {};
+
+    private defaultContextUrl: URL | undefined;
 
     /**
      * {@inheritdoc}
@@ -43,7 +44,7 @@ export default class CSVStorage implements StorageInterface {
     }
 
     init(urls: URL[], version: string) {
-        this.dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', urls[0].hostname);
+        this.defaultContextUrl = urls.at(0);
     }
 
     /**
@@ -57,16 +58,8 @@ export default class CSVStorage implements StorageInterface {
                 fs.mkdirSync(path.dirname(filePath), {recursive: true});
             }
 
-            if (!fs.existsSync(filePath)) {
-                const data: any = {};
-                Object.entries(group.structure).forEach(([data_id, structure]: [string, any]) => {
-                    data[data_id] = structure.label;
-                })
-                fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
-
-                this.installData[group_path] = data;
-                this.structures[group_path] = data;
-            }
+    
+            this.createFile(filePath, group, group_id);
         })
 
     }
@@ -77,8 +70,11 @@ export default class CSVStorage implements StorageInterface {
     add(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void {
         const group_path = this.getGroupPath(stored, group_id);
         const header = Object.keys(stored.getSchema().structure[group_id].structure)
-
-        fs.appendFileSync(this.getFilePath(group_path, context), this.getCSVLine(data, header, group_path));
+   
+        const filePath = this.getFilePath(group_path, context);
+        
+        this.createFile(filePath, stored, group_id);
+        fs.appendFileSync(filePath, this.getCSVLine(data, header, group_path));
     }
 
     /**
@@ -99,6 +95,29 @@ export default class CSVStorage implements StorageInterface {
         const file_path = this.getFilePath(group_path, context, '');
         fs.mkdirSync(path.dirname(file_path), { recursive: true });
         fs.writeFileSync(this.getFilePath(group_path, context, ''), data);
+    }
+
+    /**
+     * Create the file if not exists.
+     * @param filePath the file path
+     * @param stored the stored entity
+     * @param group_id the group id.
+     */
+    protected createFile(filePath: string, stored: StoredInterface, group_id: string) {
+        if (!fs.existsSync(filePath)) {       
+            const data: any = {};
+            const group_path = this.getGroupPath(stored, group_id);
+            const group = stored.getSchema().structure[group_id]; 
+            Object.entries(group.structure).forEach(([data_id, structure]: [string, any]) => {
+                data[data_id] = structure.label;
+            })
+
+            fs.mkdirSync(path.dirname(filePath), { recursive: true});
+            fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
+            
+            this.installData[group_path] = data;
+            this.structures[group_path] = data;
+        }
     }
 
     /**
@@ -136,7 +155,10 @@ export default class CSVStorage implements StorageInterface {
      * @private
      */
     protected getFilePath(id: string, context: WebAuditContextClass, extension: string = `.csv`) {
-        return path.join(this.dirPath, String(context.version), `${id}${extension}`);
+        const contextUrl = context.url || this.defaultContextUrl || new URL('https://default');
+        const dirPath = path.resolve(AppConfig.getConfig()?.csv_storage?.directory || './analyses', contextUrl.hostname);
+    
+        return path.join(dirPath, String(context.version), `${id}${extension}`);
     }
 
     /**
