@@ -94,6 +94,7 @@ class TargetHandler {
         
         Object.entries(data).forEach(([key, val]) => {
             const match = this.matchTarget(context, stored, group_id, key, val);
+            
             result.data[key] = {
                 value: val,
                 definition: match ? match.definition : null,
@@ -106,10 +107,12 @@ class TargetHandler {
     }
 
     matchTarget(context: WebAuditContextClass, module: ModuleInterface, group_id: string, field:string, value:any ) {
+        
         if(typeof module.getSchema == "function"){
 
             // Get schema.
             const schema = module.getSchema()?.structure[group_id]?.structure[field];
+            
             if(!schema){
                 return null;
             }

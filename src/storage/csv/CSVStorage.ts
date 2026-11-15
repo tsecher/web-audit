@@ -59,7 +59,7 @@ export default class CSVStorage implements StorageInterface {
             }
 
     
-            this.createFile(filePath, group, group_id);
+            this.createFile(filePath, stored, group_id);
         })
 
     }
@@ -115,8 +115,10 @@ export default class CSVStorage implements StorageInterface {
             fs.mkdirSync(path.dirname(filePath), { recursive: true});
             fs.writeFileSync(filePath, this.getCSVLine(data, Object.keys(group.structure), group_path));
             
-            this.installData[group_path] = data;
-            this.structures[group_path] = data;
+            if(!this.installData[group_path]){
+                this.installData[group_path] = data;
+                this.structures[group_path] = data;
+            }
         }
     }
 

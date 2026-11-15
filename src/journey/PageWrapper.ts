@@ -129,10 +129,11 @@ export class PageWrapper {
      *
      * @returns {Promise<PageWrapper>}
      */
-    async newPage(): Promise<PageWrapper> {
+    async newPage(newCacheContext=false): Promise<PageWrapper> {
         const browser = await this.getBrowser();
+        const context = newCacheContext ? await browser.createBrowserContext() : browser;
 
-        this._page = await browser.newPage();
+        this._page = await context.newPage();
         this._page.setUserAgent(userAgents[Math.floor(Math.random() * userAgents.length)]);
         await this._page.setViewport(this.options.viewport);
 
