@@ -60,8 +60,10 @@ export default class CSVStorage {
      */
     one(stored, group_id, context, data) {
         const group_path = this.getGroupPath(stored, group_id);
-        fs.rmSync(this.getFilePath(group_path, context));
-        this.installSchema(stored, context);
+        const file = this.getFilePath(group_path, context);
+        if (fs.existsSync(file)) {
+            fs.rmSync(file, { recursive: true });
+        }
         this.add(stored, group_id, context, data);
     }
     /**

@@ -9,6 +9,7 @@ import {StorageInterface} from '##/storage/Storage';
 import {AppConfig} from '##/app/conf/AppConfig';
 import {StoredInterface} from "##/storage/StoredInterface";
 import { Url } from 'url';
+import { takeCoverage } from 'v8';
 
 /**
  * store data in
@@ -69,8 +70,7 @@ export default class CSVStorage implements StorageInterface {
      */
     add(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void {
         const group_path = this.getGroupPath(stored, group_id);
-        const header = Object.keys(stored.getSchema().structure[group_id].structure)
-   
+        const header = Object.keys(stored.getSchema().structure[group_id].structure);
         const filePath = this.getFilePath(group_path, context);
         
         this.createFile(filePath, stored, group_id);
@@ -82,8 +82,12 @@ export default class CSVStorage implements StorageInterface {
      */
     one(stored: StoredInterface, group_id: string, context: WebAuditContextClass, data: any): void {
         const group_path = this.getGroupPath(stored, group_id);
-        fs.rmSync(this.getFilePath(group_path, context));
-        this.installSchema(stored, context);
+        const file = this.getFilePath(group_path, context);
+        
+        if( fs.existsSync(file)){
+            fs.rmSync(file, {recursive: true});
+        }
+        
         this.add(stored, group_id, context, data);
     }
 
